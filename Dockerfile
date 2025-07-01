@@ -22,7 +22,7 @@ COPY --from=builder /app /app
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose only the ports in your config
-EXPOSE 3100 444 8081
+EXPOSE 3100 444
 
 # Entrypoint script runs both Node and nginx
 COPY docker-entrypoint.sh /docker-entrypoint.sh
