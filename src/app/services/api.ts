@@ -5,7 +5,7 @@ import {
 
 // Create axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:2083/api',
+  baseURL: 'https://dev.goval.app:2083/api',
   headers: {
     'Content-Type': 'application/json',
   },
