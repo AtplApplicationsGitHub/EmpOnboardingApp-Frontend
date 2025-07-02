@@ -12,7 +12,7 @@ export function formatDate(date: string | Date): string {
     month: 'short',
     day: 'numeric'
   });
-}
+}          //test
 
 export function formatDateTime(date: string | Date): string {
   const d = new Date(date);
