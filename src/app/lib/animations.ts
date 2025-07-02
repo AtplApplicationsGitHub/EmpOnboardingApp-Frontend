@@ -12,7 +12,7 @@ export const useAnimation = (delay: number = 0) => {
     return () => clearTimeout(timer);
   }, [delay]);
 
-  return isVisible;
+  return isVisible;  //test
 };
 
 // Hook for intersection observer animations
