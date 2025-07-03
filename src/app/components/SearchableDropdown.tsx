@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ChevronDown, Search, X, Loader2 } from 'lucide-react';
 
 interface SearchableDropdownProps {
-  options: Array<{ id: number; name: string; email: string }>;
+  options?: Array<{ id: number; name: string; email: string }>; // Made optional for async mode
   value?: number;
   onChange: (value: number | undefined) => void;
   placeholder?: string;
@@ -10,46 +10,126 @@ interface SearchableDropdownProps {
   className?: string;
   disabled?: boolean;
   maxDisplayItems?: number;
+  // Async search props
+  enableAsyncSearch?: boolean;
+  onSearch?: (searchTerm: string) => Promise<Array<{ id: number; name: string; email: string }>>;
+  minimumSearchLength?: number;
+  // Pre-selected option (useful for edit forms where we have an ID but need to fetch the user details)
+  initialSelectedOption?: { id: number; name: string; email: string };
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
-  options,
+  options = [],
   value,
   onChange,
   placeholder = "Select an option...",
   required = false,
   className = "",
   disabled = false,
-  maxDisplayItems = 4
+  maxDisplayItems = 4,
+  enableAsyncSearch = false,
+  onSearch,
+  minimumSearchLength = 3,
+  initialSelectedOption
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{ id: number; name: string; email: string }>>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [selectedOptionCache, setSelectedOptionCache] = useState<{ id: number; name: string; email: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Find selected option
-  const selectedOption = options.find(option => option.id === value);
+  // Find selected option (look in options, searchResults, and cache)
+  let selectedOption: { id: number; name: string; email: string } | undefined;
+  if (value) {
+    // First try to find in current options/search results
+    const allOptions = enableAsyncSearch ? searchResults : options;
+    selectedOption = allOptions.find(option => option.id === value);
+    
+    // If not found but we have a cached version, use that
+    if (!selectedOption && selectedOptionCache && selectedOptionCache.id === value) {
+      selectedOption = selectedOptionCache;
+    }
+  }
 
-  // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.email.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, maxDisplayItems);
+  // Handle async search
+  const performSearch = useCallback(async (term: string) => {
+    if (!enableAsyncSearch || !onSearch) return;
+    
+    if (term.length < minimumSearchLength) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await onSearch(term);
+      setSearchResults(results);
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [enableAsyncSearch, onSearch, minimumSearchLength]);
+
+  // Debounce search
+  useEffect(() => {
+    if (!enableAsyncSearch) return;
+    
+    const timer = setTimeout(() => {
+      performSearch(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, performSearch, enableAsyncSearch]);
+
+  // Clear cache when value changes externally (e.g., form reset)
+  useEffect(() => {
+    if (!value) {
+      setSelectedOptionCache(null);
+    }
+  }, [value]);
+
+  // Set initial selected option if provided
+  useEffect(() => {
+    if (initialSelectedOption && value === initialSelectedOption.id) {
+      setSelectedOptionCache(initialSelectedOption);
+    }
+  }, [initialSelectedOption, value]);
+
+  // Filter options based on search term (for non-async mode)
+  const filteredOptions = enableAsyncSearch 
+    ? searchResults 
+    : options.filter(option =>
+        option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (option.email && option.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      ).slice(0, maxDisplayItems);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setSearchTerm('');
+        if (!enableAsyncSearch) {
+          setSearchTerm('');
+        }
         setHighlightedIndex(-1);
+        if (enableAsyncSearch) {
+          setSearchResults([]);
+          setHasSearched(false);
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [enableAsyncSearch]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -77,8 +157,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           break;
         case 'Escape':
           setIsOpen(false);
-          setSearchTerm('');
+          if (!enableAsyncSearch) {
+            setSearchTerm('');
+          }
           setHighlightedIndex(-1);
+          if (enableAsyncSearch) {
+            setSearchResults([]);
+            setHasSearched(false);
+          }
           break;
       }
     };
@@ -89,22 +175,40 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const handleSelectOption = (option: { id: number; name: string; email: string }) => {
     onChange(option.id);
+    setSelectedOptionCache(option); // Cache the selected option
     setIsOpen(false);
     setSearchTerm('');
     setHighlightedIndex(-1);
+    if (enableAsyncSearch) {
+      setSearchResults([]);
+      setHasSearched(false);
+    }
   };
 
   const handleClear = () => {
     onChange(undefined);
+    setSelectedOptionCache(null); // Clear the cached option
     setSearchTerm('');
     setIsOpen(false);
     setHighlightedIndex(-1);
+    if (enableAsyncSearch) {
+      setSearchResults([]);
+      setHasSearched(false);
+    }
   };
 
   const handleInputClick = () => {
     if (!disabled) {
       setIsOpen(true);
-      setSearchTerm('');
+      if (!enableAsyncSearch) {
+        setSearchTerm('');
+      } else {
+        // In async mode, if we have a selected option and no search results, 
+        // we can start with the selected option's name as search term
+        if (selectedOption && searchResults.length === 0 && !hasSearched) {
+          setSearchTerm(selectedOption.name);
+        }
+      }
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -147,7 +251,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         ) : (
           <div className="flex-1 text-sm">
             {selectedOption ? (
-              <span>{selectedOption.name} ({selectedOption.email})</span>
+              <span>
+                {selectedOption.name}
+                {selectedOption.email && ` (${selectedOption.email})`}
+              </span>
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
@@ -181,12 +288,41 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           {searchTerm && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
               <Search size={12} className="inline mr-1" />
-              Searching for "{searchTerm}"...
+              {enableAsyncSearch ? (
+                searchTerm.length < minimumSearchLength ? (
+                  `Type at least ${minimumSearchLength} characters to search...`
+                ) : isSearching ? (
+                  <>
+                    <Loader2 size={12} className="inline mr-1 animate-spin" />
+                    Searching for "{searchTerm}"...
+                  </>
+                ) : (
+                  `Search results for "${searchTerm}"`
+                )
+              ) : (
+                `Searching for "${searchTerm}"...`
+              )}
             </div>
           )}
           
-          {/* Clear option (if not required) */}
-          {!required && (
+          {/* Show search prompt for async mode when no search term */}
+          {enableAsyncSearch && !searchTerm && (
+            <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+              <Search size={16} className="inline mr-2" />
+              Type at least {minimumSearchLength} characters to search for users
+            </div>
+          )}
+          
+          {/* Show message when search term is too short for async mode */}
+          {enableAsyncSearch && searchTerm && searchTerm.length < minimumSearchLength && (
+            <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+              <Search size={16} className="inline mr-2" />
+              Type {minimumSearchLength - searchTerm.length} more character{minimumSearchLength - searchTerm.length !== 1 ? 's' : ''} to search
+            </div>
+          )}
+          
+          {/* Clear option (if not required and has selection) */}
+          {!required && selectedOption && (
             <div
               role="option"
               tabIndex={0}
@@ -204,41 +340,47 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           )}
 
           {/* Options */}
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => (
-              <div
-                key={option.id}
-                role="option"
-                tabIndex={0}
-                aria-selected={selectedOption?.id === option.id}
-                className={`
-                  px-3 py-2 text-sm cursor-pointer transition-colors
-                  ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
-                  ${selectedOption?.id === option.id ? 'bg-primary/5 font-medium' : ''}
-                `}
-                onClick={() => handleSelectOption(option)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleSelectOption(option);
-                  }
-                }}
-              >
-                <div className="font-medium">{option.name}</div>
-                <div className="text-xs text-muted-foreground">{option.email}</div>
-              </div>
-            ))
-          ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              {searchTerm ? 'No group leaders found' : 'No group leaders available'}
-            </div>
+          {(enableAsyncSearch ? (hasSearched && searchTerm.length >= minimumSearchLength) : true) && (
+            filteredOptions.length > 0 ? (
+              filteredOptions.map((option, index) => (
+                <div
+                  key={option.id}
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={selectedOption?.id === option.id}
+                  className={`
+                    px-3 py-2 text-sm cursor-pointer transition-colors
+                    ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
+                    ${selectedOption?.id === option.id ? 'bg-primary/5 font-medium' : ''}
+                  `}
+                  onClick={() => handleSelectOption(option)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectOption(option);
+                    }
+                  }}
+                >
+                  <div className="font-medium">{option.name}</div>
+                  {option.email && (
+                    <div className="text-xs text-muted-foreground">{option.email}</div>
+                  )}
+                </div>
+              ))
+            ) : (
+              enableAsyncSearch && hasSearched && searchTerm.length >= minimumSearchLength && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No users found for "{searchTerm}"
+                </div>
+              )
+            )
           )}
 
-          {/* Show count if there are more items */}
-          {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
+          {/* Show count if there are more items (non-async mode) */}
+          {!enableAsyncSearch && options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing {maxDisplayItems} of {options.length} group leaders. Type to filter more.
+              Showing {maxDisplayItems} of {options.length} items. Type to filter more.
             </div>
           )}
         </div>

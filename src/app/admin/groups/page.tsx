@@ -10,7 +10,6 @@ import { Plus, Edit, Trash2, Users, UserCheck, AlertTriangle, HelpCircle } from 
 
 const GroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [groupLeads, setGroupLeads] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -22,17 +21,24 @@ const GroupsPage: React.FC = () => {
   const [newEscalationGroupLeadId, setNewEscalationGroupLeadId] = useState<number | undefined>();
   const [editPrimaryGroupLeadId, setEditPrimaryGroupLeadId] = useState<number | undefined>();
   const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<number | undefined>();
-  // Fetch groups and group leads on component mount
+  
+  // Async search function for group leads
+  const searchGroupLeads = async (searchTerm: string): Promise<User[]> => {
+    try {
+      return await adminService.searchGroupLeads(searchTerm);
+    } catch (error) {
+      console.error('Failed to search group leads:', error);
+      return [];
+    }
+  };
+  
+  // Fetch groups on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [groupsData, groupLeadsData] = await Promise.all([
-          adminService.getGroups(),
-          adminService.getAllGroupLeads()
-        ]);
+        const groupsData = await adminService.getGroups();
         setGroups(groupsData);
-        setGroupLeads(groupLeadsData);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load data');
       } finally {
@@ -279,12 +285,12 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    enableAsyncSearch={true}
+                    onSearch={searchGroupLeads}
                     value={newPrimaryGroupLeadId}
                     onChange={setNewPrimaryGroupLeadId}
-                    placeholder="Select a group lead (Required)"
+                    placeholder="Type to search for group leads (Required)"
                     required={true}
-                    maxDisplayItems={4}
                     className="w-full"
                   />
                 </div>
@@ -293,12 +299,12 @@ const GroupsPage: React.FC = () => {
                     Escalation Group Lead <span className="text-sm text-muted-foreground">(Optional)</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    enableAsyncSearch={true}
+                    onSearch={searchGroupLeads}
                     value={newEscalationGroupLeadId}
                     onChange={setNewEscalationGroupLeadId}
-                    placeholder="Select a group lead (Optional)"
+                    placeholder="Type to search for group leads (Optional)"
                     required={false}
-                    maxDisplayItems={4}
                     className="w-full"
                   />
                 </div>
@@ -350,13 +356,18 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    enableAsyncSearch={true}
+                    onSearch={searchGroupLeads}
                     value={editPrimaryGroupLeadId}
                     onChange={setEditPrimaryGroupLeadId}
-                    placeholder="Select a group lead (Required)"
+                    placeholder="Type to search for group leads (Required)"
                     required={true}
-                    maxDisplayItems={4}
                     className="w-full"
+                    initialSelectedOption={editingGroup?.primary_group_lead_id && editingGroup?.primary_group_lead_name ? {
+                      id: editingGroup.primary_group_lead_id,
+                      name: editingGroup.primary_group_lead_name,
+                      email: '' // We don't have email from group data, but it's optional for display
+                    } : undefined}
                   />
                 </div>
                 <div>
@@ -364,13 +375,18 @@ const GroupsPage: React.FC = () => {
                     Escalation Group Lead <span className="text-sm text-muted-foreground">(Optional)</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    enableAsyncSearch={true}
+                    onSearch={searchGroupLeads}
                     value={editEscalationGroupLeadId}
                     onChange={setEditEscalationGroupLeadId}
-                    placeholder="Select a group lead (Optional)"
+                    placeholder="Type to search for group leads (Optional)"
                     required={false}
-                    maxDisplayItems={4}
                     className="w-full"
+                    initialSelectedOption={editingGroup?.escalation_group_lead_id && editingGroup?.escalation_group_lead_name ? {
+                      id: editingGroup.escalation_group_lead_id,
+                      name: editingGroup.escalation_group_lead_name,
+                      email: '' // We don't have email from group data, but it's optional for display
+                    } : undefined}
                   />
                 </div>
                 <div className="flex gap-3 pt-4">

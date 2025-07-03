@@ -220,6 +220,24 @@ export const adminService = {
     }>('/admin/users', { params: { role: 'group_lead', per_page: 50 } }); // Get up to 50 group leads
     return response.data.users;
   },
+
+  // Search group leads with minimum 3 characters
+  searchGroupLeads: async (searchTerm: string): Promise<User[]> => {
+    if (searchTerm.length < 3) {
+      return [];
+    }
+    const response = await api.get<{
+      users: User[];
+      pagination: any;
+    }>('/admin/users', { 
+      params: { 
+        role: 'group_lead', 
+        search: searchTerm,
+        per_page: 20 
+      } 
+    });
+    return response.data.users;
+  },
   
   createUser: async (data: {
     name: string;
@@ -230,7 +248,7 @@ export const adminService = {
     const response = await api.post<User>('/admin/users', data);
     return response.data;
   },
-  
+
   // Employee Processing
   processEmployees: async (employees: Employee[]): Promise<EmployeeProcessingResponse> => {
     const response = await api.post<EmployeeProcessingResponse>('/admin/process-employees', { employees });
