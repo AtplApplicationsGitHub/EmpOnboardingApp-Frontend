@@ -13,7 +13,7 @@ interface TaskReassignModalProps {
   onReassignSuccess: () => void;
   selectedTasks: Task[];
   mode: 'single' | 'bulk';
-  userType?: 'admin' | 'group_lead'; // New prop to determine which service to use
+  userType?: 'admin' | 'group_lead';
 }
 
 const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
@@ -22,50 +22,47 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
   onReassignSuccess,
   selectedTasks,
   mode,
-  userType = 'group_lead' // Default to group_lead for backward compatibility
+  userType = 'group_lead'
 }) => {
-  const [groupLeaders, setGroupLeaders] = useState<User[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<number | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fetchingLeaders, setFetchingLeaders] = useState(false);
+
+  // Async search function for group leads
+  const searchGroupLeads = async (searchTerm: string): Promise<User[]> => {
+    try {
+      // Get current assignee IDs to exclude
+      const currentAssigneeIds = new Set(selectedTasks.map(task => task.assignee_id));
+      
+      if (userType === 'admin') {
+        const results = await adminService.searchGroupLeads(searchTerm);
+        // Filter out currently assigned group leaders
+        return results.filter(leader => !currentAssigneeIds.has(leader.id));
+      } else {
+        // For group_lead users, get all group leaders and filter locally
+        const result = await groupLeadService.getGroupLeaders();
+        // Filter out currently assigned group leaders
+        const availableLeaders = result.filter(leader => !currentAssigneeIds.has(leader.id));
+        
+        // Apply search filter
+        const filtered = availableLeaders.filter(user => 
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return filtered;
+      }
+    } catch (error) {
+      console.error('Failed to search group leads:', error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
-      fetchGroupLeaders();
-      setReason(''); // Reset reason when modal opens
+      setReason('');
       setSelectedAssignee(null);
     }
   }, [isOpen, selectedTasks]);
-
-  const fetchGroupLeaders = async () => {
-    try {
-      setFetchingLeaders(true);
-      let leaders: User[];
-      
-      if (userType === 'admin') {
-        // Use admin service to get group leaders
-        const result = await adminService.getUsers({ role: 'group_lead' });
-        leaders = result.users;
-      } else {
-        // Use group leader service
-        leaders = await groupLeadService.getGroupLeaders();
-      }
-      
-      // Get all unique assignee IDs from selected tasks to exclude them
-      const currentAssigneeIds = new Set(selectedTasks.map(task => task.assignee_id));
-      
-      // Filter out currently assigned group leaders
-      const availableLeaders = leaders.filter(leader => !currentAssigneeIds.has(leader.id));
-      
-      setGroupLeaders(availableLeaders);
-    } catch (error: any) {
-      console.error('Failed to fetch group leaders:', error);
-      toast.error('Failed to load group leaders');
-    } finally {
-      setFetchingLeaders(false);
-    }
-  };
 
   const handleReassign = async () => {
     if (!selectedAssignee) {
@@ -82,7 +79,6 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
       setLoading(true);
 
       if (userType === 'admin') {
-        // Use admin service
         if (selectedTasks.length === 1) {
           await adminService.reassignTaskToUser(
             selectedTasks[0].id,
@@ -100,7 +96,6 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
           toast.success(`${result.reassigned_count} tasks reassigned successfully`);
         }
       } else if (selectedTasks.length === 1) {
-        // Use group leader service - single task
         await groupLeadService.reassignTask(
           selectedTasks[0].id,
           selectedAssignee,
@@ -108,7 +103,6 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
         );
         toast.success('Task reassigned successfully');
       } else {
-        // Use group leader service - multiple tasks
         const taskIds = selectedTasks.map(task => task.id);
         const result = await groupLeadService.bulkReassignTasks(
           taskIds,
@@ -130,7 +124,6 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedLeader = groupLeaders.find(leader => leader.id === selectedAssignee);
   const selectedTasksCount = selectedTasks.length;
   const questionText = selectedTasksCount > 1 ? 'Questions' : 'Question';
   const buttonText = loading 
@@ -164,26 +157,15 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
               <label htmlFor="assignee-select" className="block text-sm font-medium mb-2">
                 Reassign to Group Leader *
               </label>
-              {fetchingLeaders ? (
-                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded">
-                  Loading group leaders...
-                </div>
-              ) : (
-                <SearchableDropdown
-                  options={groupLeaders}
-                  value={selectedAssignee ?? undefined}
-                  onChange={(value) => setSelectedAssignee(value ?? null)}
-                  placeholder="Select a group leader..."
-                  required={true}
-                  disabled={loading}
-                  maxDisplayItems={6}
-                />
-              )}
-              {groupLeaders.length === 0 && !fetchingLeaders && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  No other group leaders available for reassignment
-                </p>
-              )}
+              <SearchableDropdown
+                enableAsyncSearch={true}
+                onSearch={searchGroupLeads}
+                value={selectedAssignee ?? undefined}
+                onChange={(value) => setSelectedAssignee(value ?? null)}
+                placeholder="Type to search for group leaders..."
+                required={true}
+                disabled={loading}
+              />
             </div>
 
             {/* Reason */}
@@ -203,15 +185,14 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
             </div>
 
             {/* Preview */}
-            {selectedLeader && selectedTasksCount > 0 && (
+            {selectedAssignee && selectedTasksCount > 0 && (
               <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                   <CheckCircle size={16} />
                   <span className="font-medium">Assignment Preview</span>
                 </div>
                 <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                  {selectedTasksCount} question{selectedTasksCount > 1 ? 's' : ''} will be assigned to{' '}
-                  <strong>{selectedLeader.name}</strong>
+                  {selectedTasksCount} question{selectedTasksCount > 1 ? 's' : ''} will be reassigned to the selected user
                 </p>
                 <p className="text-xs text-green-500 dark:text-green-500 mt-1">
                   Due dates will remain unchanged as per current requirements
@@ -231,7 +212,7 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
               </Button>
               <Button
                 onClick={handleReassign}
-                disabled={loading || !selectedAssignee || !reason.trim() || groupLeaders.length === 0}
+                disabled={loading || !selectedAssignee || !reason.trim()}
                 className="flex-1"
               >
                 {buttonText}
