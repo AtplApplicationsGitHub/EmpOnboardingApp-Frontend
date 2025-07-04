@@ -5,7 +5,7 @@ import {
 
 // Create axios instance
 const api = axios.create({
-  baseURL: 'https://dev.goval.app:2083/api',
+  baseURL: 'http://localhost:2083/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -226,6 +226,7 @@ export const adminService = {
     if (searchTerm.length < 3) {
       return [];
     }
+    console.log('API searchGroupLeads called with:', searchTerm);
     const response = await api.get<{
       users: User[];
       pagination: any;
@@ -236,6 +237,7 @@ export const adminService = {
         per_page: 20 
       } 
     });
+    console.log('Backend response:', response.data);
     return response.data.users;
   },
   

@@ -59,20 +59,27 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const performSearch = useCallback(async (term: string) => {
     if (!enableAsyncSearch || !onSearch) return;
     
+    console.log('SearchableDropdown performSearch called with:', { term, length: term.length, minimumSearchLength });
+    
     if (term.length < minimumSearchLength) {
+      console.log('Term too short, clearing results');
       setSearchResults([]);
       setHasSearched(false);
+      setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
     try {
+      console.log('Calling onSearch with term:', term);
       const results = await onSearch(term);
+      console.log('Search results received:', results);
       setSearchResults(results);
       setHasSearched(true);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
+      setHasSearched(true);
     } finally {
       setIsSearching(false);
     }
@@ -111,6 +118,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         (option.email && option.email.toLowerCase().includes(searchTerm.toLowerCase()))
       ).slice(0, maxDisplayItems);
 
+  // For async mode, only show options if we have searched and have results
+  const shouldShowOptions = enableAsyncSearch 
+    ? (hasSearched && searchTerm.length >= minimumSearchLength && searchResults.length > 0)
+    : filteredOptions.length > 0;
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -139,19 +151,23 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
-          setHighlightedIndex(prev => 
-            prev < filteredOptions.length - 1 ? prev + 1 : 0
-          );
+          if (shouldShowOptions && filteredOptions.length > 0) {
+            setHighlightedIndex(prev => 
+              prev < filteredOptions.length - 1 ? prev + 1 : 0
+            );
+          }
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setHighlightedIndex(prev => 
-            prev > 0 ? prev - 1 : filteredOptions.length - 1
-          );
+          if (shouldShowOptions && filteredOptions.length > 0) {
+            setHighlightedIndex(prev => 
+              prev > 0 ? prev - 1 : filteredOptions.length - 1
+            );
+          }
           break;
         case 'Enter':
           event.preventDefault();
-          if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
+          if (shouldShowOptions && highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
             handleSelectOption(filteredOptions[highlightedIndex]);
           }
           break;
@@ -171,7 +187,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, highlightedIndex, filteredOptions]);
+  }, [isOpen, highlightedIndex, filteredOptions, shouldShowOptions, enableAsyncSearch]);
 
   const handleSelectOption = (option: { id: number; name: string; email: string }) => {
     onChange(option.id);
@@ -214,6 +230,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       }
     }
   };
+
+  // Reset highlighted index when search results change
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [searchResults]);
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -322,7 +343,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           )}
           
           {/* Clear option (if not required and has selection) */}
-          {!required && selectedOption && (
+          {!required && selectedOption && !enableAsyncSearch && (
             <div
               role="option"
               tabIndex={0}
@@ -340,40 +361,39 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           )}
 
           {/* Options */}
-          {(enableAsyncSearch ? (hasSearched && searchTerm.length >= minimumSearchLength) : true) && (
-            filteredOptions.length > 0 ? (
-              filteredOptions.map((option, index) => (
-                <div
-                  key={option.id}
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={selectedOption?.id === option.id}
-                  className={`
-                    px-3 py-2 text-sm cursor-pointer transition-colors
-                    ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
-                    ${selectedOption?.id === option.id ? 'bg-primary/5 font-medium' : ''}
-                  `}
-                  onClick={() => handleSelectOption(option)}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelectOption(option);
-                    }
-                  }}
-                >
-                  <div className="font-medium">{option.name}</div>
-                  {option.email && (
-                    <div className="text-xs text-muted-foreground">{option.email}</div>
-                  )}
-                </div>
-              ))
-            ) : (
-              enableAsyncSearch && hasSearched && searchTerm.length >= minimumSearchLength && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  No users found for "{searchTerm}"
-                </div>
-              )
+          {shouldShowOptions ? (
+            filteredOptions.map((option, index) => (
+              <div
+                key={option.id}
+                role="option"
+                tabIndex={0}
+                aria-selected={selectedOption?.id === option.id}
+                className={`
+                  px-3 py-2 text-sm cursor-pointer transition-colors
+                  ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
+                  ${selectedOption?.id === option.id ? 'bg-primary/5 font-medium' : ''}
+                `}
+                onClick={() => handleSelectOption(option)}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelectOption(option);
+                  }
+                }}
+              >
+                <div className="font-medium">{option.name}</div>
+                {option.email && (
+                  <div className="text-xs text-muted-foreground">{option.email}</div>
+                )}
+              </div>
+            ))
+          ) : (
+            // Show "no results" message only when we've searched and found nothing
+            enableAsyncSearch && hasSearched && searchTerm.length >= minimumSearchLength && searchResults.length === 0 && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                No users found for "{searchTerm}"
+              </div>
             )
           )}
 
