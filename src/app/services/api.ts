@@ -226,6 +226,7 @@ export const adminService = {
     if (searchTerm.length < 3) {
       return [];
     }
+    console.log('API searchGroupLeads called with:', searchTerm);
     const response = await api.get<{
       users: User[];
       pagination: any;
@@ -236,6 +237,7 @@ export const adminService = {
         per_page: 20 
       } 
     });
+    console.log('Backend response:', response.data);
     return response.data.users;
   },
   

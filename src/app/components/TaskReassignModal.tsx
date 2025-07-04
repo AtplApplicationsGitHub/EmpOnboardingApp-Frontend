@@ -30,26 +30,52 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
 
   // Async search function for group leads
   const searchGroupLeads = async (searchTerm: string): Promise<User[]> => {
+    console.log('TaskReassignModal searchGroupLeads called with:', { searchTerm, length: searchTerm.length });
+    
     try {
+      // ALWAYS enforce minimum search length - no exceptions
+      if (searchTerm.length < 3) {
+        console.log('Search term too short, returning empty array');
+        return [];
+      }
+
       // Get current assignee IDs to exclude
       const currentAssigneeIds = new Set(selectedTasks.map(task => task.assignee_id));
+      console.log('Current assignee IDs to exclude:', Array.from(currentAssigneeIds));
       
       if (userType === 'admin') {
         const results = await adminService.searchGroupLeads(searchTerm);
+        console.log('Admin search results:', results);
+        console.log('Admin search results names:', results.map(r => ({ id: r.id, name: r.name, email: r.email })));
         // Filter out currently assigned group leaders
-        return results.filter(leader => !currentAssigneeIds.has(leader.id));
-      } else {
-        // For group_lead users, get all group leaders and filter locally
-        const result = await groupLeadService.getGroupLeaders();
-        // Filter out currently assigned group leaders
-        const availableLeaders = result.filter(leader => !currentAssigneeIds.has(leader.id));
-        
-        // Apply search filter
-        const filtered = availableLeaders.filter(user => 
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const filtered = results.filter(leader => !currentAssigneeIds.has(leader.id));
+        console.log('Filtered results (admin):', filtered);
+        console.log('Filtered results names:', filtered.map(r => ({ id: r.id, name: r.name, email: r.email })));
         return filtered;
+      } else {
+        // For group_lead users, we need to use the search functionality too
+        // We'll modify the groupLeadService to support search, or use admin search and filter by role
+        try {
+          // Try to use admin search if available (it filters by role already)
+          const results = await adminService.searchGroupLeads(searchTerm);
+          console.log('Group lead using admin search results:', results);
+          const filtered = results.filter(leader => !currentAssigneeIds.has(leader.id));
+          console.log('Filtered results (group lead via admin):', filtered);
+          return filtered;
+        } catch (adminError) {
+          console.log('Admin search failed, falling back to local filter:', adminError);
+          // Fallback: get all group leaders and filter locally (only if search term >= 3)
+          const result = await groupLeadService.getGroupLeaders();
+          const availableLeaders = result.filter(leader => !currentAssigneeIds.has(leader.id));
+          
+          // Apply search filter
+          const filtered = availableLeaders.filter(user => 
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          console.log('Fallback filtered results:', filtered);
+          return filtered;
+        }
       }
     } catch (error) {
       console.error('Failed to search group leads:', error);
@@ -158,6 +184,7 @@ const TaskReassignModal: React.FC<TaskReassignModalProps> = ({
                 Reassign to Group Leader *
               </label>
               <SearchableDropdown
+                options={[]} // Explicitly empty for async mode
                 enableAsyncSearch={true}
                 onSearch={searchGroupLeads}
                 value={selectedAssignee ?? undefined}
