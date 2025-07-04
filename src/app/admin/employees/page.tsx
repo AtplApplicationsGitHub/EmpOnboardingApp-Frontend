@@ -123,7 +123,7 @@ const EmployeeProcessingPage: React.FC = () => {
       
       // Convert QueueEmployee to Employee format for API
       const employeesToProcess: Employee[] = queueEmployees.map(qe => ({
-        employee_id: qe.candidate_name.toLowerCase().replace(/\s+/g, '.'),
+        employee_id: qe.sr_no.toString(), // Use Sr No as employee_id
         employee_name: qe.candidate_name,
         employee_level: qe.level,
         group_id: 1, // Default group - could be made configurable
@@ -193,7 +193,7 @@ const EmployeeProcessingPage: React.FC = () => {
       
       // Convert processed employees to QueueEmployee format for the queue
       const queueEmployeesFromResult: QueueEmployee[] = result.processed_employees.map((pe, index) => ({
-        sr_no: queueEmployees.length + index + 1,
+        sr_no: parseInt(pe.employee_id) || (queueEmployees.length + index + 1), // Use employee_id from Excel (which is Sr No) or fallback
         candidate_name: pe.employee_name || '',
         doj: pe.doj || '',
         department: pe.department || '',
