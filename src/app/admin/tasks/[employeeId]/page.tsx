@@ -324,7 +324,7 @@ const EmployeeTaskDetailsPage: React.FC = () => {
                       <TableRow>
                         <TableHead className="py-2">Question</TableHead>
                         <TableHead className="py-2">Status</TableHead>
-                        <TableHead className="py-2">Due Date</TableHead>
+                        <TableHead className="py-2">Compliance Day</TableHead>
                         <TableHead className="py-2">Response</TableHead>
                       </TableRow>
                     </TableHeader>

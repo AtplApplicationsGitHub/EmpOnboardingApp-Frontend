@@ -363,7 +363,7 @@ const EmployeeTasksPage: React.FC = () => {
                   <TableHead className="w-20">Status</TableHead>
                   <TableHead>Question</TableHead>
                   <TableHead>Response</TableHead>
-                  <TableHead className="w-32">Due Date</TableHead>
+                  <TableHead className="w-32">Compliance Day</TableHead>
                   <TableHead className="w-32">Auto-Save</TableHead>
                 </TableRow>
               </TableHeader>
@@ -457,7 +457,7 @@ const EmployeeTasksPage: React.FC = () => {
                         </div>
                       </TableCell>
                       
-                      {/* Due Date */}
+                      {/* Compliance Day */}
                       <TableCell>
                         <div className="text-sm">
                           <p>{new Date(task.due_date).toLocaleDateString()}</p>

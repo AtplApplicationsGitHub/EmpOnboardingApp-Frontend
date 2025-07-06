@@ -325,6 +325,30 @@ export const adminService = {
     });
     return response.data;
   },
+
+  updateEmployeeData: async (employeeId: string, updates: {
+    mock_employee_name?: string;
+    mock_employee_level?: string; 
+    mock_employee_id?: string;
+    mock_employee_doj?: string;
+    mock_employee_department?: string;
+    mock_employee_role?: string;
+    mock_employee_total_experience?: number;
+    mock_employee_past_organization?: string;
+    mock_employee_lab_allocation?: string;
+    mock_employee_compliance_day?: number;
+  }): Promise<{
+    message: string;
+    tasks_updated: number;
+    old_values: any;
+    new_values: any;
+  }> => {
+    const response = await api.put('/admin/tasks/update-employee-data', {
+      employee_id: employeeId,
+      updates: updates
+    });
+    return response.data;
+  },
 };
 
 // Group Lead Services
