@@ -34,7 +34,6 @@ const EmployeeProcessingPage: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const [newEmployee, setNewEmployee] = useState<Partial<QueueEmployee>>({
-    sr_no: 0,
     candidate_name: '',
     doj: '',
     department: '',
@@ -62,14 +61,13 @@ const EmployeeProcessingPage: React.FC = () => {
     }
   };
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = async () => {
     if (!newEmployee.candidate_name) {
       toast.error('Please fill in Candidate Name');
       return;
     }
 
     const employee: QueueEmployee = {
-      sr_no: queueEmployees.length + 1,
       candidate_name: newEmployee.candidate_name as string,
       doj: newEmployee.doj || new Date().toISOString().split('T')[0],
       department: newEmployee.department || 'General',
@@ -83,7 +81,6 @@ const EmployeeProcessingPage: React.FC = () => {
 
     setQueueEmployees([...queueEmployees, employee]);
     setNewEmployee({
-      sr_no: 0,
       candidate_name: '',
       doj: '',
       department: '',
@@ -121,12 +118,42 @@ const EmployeeProcessingPage: React.FC = () => {
     try {
       setProcessing(true);
       
-      // Convert QueueEmployee to Employee format for API
-      const employeesToProcess: Employee[] = queueEmployees.map(qe => ({
-        employee_id: qe.sr_no.toString(), // Use Sr No as employee_id
+      // Generate Employee IDs during processing in TMMYY0000 format
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = String(now.getFullYear()).slice(-2);
+      const prefix = `T${month}${year}`;
+      
+      // Get existing employee IDs to find the next sequential number
+      const existingTasks = await adminService.getTasks();
+      const existingIds = existingTasks.map(task => task.mock_employee_id);
+      
+      // Find the highest number for the current month/year
+      const currentPrefixIds = existingIds.filter(id => id.startsWith(prefix));
+      let nextNumber = 1;
+      
+      if (currentPrefixIds.length > 0) {
+        const numbers = currentPrefixIds.map(id => {
+          const numStr = id.replace(prefix, '');
+          return parseInt(numStr, 10) || 0;
+        });
+        nextNumber = Math.max(...numbers) + 1;
+      }
+      
+      // Convert QueueEmployee to Employee format with generated IDs
+      const employeesToProcess: Employee[] = queueEmployees.map((qe, index) => ({
+        employee_id: `${prefix}${String(nextNumber + index).padStart(4, '0')}`,
         employee_name: qe.candidate_name,
         employee_level: qe.level,
         group_id: 1, // Default group - could be made configurable
+        // Include additional fields from QueueEmployee
+        doj: qe.doj,
+        department: qe.department,
+        role: qe.role,
+        total_experience: qe.total_experience.toString(),
+        past_organization: qe.past_organization,
+        lab_allocation: qe.lab_allocation,
+        compliance_day: qe.compliance_day.toString(),
       }));
 
       const result = await adminService.processEmployeeQueue(employeesToProcess);
@@ -193,7 +220,6 @@ const EmployeeProcessingPage: React.FC = () => {
       
       // Convert processed employees to QueueEmployee format for the queue
       const queueEmployeesFromResult: QueueEmployee[] = result.processed_employees.map((pe, index) => ({
-        sr_no: parseInt(pe.employee_id) || (queueEmployees.length + index + 1), // Use employee_id from Excel (which is Sr No) or fallback
         candidate_name: pe.employee_name || '',
         doj: pe.doj || '',
         department: pe.department || '',
@@ -372,7 +398,7 @@ const EmployeeProcessingPage: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-16">Sr No</TableHead>
+                        <TableHead className="w-16">#</TableHead>
                         <TableHead className="min-w-[150px]">Candidate Name</TableHead>
                         <TableHead className="min-w-[120px]">DOJ</TableHead>
                         <TableHead className="min-w-[120px]">Department</TableHead>
@@ -387,8 +413,8 @@ const EmployeeProcessingPage: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {currentEmployees.map((employee, index) => (
-                        <TableRow key={`${employee.sr_no}-${index}`}>
-                          <TableCell className="font-medium">{employee.sr_no}</TableCell>
+                        <TableRow key={`${employee.candidate_name}-${index}`}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
                           
                           <TableCell>
                             {editingCell?.row === index && editingCell?.field === 'candidate_name' ? (
@@ -865,7 +891,6 @@ const EmployeeProcessingPage: React.FC = () => {
                   onClick={() => {
                     setShowAddModal(false);
                     setNewEmployee({
-                      sr_no: 0,
                       candidate_name: '',
                       doj: '',
                       department: '',

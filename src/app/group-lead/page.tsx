@@ -427,7 +427,7 @@ const GroupLeadTaskPage: React.FC = () => {
                       <TableHead>Level</TableHead>
                       <TableHead>Sr No</TableHead>
                       <TableHead>Progress</TableHead>
-                      <TableHead>Due Date</TableHead>
+                      <TableHead>Compliance Day</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>

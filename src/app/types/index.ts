@@ -17,6 +17,7 @@ export interface Group {
   primary_group_lead_name?: string;
   escalation_group_lead_name?: string;
   question_count?: number;
+  pending_tasks_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,14 @@ export interface Task {
   mock_employee_id: string;
   mock_employee_name: string;
   mock_employee_level: string; // 'L1', 'L2', 'L3', or 'L4'
+  // Additional employee fields from Excel template
+  mock_employee_doj?: string; // Date of Joining
+  mock_employee_department?: string; // Department
+  mock_employee_role?: string; // Role
+  mock_employee_total_experience?: number; // Total Experience in years
+  mock_employee_past_organization?: string; // Past Organization
+  mock_employee_lab_allocation?: string; // Lab Allocation
+  mock_employee_compliance_day?: number; // Compliance Day
   assignee_id: number;
   escalation_user_id: number;
   status: 'pending' | 'completed' | 'reassigned';
@@ -63,10 +72,17 @@ export interface Employee {
   employee_name: string;
   employee_level: 'L1' | 'L2' | 'L3' | 'L4';
   group_id?: number; // Optional since employees are assigned to all groups
+  // Additional fields from Excel template
+  doj?: string;
+  department?: string;
+  role?: string;
+  total_experience?: string;
+  past_organization?: string;
+  lab_allocation?: string;
+  compliance_day?: string;
 }
 
 export interface QueueEmployee {
-  sr_no: number;
   candidate_name: string;
   doj: string;
   department: string;

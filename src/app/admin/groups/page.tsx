@@ -6,7 +6,7 @@ import { Group, User } from '../../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import Button from '../../components/ui/button';
 import SearchableDropdown from '../../components/SearchableDropdown';
-import { Plus, Edit, Trash2, Users, UserCheck, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, AlertTriangle, HelpCircle, Clock } from 'lucide-react';
 
 const GroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -110,15 +110,30 @@ const GroupsPage: React.FC = () => {
   };
 
   const handleDeleteGroup = async (groupId: number) => {
-    if (!confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+    const group = groups.find(g => g.id === groupId);
+    const groupName = group?.name ?? 'this group';
+    
+    // Check if group has pending tasks before confirming deletion
+    if (group && (group.pending_tasks_count ?? 0) > 0) {
+      alert(`Cannot delete ${groupName}: This group has ${group.pending_tasks_count} pending task(s). Please complete or reassign all tasks before deleting the group.`);
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${groupName}? This action cannot be undone and will delete all associated questions and tasks.`)) {
       return;
     }
 
     try {
       await adminService.deleteGroup(groupId);
       setGroups(groups.filter(group => group.id !== groupId));
+      setError(''); // Clear any existing errors
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete group');
+      const errorData = err.response?.data;
+      if (errorData?.pending_tasks_count) {
+        setError(`Cannot delete ${groupName}: ${errorData.error}`);
+      } else {
+        setError(errorData?.message ?? 'Failed to delete group');
+      }
     }
   };
   const openEditModal = (group: Group) => {
@@ -190,7 +205,17 @@ const GroupsPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteGroup(group.id)}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                    disabled={(group.pending_tasks_count ?? 0) > 0}
+                    className={`p-2 rounded-md transition-colors ${
+                      (group.pending_tasks_count ?? 0) > 0
+                        ? 'text-muted-foreground/50 cursor-not-allowed'
+                        : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                    }`}
+                    title={
+                      (group.pending_tasks_count ?? 0) > 0
+                        ? `Cannot delete: ${group.pending_tasks_count} pending task(s)`
+                        : 'Delete group'
+                    }
                   >
                     <Trash2 size={16} />
                   </button>
@@ -223,6 +248,13 @@ const GroupsPage: React.FC = () => {
                     <span className="font-medium">Questions:</span>
                     <span className="text-foreground font-semibold">
                       {group.question_count ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock size={14} className={(group.pending_tasks_count ?? 0) > 0 ? "text-orange-500" : "text-green-500"} />
+                    <span className="font-medium">Pending Tasks:</span>
+                    <span className={`font-semibold ${(group.pending_tasks_count ?? 0) > 0 ? "text-orange-600" : "text-green-600"}`}>
+                      {group.pending_tasks_count ?? 0}
                     </span>
                   </div>
                 </div>
