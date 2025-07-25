@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=builder /app /app
 COPY nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 3001 445
+EXPOSE 3001 1443
 
 # Entrypoint script runs both Node and nginx
 COPY docker-entrypoint.sh /docker-entrypoint.sh
