@@ -5,6 +5,7 @@ const nextConfig = {
   },
   images: {
     domains: ['localhost'],
+    domains: ['emp.onboarding.goval.app'],
   },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
