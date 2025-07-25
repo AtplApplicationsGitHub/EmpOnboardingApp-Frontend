@@ -48,8 +48,8 @@ const AdminDashboard: React.FC = () => {
         const totalQuestions = groups.reduce((sum: number, group: any) => sum + (group.question_count || 0), 0);
         
         // Fetch users count
-        const usersResponse = await adminService.getUsers({ page: 1, per_page: 1 }); // Just get first page to see total
-        const totalUsers = usersResponse.pagination?.total || 0;
+        const usersResponse = await adminService.getUsers({ page: 1}); // Just get first page to see total
+        const totalUsers = usersResponse.totalElements || 0;
         
         // Fetch tasks count and recent tasks
         const tasks = await adminService.getTasks();
@@ -115,8 +115,8 @@ const AdminDashboard: React.FC = () => {
       const totalQuestions = groups.reduce((sum: number, group: any) => sum + (group.question_count || 0), 0);
       
       // Fetch users count
-      const usersResponse = await adminService.getUsers({ page: 1, per_page: 1 }); // Just get first page to see total
-      const totalUsers = usersResponse.pagination?.total || 0;
+      // const usersResponse = await adminService.getUsers({ page: 1, per_page: 1 }); // Just get first page to see total
+      // const totalUsers = usersResponse.pagination?.total || 0;
       
       // Fetch tasks count and recent tasks
       const tasks = await adminService.getTasks();

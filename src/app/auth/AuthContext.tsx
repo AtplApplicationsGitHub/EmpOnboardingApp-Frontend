@@ -26,18 +26,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on app start
     const initializeAuth = async () => {
+      console.log('Initializing auth context...');
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      
+      debugger;
       if (token) {
-        try {
-          // Try to verify token is still valid by fetching fresh user data
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-          // Update stored user data with fresh data
-          localStorage.setItem('user', JSON.stringify(userData));
-        } catch (error) {
-          // If API call fails, try to use stored user data as fallback
+        // try {
+        //   // Try to verify token is still valid by fetching fresh user data
+        //   const userData = await authService.getCurrentUser();
+        //   setUser(userData);
+        //   // Update stored user data with fresh data
+        //   localStorage.setItem('user', JSON.stringify(userData));
+        // } catch (error) {
+        //   // If API call fails, try to use stored user data as fallback
           if (storedUser) {
             try {
               const userData = JSON.parse(storedUser);
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('Token validation failed, user logged out');
           }
         }
-      }
+      // }
       setIsLoading(false);
     };
     
@@ -67,12 +68,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const response = await authService.login(email, password);
-      
-      // Store token and user data
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
-      
+      localStorage.setItem('token', response.accessToken);
+      const userResponse = await authService.findById(response.userId);
+      localStorage.setItem('user', JSON.stringify(userResponse));
+      setUser(userResponse);
       console.log('Login successful, token stored');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Login failed');

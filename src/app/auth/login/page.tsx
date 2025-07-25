@@ -16,7 +16,7 @@ interface LoginFormInputs {
 }
 
 const LoginPage: React.FC = () => {
-  const { login, error, isLoading, user } = useAuth();
+  const { login, error, isLoading, user} = useAuth();
   const router = useRouter();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -24,8 +24,10 @@ const LoginPage: React.FC = () => {
   
   // Redirect if already logged in
   useEffect(() => {
+    // console.log('User Refresh', user);
     if (user) {
       const redirectPath = user.role === 'admin' ? '/admin' : '/group-lead';
+      // const redirectPath = '/admin';
       router.push(redirectPath);
     }
   }, [user, router]);

@@ -5,8 +5,8 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'group_lead';
-  created_at: string;
-  updated_at: string;
+  createdTime: string;
+  updatedTime: string;
 }
 
 export interface Group {
@@ -54,9 +54,15 @@ export interface Task {
 }
 
 export interface AuthResponse {
-  token: string;
-  user: User;
+  accessToken: string;
+  userName: string | null;
+  userId: number;
+  success: boolean;
+  message: string;
+  loginAttemptCount: number;
+  newUser: boolean;
 }
+
 
 export interface Employee {
   employee_id: string;
