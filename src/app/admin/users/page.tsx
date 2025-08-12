@@ -34,7 +34,7 @@ const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // 0-based paging
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchFilter, setSearchFilter] = useState<string>("");
@@ -57,7 +57,7 @@ const UsersPage: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const params: any = { page: currentPage };
       if (searchFilter && searchFilter.trim() !== "") {
         params.search = searchFilter.trim();
@@ -68,7 +68,7 @@ const UsersPage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -139,7 +139,7 @@ const UsersPage: React.FC = () => {
   // For update: open modal, load user data by id
   const handleEditUser = async (userId: number) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const user = await adminService.findById(userId); // should return user object
       setFormData({
         name: user.name || "",
@@ -153,7 +153,7 @@ const UsersPage: React.FC = () => {
     } catch (err: any) {
       toast.error("Failed to load user");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -204,14 +204,6 @@ const UsersPage: React.FC = () => {
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-64"
           />
-          <Button
-            type="submit"
-            variant="outline"
-            className="flex items-center gap-1"
-          >
-            <Search size={16} />
-            Search
-          </Button>
         </form>
         <Button
           onClick={() => {
