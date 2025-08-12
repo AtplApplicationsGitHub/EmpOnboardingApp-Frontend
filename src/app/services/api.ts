@@ -7,6 +7,7 @@ import {
   Task,
   Employee,
   EmployeeProcessingResponse,
+  DropDownDTO,
 } from "../types";
 
 // Create axios instance
@@ -69,75 +70,90 @@ export const authService = {
 // Admin Services
 export const adminService = {
   // Group Management
-  getGroups: async (): Promise<Group[]> => {
-    const response = await api.get<Group[]>("/admin/groups");
+
+  getGroups: async (
+    pageNo: number
+  ): Promise<{
+    commonListDto: Group[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const response = await api.post<{
+      commonListDto: Group[];
+      totalElements: number;
+    }>(`/group/findFilteredGroups/${page}`);
+    return response.data;
+  },
+  findGroupById: async (id: number): Promise<Group> => {
+    const response = await api.get<Group>(`/group/findById/${id}`);
+    return response.data;
+  },
+
+  getAllGroupLeads: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>("/group/loadGL");
     return response.data;
   },
   createGroup: async (data: {
     name: string;
-    primary_group_lead_id?: number;
-    escalation_group_lead_id?: number;
+    pgLead?: number;
+    egLead?: number;
   }): Promise<Group> => {
-    const response = await api.post<Group>("/admin/groups", data);
+    const response = await api.post<Group>("/group/saveGroup", data);
     return response.data;
   },
 
-  updateGroup: async (
-    id: number,
-    data: {
-      name: string;
-      primary_group_lead_id?: number;
-      escalation_group_lead_id?: number;
-    }
-  ): Promise<Group> => {
-    const response = await api.put<Group>(`/admin/groups/${id}`, data);
+  updateGroup: async (data: {
+    id: number;
+    name: string;
+    pgLead?: number;
+    egLead?: number;
+  }): Promise<Group> => {
+    const response = await api.post<Group>(`/group/updateGroup`, data);
     return response.data;
   },
 
   deleteGroup: async (id: number): Promise<void> => {
-    await api.delete(`/admin/groups/${id}`);
+    await api.delete(`/group/deleteGroup/${id}`);
   },
 
   // Question Management
   getQuestions: async (
     groupId: number,
-    level?: string
-  ): Promise<Question[]> => {
-    const params = level ? { level } : {};
-    const response = await api.get<Question[]>(
-      `/admin/groups/${groupId}/questions`,
-      { params }
-    );
+    pageNo: number = 0
+  ): Promise<{
+    commonListDto: Question[];
+    totalElements: number;
+  }> => {
+    // const params = level ? { level } : {};
+    const response = await api.post<{
+      commonListDto: Question[];
+      totalElements: number;
+    }>(`/question/findFilteredQuestionByGroup/${pageNo}/${groupId}`);
     return response.data;
   },
 
-  createQuestion: async (
-    groupId: number,
-    data: {
-      question_text: string;
-      response_type: "yes_no" | "text";
-      compliance_day: string;
-      levels: string[];
-    }
-  ): Promise<Question> => {
-    const response = await api.post<Question>(
-      `/admin/groups/${groupId}/questions`,
-      data
-    );
+  createQuestion: async (data: {
+    text: string;
+    response: "yes_no" | "text";
+    complainceDay: string;
+    questionLevel: string[];
+    groupId: string;
+  }): Promise<Question> => {
+    const response = await api.post<Question>(`/question/saveQuestion`, data);
     return response.data;
   },
 
   updateQuestion: async (
-    questionId: number,
     data: {
-      question_text?: string;
-      response_type?: "yes_no" | "text";
-      compliance_day?: string;
-      levels?: string[];
+      id?: number;
+      text?: string;
+      response?: "yes_no" | "text";
+      complainceDay?: string;
+      questionLevel?: string[];
     }
   ): Promise<Question> => {
     const response = await api.put<Question>(
-      `/admin/questions/${questionId}`,
+      `/questions/updateQuestion`,
       data
     );
     return response.data;

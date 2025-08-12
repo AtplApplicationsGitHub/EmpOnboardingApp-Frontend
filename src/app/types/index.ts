@@ -4,32 +4,47 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'group_lead';
+  role: "admin" | "group_lead";
   createdTime: string;
   updatedTime: string;
+}
+
+export interface DropDownDTO {
+  id: number;
+  key: string;
+  value: string;
 }
 
 export interface Group {
   id: number;
   name: string;
-  primary_group_lead_id?: number;
-  escalation_group_lead_id?: number;
-  primary_group_lead_name?: string;
-  escalation_group_lead_name?: string;
-  question_count?: number;
-  created_at: string;
-  updated_at: string;
+  pgLead?: string;
+  egLead?: string;
+  createdTime: string;
+  updatedTime: string;
 }
+
+// export interface Group {
+//   id: number;
+//   name: string;
+//   pgLeadId?: number;
+//   egLeadId?: number;
+//   pgLeadName?: string;
+//   egLeadName?: string;
+//   question_count?: number;
+//   created_at: string;
+//   updated_at: string;
+// }
 
 export interface Question {
   id: number;
-  group_id: number;
-  question_text: string;
-  response_type: 'yes_no' | 'text';
-  compliance_day: number;
-  created_at: string;
-  updated_at: string;
-  levels: string[]; // 'L1', 'L2', 'L3', or 'L4'
+  text: string;
+  response: "yes_no" | "text";
+  complianceDay: string;
+  questionLevel: string[];
+  groupId: number;
+  createdTime: string;
+  updatedTime: string;
 }
 
 export interface Task {
@@ -40,14 +55,14 @@ export interface Task {
   mock_employee_level: string; // 'L1', 'L2', 'L3', or 'L4'
   assignee_id: number;
   escalation_user_id: number;
-  status: 'pending' | 'completed' | 'reassigned';
+  status: "pending" | "completed" | "reassigned";
   response?: string;
   due_date: string;
   created_at: string;
   updated_at: string;
   completed_at?: string;
   question: string;
-  response_type: 'yes_no' | 'text';
+  response_type: "yes_no" | "text";
   compliance_day: number;
   assignee_name: string;
   escalation_user_name: string;
@@ -63,11 +78,10 @@ export interface AuthResponse {
   newUser: boolean;
 }
 
-
 export interface Employee {
   employee_id: string;
   employee_name: string;
-  employee_level: 'L1' | 'L2' | 'L3' | 'L4';
+  employee_level: "L1" | "L2" | "L3" | "L4";
   group_id?: number; // Optional since employees are assigned to all groups
 }
 
@@ -77,7 +91,7 @@ export interface QueueEmployee {
   doj: string;
   department: string;
   role: string;
-  level: 'L1' | 'L2' | 'L3' | 'L4';
+  level: "L1" | "L2" | "L3" | "L4";
   total_experience: number;
   past_organization: string;
   lab_allocation: string;
