@@ -22,6 +22,8 @@ export interface Group {
   egLead?: string;
   createdTime: string;
   updatedTime: string;
+  quesCount?: number;
+  deleteFlag?: boolean;
 }
 
 export interface Employee {

@@ -40,6 +40,9 @@ const UsersPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Modal state for create/update
   const [formData, setFormData] = useState({
@@ -122,6 +125,41 @@ const UsersPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update user");
     }
+  };
+
+  const handleEmailChange = async (value: string) => {
+    setFormData({ ...formData, email: value });
+    if (!value || editMode) return;
+    setCheckingEmail(true);
+    try {
+      const res = await adminService.isEmailExists(value);
+      setEmailExists(res);
+    } catch (error) {
+      console.error("Email check failed", error);
+      setEmailExists(false);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const validatePassword = (password: string) => {
+    const rules = [
+      { regex: /.{8,}/, message: "At least 8 characters" },
+      { regex: /[A-Z]/, message: "At least one uppercase letter" },
+      { regex: /[a-z]/, message: "At least one lowercase letter" },
+      { regex: /[0-9]/, message: "At least one number" },
+      {
+        regex: /[!@#$%^&*(),.?":{}|<>]/,
+        message: "At least one special character",
+      },
+    ];
+
+    for (const rule of rules) {
+      if (!rule.regex.test(password)) {
+        return rule.message;
+      }
+    }
+    return null;
   };
 
   // Reset Modal
@@ -417,13 +455,16 @@ const UsersPage: React.FC = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  disabled={editMode} // non-editable on update
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  disabled={editMode}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="Enter user's email address"
                   required
                 />
+                {!editMode && emailExists && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Email already exists
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
@@ -453,12 +494,17 @@ const UsersPage: React.FC = () => {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, password: value });
+                      setPasswordError(validatePassword(value));
+                    }}
                     placeholder="Enter password"
                     required
                   />
+                  {passwordError && (
+                    <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                  )}
                 </div>
               )}
 
@@ -466,7 +512,14 @@ const UsersPage: React.FC = () => {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button
+                  type="submit"
+                  disabled={
+                    emailExists ||
+                    checkingEmail ||
+                    (!!passwordError && !editMode)
+                  }
+                >
                   {editMode ? "Update User" : "Create User"}
                 </Button>
               </div>
