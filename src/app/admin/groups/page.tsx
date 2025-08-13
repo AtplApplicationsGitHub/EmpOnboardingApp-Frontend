@@ -53,7 +53,7 @@ const GroupsPage: React.FC = () => {
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
     const found = groupLeads.find((lead) => lead.key === name);
-    return found ? Number(found.value) : undefined;
+    return found ? Number(found.id) : undefined;
   };
 
   const fetchPage = useCallback(

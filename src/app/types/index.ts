@@ -55,7 +55,7 @@ export interface Question {
   id: number;
   text: string;
   response: "yes_no" | "text";
-  complianceDay: string;
+  complainceDay: string;
   questionLevel: string[];
   groupId: number;
   createdTime: string;

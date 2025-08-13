@@ -34,6 +34,7 @@ const GroupDetailsPage: React.FC = () => {
 
   // Form states
   const [formData, setFormData] = useState({
+    id: 0,
     text: "",
     response: "yes_no" as "yes_no" | "text",
     complainceDay: "1",
@@ -54,7 +55,6 @@ const GroupDetailsPage: React.FC = () => {
     try {
       setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
-      console.log("Fetched group data:", groupData);
       // Get paginated questions
       const questionRes = await adminService.getQuestions(groupId, questionPage);
       setQuestions(questionRes.commonListDto || []);
@@ -93,7 +93,8 @@ const GroupDetailsPage: React.FC = () => {
       return;
 
     try {
-      await adminService.updateQuestion(editingQuestion.id, formData);
+      formData.id = editingQuestion.id;
+      await adminService.updateQuestion(formData);
       setShowEditModal(false);
       setEditingQuestion(null);
       resetForm();
@@ -128,9 +129,10 @@ const GroupDetailsPage: React.FC = () => {
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);
     setFormData({
+      id: question.id,
       text: question.text,
       response: question.response,
-      complainceDay: question.complianceDay || "1",
+      complainceDay: question.complainceDay || "1",
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
     });
@@ -139,6 +141,7 @@ const GroupDetailsPage: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
+      id:0,
       text: "",
       response: "yes_no",
       complainceDay: "1",
@@ -240,7 +243,7 @@ const GroupDetailsPage: React.FC = () => {
                         ? "Yes/No/N/A"
                         : "Text Response"}
                     </span>
-                    <span>Due: Day {question.complianceDay}</span>
+                    <span>Due: Day {question.complainceDay}</span>
                     <div className="flex items-center gap-1">
                       <span>Levels:</span>
                       {question.questionLevel.map((questionLevel) => (
