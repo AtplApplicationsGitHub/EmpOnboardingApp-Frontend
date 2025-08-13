@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
 import { User } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
@@ -31,6 +31,7 @@ import toast from "react-hot-toast";
 const PAGE_SIZE = 10;
 
 const UsersPage: React.FC = () => {
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // 0-based paging
@@ -52,8 +53,10 @@ const UsersPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line
-  }, [searchFilter, currentPage]);
+    if (showCreateModal && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [searchFilter, currentPage, showCreateModal]);
 
   const fetchUsers = async () => {
     try {
@@ -255,7 +258,6 @@ const UsersPage: React.FC = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Last Updated</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,12 +273,20 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>
+                    <TableCell className="flex items-center gap-2">
                       {user.role === "admin" ? (
                         <Shield size={16} className="text-red-500" />
                       ) : (
                         <UserCheck size={16} className="text-blue-500" />
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="p-1 hover:bg-transparent hover:text-primary"
+                        onClick={() => handleEditUser(user.id)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -298,17 +308,6 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.updatedTime}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        <Pencil size={14} />
-                        Update
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -402,6 +401,7 @@ const UsersPage: React.FC = () => {
                 <label className="block text-sm font-medium mb-2">Name</label>
                 <Input
                   id="name"
+                  ref={nameInputRef}
                   type="text"
                   value={formData.name}
                   onChange={(e) =>

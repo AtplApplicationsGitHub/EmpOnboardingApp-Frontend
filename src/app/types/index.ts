@@ -24,6 +24,21 @@ export interface Group {
   updatedTime: string;
 }
 
+export interface Employee {
+  id: number;
+  name: string;
+  date: string;
+  department: string;
+  role: string;
+  email: string;
+  level: "L1" | "L2" | "L3" | "L4";
+  totalExperience: string;
+  labAllocation: string;
+  pastOrganization: string;
+  complianceDay: string;
+  createdTime: string;
+  updatedTime: string;
+}
 // export interface Group {
 //   id: number;
 //   name: string;

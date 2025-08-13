@@ -272,6 +272,24 @@ export const adminService = {
   },
 
   // Employee Processing
+
+    getEmployee: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: Employee[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Employee[];
+      totalElements: number;
+    }>(`/employee/findFilteredEmployee/${search}/${page}`);
+    return response.data;
+  },
+
+
   processEmployees: async (
     employees: Employee[]
   ): Promise<EmployeeProcessingResponse> => {

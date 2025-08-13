@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { adminService } from "../../services/api";
 import { DropDownDTO, Group } from "../../types";
 import {
@@ -56,25 +56,40 @@ const GroupsPage: React.FC = () => {
     return found ? Number(found.value) : undefined;
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchPage = useCallback(
+    async (page: number) => {
       try {
         setLoading(true);
         setError(null);
-        const groupsResponse = await adminService.getGroups(currentPage);
+        const groupsResponse = await adminService.getGroups(page);
         setGroups(groupsResponse.commonListDto || []);
         setTotal(groupsResponse.totalElements || 0);
-        const groupLeadsData = await adminService.getAllGroupLeads();
-        setGroupLeads(groupLeadsData);
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
-    };
-    fetchData();
-    // eslint-disable-next-line
-  }, [currentPage]);
+    },
+    [] // no deps; pass page explicitly
+  );
+
+  const fetchGroupLeads = useCallback(async () => {
+    try {
+      const groupLeadsData = await adminService.getAllGroupLeads();
+      setGroupLeads(groupLeadsData);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPage(currentPage);
+  }, [currentPage, fetchPage]);
+
+  useEffect(() => {
+    fetchGroupLeads();
+  }, [fetchGroupLeads]);
+
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -100,6 +115,7 @@ const GroupsPage: React.FC = () => {
       setNewPrimaryGroupLeadId(undefined);
       setNewEscalationGroupLeadId(undefined);
       setCurrentPage(0);
+      await fetchPage(0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create group");
     }
@@ -128,7 +144,7 @@ const GroupsPage: React.FC = () => {
       setEditGroupName("");
       setEditPrimaryGroupLeadId(undefined);
       setEditEscalationGroupLeadId(undefined);
-      setCurrentPage(0);
+      await fetchPage(currentPage);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to update group");
     }
@@ -145,7 +161,7 @@ const GroupsPage: React.FC = () => {
     }
     try {
       await adminService.deleteGroup(groupId);
-      setCurrentPage(0);
+      await fetchPage(currentPage);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete group");
     }
