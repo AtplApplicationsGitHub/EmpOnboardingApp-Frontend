@@ -25,6 +25,8 @@ const PAGE_SIZE = 10;
 
 const GroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // Zero-based index
   const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
@@ -47,6 +49,12 @@ const GroupsPage: React.FC = () => {
   const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<
     number | undefined
   >();
+  const getOptId = (opt: DropDownDTO) =>
+    Number((opt as any).id ?? (opt as any).value);
+  const filterLeads = (excludeId?: number) =>
+    excludeId == null
+      ? groupLeads
+      : groupLeads.filter((o) => getOptId(o) !== excludeId);
 
   // Fetch paginated groups and group leads
 
@@ -89,7 +97,6 @@ const GroupsPage: React.FC = () => {
   useEffect(() => {
     fetchGroupLeads();
   }, [fetchGroupLeads]);
-
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -151,17 +158,13 @@ const GroupsPage: React.FC = () => {
   };
 
   // Delete Group
-  const handleDeleteGroup = async (groupId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this group? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+  const handleDeleteGroup = async () => {
+    if (!groupToDelete) return;
     try {
-      await adminService.deleteGroup(groupId);
+      await adminService.deleteGroup(groupToDelete.id);
       await fetchPage(currentPage);
+      setShowDeleteModal(false);
+      setGroupToDelete(null);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete group");
     }
@@ -255,12 +258,17 @@ const GroupsPage: React.FC = () => {
                   >
                     <Edit size={16} />
                   </button>
-                  <button
-                    onClick={() => handleDeleteGroup(group.id)}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {group.deleteFlag && (
+                    <button
+                      onClick={() => {
+                        setGroupToDelete(group);
+                        setShowDeleteModal(true);
+                      }}
+                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -307,13 +315,13 @@ const GroupsPage: React.FC = () => {
                       {group.egLead || "Not assigned"}
                     </span>
                   </div>
-                  {/* <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm">
                     <HelpCircle size={14} className="text-blue-500" />
                     <span className="font-medium">Questions:</span>
                     <span className="text-foreground font-semibold">
-                      {group.question_count ?? 0}
+                      {group.quesCount ?? 0}
                     </span>
-                  </div> */}
+                  </div>
                 </div>
                 <div className="pt-2">
                   <Button
@@ -430,6 +438,7 @@ const GroupsPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
+                    autoFocus
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="e.g., Engineering, Marketing, Sales"
@@ -442,7 +451,7 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    options={filterLeads(newEscalationGroupLeadId)}
                     value={newPrimaryGroupLeadId}
                     onChange={setNewPrimaryGroupLeadId}
                     placeholder="Select a group lead (Required)"
@@ -459,7 +468,7 @@ const GroupsPage: React.FC = () => {
                     </span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    options={filterLeads(newPrimaryGroupLeadId)}
                     value={newEscalationGroupLeadId}
                     onChange={setNewEscalationGroupLeadId}
                     placeholder="Select a group lead (Optional)"
@@ -507,6 +516,7 @@ const GroupsPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
+                    autoFocus
                     value={editGroupName}
                     onChange={(e) => setEditGroupName(e.target.value)}
                     className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -518,7 +528,7 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    options={filterLeads(editEscalationGroupLeadId)}
                     value={editPrimaryGroupLeadId}
                     onChange={setEditPrimaryGroupLeadId}
                     placeholder="Select a group lead (Required)"
@@ -535,7 +545,7 @@ const GroupsPage: React.FC = () => {
                     </span>
                   </label>
                   <SearchableDropdown
-                    options={groupLeads}
+                    options={filterLeads(editPrimaryGroupLeadId)}
                     value={editEscalationGroupLeadId}
                     onChange={setEditEscalationGroupLeadId}
                     placeholder="Select a group lead (Optional)"
@@ -564,6 +574,43 @@ const GroupsPage: React.FC = () => {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && groupToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Group</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the group{" "}
+                <span className="font-semibold">{groupToDelete.name}</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteGroup}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setGroupToDelete(null);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

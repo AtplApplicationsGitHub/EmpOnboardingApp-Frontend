@@ -184,6 +184,23 @@ export const adminService = {
     return response.data.task;
   },
 
+  // Dashboard
+
+  getUserCount: async (): Promise<number> => {
+    const response = await api.get<number>("/user/countUser");
+    return response.data;
+  },
+
+  getGroupsCount: async (): Promise<number> => {
+    const response = await api.get<number>("/group/countGroup");
+    return response.data;
+  },
+
+  getQuestionsCount: async (): Promise<number> => {
+    const response = await api.get<number>("/question/countQuestions");
+    return response.data;
+  },
+
   // New admin reassignment methods
   reassignTaskToUser: async (
     taskId: number,
@@ -267,7 +284,11 @@ export const adminService = {
     return response.data;
   },
 
-  // Employee Processing
+  isEmailExists: async (email: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/user/emailExists/${email}`);
+    return response.data;  
+  },
+
 
   getEmployee: async (params?: {
     search?: string;

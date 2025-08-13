@@ -112,7 +112,7 @@ const LoginPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Demo Accounts */}
+          {/* Demo Accounts
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-sm text-muted-foreground text-center mb-4">Demo Accounts:</p>
             <div className="space-y-2 text-xs text-muted-foreground">
@@ -125,7 +125,7 @@ const LoginPage: React.FC = () => {
                 <span>gl1@example.com / password</span>
               </div>
             </div>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

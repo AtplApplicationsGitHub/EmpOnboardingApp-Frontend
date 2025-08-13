@@ -20,6 +20,8 @@ const GroupDetailsPage: React.FC = () => {
   const router = useRouter();
   const groupId = parseInt(params.id as string);
 
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,10 @@ const GroupDetailsPage: React.FC = () => {
       setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
       // Get paginated questions
-      const questionRes = await adminService.getQuestions(groupId, questionPage);
+      const questionRes = await adminService.getQuestions(
+        groupId,
+        questionPage
+      );
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
 
@@ -104,18 +109,12 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteQuestion = async (questionId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this question? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
+  const handleDeleteQuestion = async () => {
+    if (!questionToDelete) return;
     try {
-      await adminService.deleteQuestion(questionId);
-      // If last question on page deleted, move to previous page if needed
+      await adminService.deleteQuestion(questionToDelete.id);
+      setShowDeleteModal(false);
+      setQuestionToDelete(null);
       if (questions.length === 1 && questionPage > 0) {
         setQuestionPage((prev) => prev - 1);
       } else {
@@ -125,6 +124,8 @@ const GroupDetailsPage: React.FC = () => {
       setError(err.response?.data?.message || "Failed to delete question");
     }
   };
+
+  
 
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);
@@ -141,7 +142,7 @@ const GroupDetailsPage: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      id:0,
+      id: 0,
       text: "",
       response: "yes_no",
       complainceDay: "1",
@@ -265,7 +266,10 @@ const GroupDetailsPage: React.FC = () => {
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDeleteQuestion(question.id)}
+                    onClick={() => {
+                      setQuestionToDelete(question);
+                      setShowDeleteModal(true);
+                    }}
                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                   >
                     <Trash2 size={16} />
@@ -358,6 +362,7 @@ const GroupDetailsPage: React.FC = () => {
                   </label>
                   <textarea
                     value={formData.text}
+                    autoFocus
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
@@ -482,6 +487,42 @@ const GroupDetailsPage: React.FC = () => {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && questionToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Group</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the Question{" "}
+                <span className="font-semibold">{questionToDelete.text}</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
