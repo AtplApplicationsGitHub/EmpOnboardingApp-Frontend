@@ -143,24 +143,20 @@ export const adminService = {
     return response.data;
   },
 
-  updateQuestion: async (
-    data: {
-      id?: number;
-      text?: string;
-      response?: "yes_no" | "text";
-      complainceDay?: string;
-      questionLevel?: string[];
-    }
-  ): Promise<Question> => {
-    const response = await api.put<Question>(
-      `/questions/updateQuestion`,
-      data
-    );
+  updateQuestion: async (data: {
+    id?: number;
+    text?: string;
+    response?: "yes_no" | "text";
+    complainceDay?: string;
+    questionLevel?: string[];
+  }): Promise<Question> => {
+    console.log("Updating question with data:", data);
+    const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
 
   deleteQuestion: async (questionId: number): Promise<void> => {
-    await api.delete(`/admin/questions/${questionId}`);
+    await api.delete(`/question/deleteQuestion/${questionId}`);
   },
 
   // Task Management
@@ -272,6 +268,23 @@ export const adminService = {
   },
 
   // Employee Processing
+
+  getEmployee: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: Employee[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Employee[];
+      totalElements: number;
+    }>(`/employee/findFilteredEmployee/${search}/${page}`);
+    return response.data;
+  },
+
   processEmployees: async (
     employees: Employee[]
   ): Promise<EmployeeProcessingResponse> => {

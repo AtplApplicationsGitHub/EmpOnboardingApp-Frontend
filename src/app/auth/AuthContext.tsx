@@ -29,7 +29,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Initializing auth context...');
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      debugger;
       if (token) {
         // try {
         //   // Try to verify token is still valid by fetching fresh user data
