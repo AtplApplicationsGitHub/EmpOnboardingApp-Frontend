@@ -312,7 +312,6 @@ export const adminService = {
     date: string;
     department: string;
     role: string;
-    email: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
     labAllocation: string;
