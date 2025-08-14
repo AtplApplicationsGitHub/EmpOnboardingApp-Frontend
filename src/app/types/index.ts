@@ -41,6 +41,12 @@ export interface Employee {
   createdTime: string;
   updatedTime: string;
 }
+
+export interface EmployeeImportResult {
+  successCount: number;
+  errorCount: number;
+  errors?: Array<string | { row?: number; message?: string }>;
+}
 // export interface Group {
 //   id: number;
 //   name: string;
@@ -148,6 +154,11 @@ export interface ProcessedEmployee {
     escalation_group_lead?: string;
   }[];
   message?: string;
+}
+
+export interface PdfDto {
+  pdf: string;
+  fileName: string;
 }
 
 export interface EmployeeProcessingResponse {
