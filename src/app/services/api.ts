@@ -322,7 +322,7 @@ export const adminService = {
     const response = await api.post<Employee>("/employee/saveEmployee", data);
     return response.data;
   },
-  //update employee
+
   updateEmployee: async (data: {
     id: number;
     name: string;
@@ -339,11 +339,14 @@ export const adminService = {
     return response.data;
   },
 
-  //get by id
   findByEmployee: async (id: number): Promise<Employee> => {
     const response = await api.get<Employee>(`/employee/findById/${id}`);
     return response.data;
   },
+
+deleteEmployee: async (id: number): Promise<void> => {
+  await api.delete(`/employee/deleteEmployee/${id}`);
+},
 
   excelExportEmployee: async (): Promise<PdfDto> => {
     const response = await api.post<PdfDto>(

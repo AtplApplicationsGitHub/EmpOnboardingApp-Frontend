@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Pencil, Download, Upload, Plus, Users, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/button';
 import Input from '../../components/Input';
-import { Employee } from '../../types'; 
+import { Employee } from '../../types';
 import { adminService } from '../../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -19,10 +19,11 @@ const EmployeesPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
-  
+
   const [editMode, setEditMode] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: '',
@@ -70,7 +71,7 @@ const EmployeesPage: React.FC = () => {
       return;
     }
 
-    
+
     try {
       await adminService.createEmployee({
         name: newEmployee.name,
@@ -106,90 +107,104 @@ const EmployeesPage: React.FC = () => {
   };
 
   //edit
- const handleEditEmployee = async (employeeId: number) => {
-  if (!employeeId) return;
+  const handleEditEmployee = async (employeeId: number) => {
+    if (!employeeId) return;
 
-  try {
-    // Fetch employee data by ID
-    const emp: Employee = await adminService.findByEmployee(employeeId);
+    try {
 
-    console.log(emp)
-    const formattedDate = new Date(emp.date).toISOString().split('T')[0];
+      const emp: Employee = await adminService.findByEmployee(employeeId);
 
-    // Prefill the modal form with fetched employee data
-    setNewEmployee({
-      name: emp.name,
-      date: emp.date,
-      department: emp.department,
-      role: emp.role,
-      level: emp.level,
-      totalExperience: emp.totalExperience,
-      pastOrganization: emp.pastOrganization,
-      labAllocation: emp.labAllocation,
-      complianceDay: emp.complianceDay,
-    });
+      console.log(emp)
+      const formattedDate = new Date(emp.date).toISOString().split('T')[0];
 
-    setEditMode(true);
-    setSelectedEmployeeId(employeeId);
-    setShowAddModal(true);
+      // Prefill the modal form with fetched employee data
+      setNewEmployee({
+        name: emp.name,
+        date: emp.date,
+        department: emp.department,
+        role: emp.role,
+        level: emp.level,
+        totalExperience: emp.totalExperience,
+        pastOrganization: emp.pastOrganization,
+        labAllocation: emp.labAllocation,
+        complianceDay: emp.complianceDay,
+      });
 
-  } catch (err: any) {
-    toast.error("Failed to load employee data");
-  }
-};
+      setEditMode(true);
+      setSelectedEmployeeId(employeeId);
+      setShowAddModal(true);
+
+    } catch (err: any) {
+      toast.error("Failed to load employee data");
+    }
+  };
 
   //update
- const handleUpdateEmployee = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!selectedEmployeeId) return;
-  
-  if (!newEmployee.name?.trim()) {
-    toast.error('Candidate Name is required.');
-    return;
-  }
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    
-    const updatePayload = {
-      id: selectedEmployeeId,
-      name: newEmployee.name,
-      date: newEmployee.date ? new Date(newEmployee.date).toISOString() : undefined,
-      department: newEmployee.department,
-      role: newEmployee.role,
-      level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
-      totalExperience: newEmployee.totalExperience,
-      pastOrganization: newEmployee.pastOrganization,
-      labAllocation: newEmployee.labAllocation,
-      complianceDay: newEmployee.complianceDay,
-    };
+    if (!selectedEmployeeId) return;
 
-    await adminService.updateEmployee(updatePayload as Employee);
+    if (!newEmployee.name?.trim()) {
+      toast.error('Candidate Name is required.');
+      return;
+    }
 
-    toast.success('Employee updated successfully!');
-    
-    // Reset state and close the modal
-    setNewEmployee({
-      name: '',
-      date: '',
-      department: '',
-      role: '',
-      level: 'L1',
-      totalExperience: '0',
-      pastOrganization: '',
-      labAllocation: '',
-      complianceDay: '3'
-    });
-    setShowAddModal(false);
-    setEditMode(false);
-    setSelectedEmployeeId(null);
-    fetchEmployees();
+    try {
 
-  } catch (err: any) {
-    toast.error(err.response?.data?.message || 'Failed to update employee.');
-  }
-};
+      const updatePayload = {
+        id: selectedEmployeeId,
+        name: newEmployee.name,
+        date: newEmployee.date ? new Date(newEmployee.date).toISOString() : undefined,
+        department: newEmployee.department,
+        role: newEmployee.role,
+        level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
+        totalExperience: newEmployee.totalExperience,
+        pastOrganization: newEmployee.pastOrganization,
+        labAllocation: newEmployee.labAllocation,
+        complianceDay: newEmployee.complianceDay,
+      };
 
+      await adminService.updateEmployee(updatePayload as Employee);
+
+      toast.success('Employee updated successfully!');
+
+      // Reset state and close the modal
+      setNewEmployee({
+        name: '',
+        date: '',
+        department: '',
+        role: '',
+        level: 'L1',
+        totalExperience: '0',
+        pastOrganization: '',
+        labAllocation: '',
+        complianceDay: '3'
+      });
+      setShowAddModal(false);
+      setEditMode(false);
+      setSelectedEmployeeId(null);
+      fetchEmployees();
+
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update employee.');
+    }
+  };
+
+  //delete
+  const handleDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+
+    try {
+      await adminService.deleteEmployee(employeeToDelete.id);
+      toast.success('Employee deleted successfully!');
+      fetchEmployees();
+      setShowDeleteModal(false);
+      setEmployeeToDelete(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete employee.');
+    }
+  };
   // Pagination logic
   const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
@@ -300,7 +315,10 @@ const EmployeesPage: React.FC = () => {
                       <Button size="sm" variant="ghost" onClick={() => handleEditEmployee(emp.id)}>
                         <Pencil size={14} />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-500">
+                      <Button size="sm" variant="ghost" className="text-red-500" onClick={() => {
+                        setEmployeeToDelete(emp);
+                        setShowDeleteModal(true);
+                      }}>
                         <Trash2 size={14} />
                       </Button>
                     </TableCell>
@@ -313,18 +331,18 @@ const EmployeesPage: React.FC = () => {
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${emp.level === 'L1'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : emp.level === 'L2'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : emp.level === 'L3'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : emp.level === 'L2'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : emp.level === 'L3'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           }`}
                       >
-                       {emp.level || 'L1'}
+                        {emp.level || 'L1'}
                       </span>
                     </TableCell>
-                     <TableCell>{emp.totalExperience || '0'}</TableCell>
+                    <TableCell>{emp.totalExperience || '0'}</TableCell>
                     <TableCell>{emp.pastOrganization || 'N/A'}</TableCell>
                     <TableCell>{emp.labAllocation || 'N/A'}</TableCell>
                     <TableCell>Day {emp.complianceDay || '3'}</TableCell>
@@ -502,6 +520,42 @@ const EmployeesPage: React.FC = () => {
                     });
                     setSelectedEmployeeId(null);
                     setEditMode(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && employeeToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Employee</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the employee{" "}
+                <span className="font-semibold">{employeeToDelete.name}</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteEmployee}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setEmployeeToDelete(null);
                   }}
                   className="flex-1"
                 >
