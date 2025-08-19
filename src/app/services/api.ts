@@ -16,9 +16,7 @@ import {
 // Create axios instance
 const api = axios.create({
   // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "http://localhost:8084/api",
-
-  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "https://employee.onboarding.goval.app:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
