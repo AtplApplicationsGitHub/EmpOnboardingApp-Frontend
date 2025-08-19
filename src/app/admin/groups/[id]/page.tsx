@@ -20,7 +20,9 @@ const GroupDetailsPage: React.FC = () => {
   const router = useRouter();
   const groupId = parseInt(params.id as string);
 
-  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(
+    null
+  );
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -124,8 +126,6 @@ const GroupDetailsPage: React.FC = () => {
       setError(err.response?.data?.message || "Failed to delete question");
     }
   };
-
-  
 
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);

@@ -8,6 +8,9 @@ import {
   Employee,
   EmployeeProcessingResponse,
   DropDownDTO,
+  PdfDto,
+  EmployeeImportResult,
+  QueueEmployee,
 } from "../types";
 
 // Create axios instance
@@ -286,9 +289,8 @@ export const adminService = {
 
   isEmailExists: async (email: string): Promise<boolean> => {
     const response = await api.get<boolean>(`/user/emailExists/${email}`);
-    return response.data;  
+    return response.data;
   },
-
 
   getEmployee: async (params?: {
     search?: string;
@@ -304,6 +306,65 @@ export const adminService = {
       totalElements: number;
     }>(`/employee/findFilteredEmployee/${search}/${page}`);
     return response.data;
+  },
+
+  createEmployee: async (data: {
+    name: string;
+    date: string;
+    department: string;
+    role: string;
+    level: "L1" | "L2" | "L3" | "L4";
+    totalExperience: string;
+    labAllocation: string;
+    pastOrganization: string;
+    complianceDay: string;
+  }): Promise<Employee> => {
+    const response = await api.post<Employee>("/employee/saveEmployee", data);
+    return response.data;
+  },
+  //update employee
+  updateEmployee: async (data: {
+    id: number;
+    name: string;
+    date: string;
+    department: string;
+    role: string;
+    level: "L1" | "L2" | "L3" | "L4";
+    totalExperience: string;
+    labAllocation: string;
+    pastOrganization: string;
+    complianceDay: string;
+  }): Promise<Employee> => {
+    const response = await api.post<Employee>("/employee/updateEmployee", data);
+    return response.data;
+  },
+
+  //get by id
+  findByEmployee: async (id: number): Promise<Employee> => {
+    const response = await api.get<Employee>(`/employee/findById/${id}`);
+    return response.data;
+  },
+
+  excelExportEmployee: async (): Promise<PdfDto> => {
+    const response = await api.post<PdfDto>(
+      "/employee/generateAddEmployeeExcel",
+      {}
+    );
+    return response.data;
+  },
+
+  importEmployees: async (file: File): Promise<EmployeeImportResult> => {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await api.post<EmployeeImportResult>(
+      "/employee/importEmployees",
+      form,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      }
+    );
+    return data;
   },
 
   processEmployees: async (
@@ -376,6 +437,32 @@ export const adminService = {
           "Content-Type": "multipart/form-data",
         },
       }
+    );
+    return response.data;
+  },
+};
+
+// Task Management
+export const taskService = {
+  getTask: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/findFilteredTask/${search}/${page}`);
+    return response.data;
+  },
+
+  getTaskById: async ( id?: string ): Promise<Task> => {
+    const response = await api.get<Task>(
+      `/task/findById/${id}`
     );
     return response.data;
   },

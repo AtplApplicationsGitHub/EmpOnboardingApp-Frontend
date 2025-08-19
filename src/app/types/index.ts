@@ -41,6 +41,12 @@ export interface Employee {
   createdTime: string;
   updatedTime: string;
 }
+
+export interface EmployeeImportResult {
+  successCount: number;
+  errorCount: number;
+  errors?: Array<string | { row?: number; message?: string }>;
+}
 // export interface Group {
 //   id: number;
 //   name: string;
@@ -65,6 +71,32 @@ export interface Question {
 }
 
 export interface Task {
+  id: number;
+  employeeName: string;
+  level: string;
+  role: string;
+  lab: string;
+  pastExperience: string;
+  prevCompany: string;
+  complianceDay: string;
+  assignedTo: string;
+  totalQuestions: number;
+  completedQuestions: number;
+  status: string;
+  questionList: TaskQuestions[];
+  createdTime: string;
+  updatedTime: string;
+}
+
+export interface TaskQuestions {
+  id: number;
+  questionId: string;
+  response: string;
+  status: string;
+
+}
+
+export interface TaskP {
   id: number;
   question_id: number;
   mock_employee_id: string;
@@ -148,6 +180,11 @@ export interface ProcessedEmployee {
     escalation_group_lead?: string;
   }[];
   message?: string;
+}
+
+export interface PdfDto {
+  pdf: string;
+  fileName: string;
 }
 
 export interface EmployeeProcessingResponse {
