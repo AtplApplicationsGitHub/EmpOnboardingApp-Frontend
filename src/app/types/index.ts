@@ -72,6 +72,32 @@ export interface Question {
 
 export interface Task {
   id: number;
+  employeeName: string;
+  level: string;
+  role: string;
+  lab: string;
+  pastExperience: string;
+  prevCompany: string;
+  complianceDay: string;
+  assignedTo: string;
+  totalQuestions: number;
+  completedQuestions: number;
+  status: string;
+  questionList: TaskQuestions[];
+  createdTime: string;
+  updatedTime: string;
+}
+
+export interface TaskQuestions {
+  id: number;
+  questionId: string;
+  response: string;
+  status: string;
+
+}
+
+export interface TaskP {
+  id: number;
   question_id: number;
   mock_employee_id: string;
   mock_employee_name: string;

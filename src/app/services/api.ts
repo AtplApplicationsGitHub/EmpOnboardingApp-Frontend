@@ -16,9 +16,9 @@ import {
 // Create axios instance
 const api = axios.create({
   // baseURL: 'https://dev.goval.app:2083/api',
-  // baseURL: "http://localhost:8084/api",
+  baseURL: "http://localhost:8084/api",
 
-  baseURL: 'https://employee.onboarding.goval.app:8084/api',
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -324,29 +324,28 @@ export const adminService = {
     const response = await api.post<Employee>("/employee/saveEmployee", data);
     return response.data;
   },
-//update employee
+  //update employee
   updateEmployee: async (data: {
-  id: number;
-  name: string;
-  date: string;
-  department: string;
-  role: string;
-  level: "L1" | "L2" | "L3" | "L4";
-  totalExperience: string;
-  labAllocation: string;
-  pastOrganization: string;
-  complianceDay: string;
-}): Promise<Employee> => {
-  const response = await api.post<Employee>("/employee/updateEmployee", data);
-  return response.data;
-},
+    id: number;
+    name: string;
+    date: string;
+    department: string;
+    role: string;
+    level: "L1" | "L2" | "L3" | "L4";
+    totalExperience: string;
+    labAllocation: string;
+    pastOrganization: string;
+    complianceDay: string;
+  }): Promise<Employee> => {
+    const response = await api.post<Employee>("/employee/updateEmployee", data);
+    return response.data;
+  },
 
-//get by id
- findByEmployee: async (id: number): Promise<Employee> => {
-  const response = await api.get<Employee>(`/employee/findById/${id}`);
-  return response.data;
-},
-
+  //get by id
+  findByEmployee: async (id: number): Promise<Employee> => {
+    const response = await api.get<Employee>(`/employee/findById/${id}`);
+    return response.data;
+  },
 
   excelExportEmployee: async (): Promise<PdfDto> => {
     const response = await api.post<PdfDto>(
@@ -440,6 +439,32 @@ export const adminService = {
           "Content-Type": "multipart/form-data",
         },
       }
+    );
+    return response.data;
+  },
+};
+
+// Task Management
+export const taskService = {
+  getTask: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/findFilteredTask/${search}/${page}`);
+    return response.data;
+  },
+
+  getTaskById: async ( id?: string ): Promise<Task> => {
+    const response = await api.get<Task>(
+      `/task/findById/${id}`
     );
     return response.data;
   },
