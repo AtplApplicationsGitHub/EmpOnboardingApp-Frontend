@@ -10,6 +10,8 @@ interface SearchableDropdownProps {
   className?: string;
   disabled?: boolean;
   maxDisplayItems?: number;
+  displayFullValue?: boolean;
+  isEmployeePage?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -20,7 +22,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   required = false,
   className = "",
   disabled = false,
-  maxDisplayItems = 4
+  maxDisplayItems = 4,
+  displayFullValue = true,
+  isEmployeePage = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,11 +150,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           />
         ) : (
           <div className="flex-1 text-sm">
-            {selectedOption ? (
-              <span>{selectedOption.key} ({selectedOption.value})</span>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
+           {selectedOption ? (
+  // Conditionally render based on the new prop
+  <span>
+    {displayFullValue ? `${selectedOption.key} (${selectedOption.value})` : selectedOption.value}
+  </span>
+) : (
+  <span className="text-muted-foreground">{placeholder}</span>
+)}
           </div>
         )}
         
@@ -225,8 +232,21 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                   }
                 }}
               >
-                <div className="font-medium">{option.key}</div>
-                <div className="text-xs text-muted-foreground">{option.value}</div>
+                {isEmployeePage ? (
+  <div className="font-medium">
+    {option.key}
+  </div>
+) : (
+  <>
+    <div className="font-medium">
+      {option.key}
+    </div>
+    <div className="text-xs text-muted-foreground">
+      {option.value}
+    </div>
+  </>
+)}
+
               </div>
             ))
           ) : (

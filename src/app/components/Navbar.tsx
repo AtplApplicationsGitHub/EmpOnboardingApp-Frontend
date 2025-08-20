@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border ${
+      className={`fixed inset-y-0 left-0 z-50 w-56 bg-card border-r border-border ${
         isVisible ? animationClasses.slideInLeft : "opacity-0"
       }`}
     >
