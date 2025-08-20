@@ -97,6 +97,18 @@ const Navbar: React.FC = () => {
                   <Settings className="h-4 w-4" />
                   <span>Manage Tasks</span>
                 </Link>
+                 <Link
+                  href="/admin/users"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/users"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Manage Users</span>
+                </Link>
               </>
             )}
             {user.role === "group_lead" && (

@@ -65,6 +65,7 @@ export interface Question {
   response: "yes_no" | "text";
   complainceDay: string;
   questionLevel: string[];
+  period: string;
   groupId: number;
   createdTime: string;
   updatedTime: string;
@@ -74,8 +75,10 @@ export interface Task {
   id: number;
   employeeName: string;
   level: string;
+  department: string;
   role: string;
   lab: string;
+  groupName: string;
   pastExperience: string;
   prevCompany: string;
   complianceDay: string;
@@ -83,6 +86,7 @@ export interface Task {
   totalQuestions: number;
   completedQuestions: number;
   status: string;
+  doj: string;
   questionList: TaskQuestions[];
   createdTime: string;
   updatedTime: string;
@@ -93,28 +97,21 @@ export interface TaskQuestions {
   questionId: string;
   response: string;
   status: string;
-
+  complianceDay: string;
+  overDueFlag: boolean;
 }
 
-export interface TaskP {
-  id: number;
-  question_id: number;
-  mock_employee_id: string;
-  mock_employee_name: string;
-  mock_employee_level: string; // 'L1', 'L2', 'L3', or 'L4'
-  assignee_id: number;
-  escalation_user_id: number;
-  status: "pending" | "completed" | "reassigned";
-  response?: string;
-  due_date: string;
-  created_at: string;
-  updated_at: string;
-  completed_at?: string;
-  question: string;
-  response_type: "yes_no" | "text";
-  compliance_day: number;
-  assignee_name: string;
-  escalation_user_name: string;
+export interface TaskProjection {
+  employeeId: string;
+  name: string;
+  department: string;
+  role: string;
+  level: string;
+  taskIds: string;
+  totalQuetions: number;
+  completedQuetions: number;
+  pendingQuetions: number;
+  status: string;
 }
 
 export interface AuthResponse {

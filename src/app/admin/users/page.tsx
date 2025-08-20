@@ -70,6 +70,7 @@ const UsersPage: React.FC = () => {
       }
       const response = await adminService.getUsers(params);
       setUsers(response.commonListDto || []);
+      console.log("Users fetched:", response.commonListDto);
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");

@@ -11,12 +11,14 @@ import {
   PdfDto,
   EmployeeImportResult,
   QueueEmployee,
+  TaskProjection,
 } from "../types";
 
 // Create axios instance
 const api = axios.create({
   // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -451,20 +453,24 @@ export const taskService = {
     search?: string;
     page?: number;
   }): Promise<{
-    commonListDto: Task[];
+    commonListDto: {
+      content: TaskProjection[];
+    };
     totalElements: number;
   }> => {
     const search = params?.search ?? "null";
     const page = params?.page ?? 0;
     const response = await api.post<{
-      commonListDto: Task[];
+     commonListDto: {
+      content: TaskProjection[];
+    };
       totalElements: number;
-    }>(`/task/findFilteredTask/${search}/${page}`);
+    }>(`/task/filteredTaskForAdmin/${search}/${page}`);
     return response.data;
   },
 
-  getTaskById: async ( id?: string ): Promise<Task> => {
-    const response = await api.get<Task>(
+  getTaskById: async ( id?: string ): Promise<Task[]> => {
+    const response = await api.get<Task[]>(
       `/task/findById/${id}`
     );
     return response.data;
