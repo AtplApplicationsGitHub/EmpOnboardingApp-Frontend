@@ -75,11 +75,13 @@ export interface Task {
   id: number;
   employeeId: number;
   employeeName: string;
+  employeeId?: number | string;
   level: string;
   department: string;
   role: string;
   lab: string;
   groupName: string;
+  groupId?: number;
   pastExperience: string;
   prevCompany: string;
   complianceDay: string;
@@ -90,8 +92,16 @@ export interface Task {
   doj: string;
   freezeTask: string;
   questionList: TaskQuestions[];
+  questionText?: string;
+  response?: string;
   createdTime: string;
   updatedTime: string;
+  
+  // Additional fields that might come from API
+  mock_employee_id?: string;
+  mock_employee_name?: string;
+  mock_employee_level?: string;
+  completed_at?: string;
 }
 
 export interface TaskQuestions {
