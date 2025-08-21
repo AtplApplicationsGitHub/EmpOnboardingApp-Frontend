@@ -480,27 +480,125 @@ export const taskService = {
   },
 };
 
+// Helper function to convert TaskProjection to Task format for group leaders
+const convertTaskProjectionToTask = (projection: TaskProjection): Task => {
+  return {
+    id: parseInt(projection.taskIds) || 0,
+    employeeName: projection.name,
+    employeeId: projection.employeeId,
+    level: projection.level,
+    department: projection.department,
+    role: projection.role,
+    lab: "", // Not available in TaskProjection
+    groupName: "", // Not available in TaskProjection
+    pastExperience: "", // Not available in TaskProjection
+    prevCompany: "", // Not available in TaskProjection
+    complianceDay: "", // Not available in TaskProjection
+    assignedTo: "", // Not available in TaskProjection
+    totalQuestions: projection.totalQuetions,
+    completedQuestions: projection.completedQuetions,
+    status: projection.status,
+    doj: "", // Not available in TaskProjection
+    questionList: [], // Not available in TaskProjection
+    createdTime: "",
+    updatedTime: "",
+  };
+};
+
 // Group Lead Services
 export const groupLeadService = {
   getTasks: async (): Promise<Task[]> => {
-    const response = await api.get<Task[]>("/group-lead/tasks");
-    return response.data;
+    // Use the admin task endpoint (temporary until group lead endpoint is deployed)
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>("/task/filteredTaskForAdmin/null/0");
+    
+    // Convert TaskProjection[] to Task[] for compatibility
+    return response.data.commonListDto.content.map(convertTaskProjectionToTask);
+  },
+
+  getTasksPaginated: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: Task[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredTaskForAdmin/${search}/${page}`);
+    
+    // Convert TaskProjection[] to Task[] for compatibility
+    const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
+    
+    return {
+      commonListDto: {
+        content: convertedContent,
+      },
+      totalElements: response.data.totalElements,
+    };
   },
 
   completeTask: async (taskId: number, response: string): Promise<Task> => {
-    const result = await api.put<{ message: string; task: Task }>(
-      `/group-lead/tasks/${taskId}/complete`,
-      { response }
-    );
-    return result.data.task;
+    // TODO: Implement backend endpoint - for now return mock response
+    console.warn("Complete task endpoint not implemented yet. Using mock response.");
+    return {
+      id: taskId,
+      employeeName: "Mock Employee",
+      employeeId: 1,
+      level: "L1",
+      department: "IT",
+      role: "Developer",
+      lab: "Lab 1",
+      groupName: "Group 1",
+      pastExperience: "2 years",
+      prevCompany: "Previous Co",
+      complianceDay: "30",
+      assignedTo: "Group Lead",
+      totalQuestions: 5,
+      completedQuestions: 5,
+      status: "Completed",
+      doj: new Date().toISOString(),
+      questionList: [],
+      createdTime: new Date().toISOString(),
+      updatedTime: new Date().toISOString(),
+    };
   },
 
   saveTaskResponse: async (taskId: number, response: string): Promise<Task> => {
-    const result = await api.put<{ message: string; task: Task }>(
-      `/group-lead/tasks/${taskId}/save`,
-      { response }
-    );
-    return result.data.task;
+    // TODO: Implement backend endpoint - for now return mock response
+    console.warn("Save task response endpoint not implemented yet. Using mock response.");
+    return {
+      id: taskId,
+      employeeName: "Mock Employee",
+      employeeId: 1,
+      level: "L1",
+      department: "IT",
+      role: "Developer",
+      lab: "Lab 1",
+      groupName: "Group 1",
+      pastExperience: "2 years",
+      prevCompany: "Previous Co",
+      complianceDay: "30",
+      assignedTo: "Group Lead",
+      totalQuestions: 5,
+      completedQuestions: 3,
+      status: "In Progress",
+      doj: new Date().toISOString(),
+      questionList: [],
+      createdTime: new Date().toISOString(),
+      updatedTime: new Date().toISOString(),
+    };
   },
 
   // User Management for Group Leads
