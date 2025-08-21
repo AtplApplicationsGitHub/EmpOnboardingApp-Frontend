@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import Button from "../../../components/ui/button";
@@ -19,8 +19,8 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 
-import { taskService } from "@/app/services/api";
-import { Task, TaskQuestions } from "@/app/types";
+import { adminService, taskService } from "@/app/services/api";
+import { DropDownDTO, Task, TaskQuestions } from "@/app/types";
 
 import {
   ArrowLeft,
@@ -31,6 +31,9 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
+import { set } from "react-hook-form";
+import toast from "react-hot-toast";
 
 // small progress pill
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
@@ -52,35 +55,124 @@ const TaskDetailsPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<
+    number | undefined
+  >(undefined);
+  const [reAssignTask, setReAssignTask] = useState<string>();
   const taskId = params.id as string;
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
+    undefined
+  );
+  const labOptions = [
+    { id: 101, key: "Lab1", value: "Lab1" },
+    { id: 102, key: "Lab2", value: "Lab2" },
+  ];
 
   useEffect(() => {
-    const run = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const t = await taskService.getTaskById(taskId);
-        console.log("Task fetched:", t);
-        const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
-        setTasks(list);
-      } catch (e: any) {
-        setError(e?.response?.data?.message || "Failed to load task(s)");
-        setTasks([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (taskId) run();
+    fetchTasks();
   }, [taskId]);
 
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const t = await taskService.getTaskById(taskId);
+      const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
+      console.log("Fetched tasks:", list);
+      setTasks(list);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [taskId]);
+
+  const fetchGroupLeads = useCallback(async () => {
+    try {
+      const groupLeadsData = await adminService.getAllGroupLeads();
+      setGroupLeads(groupLeadsData);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
+
+  const getLeadIdByName = (name?: string) => {
+    if (!name) return undefined;
+    const found = groupLeads.find((lead) => lead.key === name);
+    return found ? Number(found.id) : undefined;
+  };
+
+  const reassignTask = () => {
+    if (!reAssignTask) {
+      setError("Missing task id to reassign.");
+      return;
+    }
+    if (primaryGroupLeadId == null) {
+      setError("Please select a group lead.");
+      return;
+    }
+    taskService
+      .reassignTask(reAssignTask, primaryGroupLeadId)
+      .then(() => {
+        setShowReassignModal(false);
+        setPrimaryGroupLeadId(undefined);
+        toast.success("Task Reassign successfully");
+        fetchTasks();
+      })
+      .catch((err: any) => {
+        setError(err.response?.data?.message || "Failed to reassign tasks");
+      });
+  };
+
+  useEffect(() => {
+    fetchGroupLeads();
+  }, [fetchGroupLeads]);
+
+  const employeeId = tasks[0]?.employeeId;
   const employeeName = tasks[0]?.employeeName;
   const employeeLevel = tasks[0]?.level;
   const department = tasks[0]?.department;
   const role = tasks[0]?.role;
   const doj = tasks[0]?.doj;
+  const lab = tasks[0]?.lab;
+  const freezeTask = tasks[0]?.freezeTask;
 
+  useEffect(() => {
+    const id = labOptions.find((opt) => opt.value === lab)?.id;
+    setSelectedLabId(id);
+  }, [lab]);
+
+  const handleSaveLab = async (id?: number) => {
+    console.log("handleSaveLab called with id:", id);
+    setSelectedLabId(id);
+    const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
+    if (!selectedLabValue) {
+      toast.error("Invalid lab selection.");
+      return;
+    }
+    if (!employeeId) {
+      toast.error("Missing employee id.");
+      return;
+    }
+    if (selectedLabValue === lab) {
+      toast.success("Lab already up to date.");
+      return;
+    }
+    try {
+      await taskService.labAllocation(employeeId, selectedLabValue);
+      toast.success("Lab updated");
+      await fetchTasks();
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message ?? "Failed to update lab allocation"
+      );
+      const prevId = labOptions.find((o) => o.value === lab)?.id;
+      setSelectedLabId(prevId);
+    }
+  };
 
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
@@ -170,12 +262,28 @@ const TaskDetailsPage: React.FC = () => {
           Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
           {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
         </h3>
+        <div className="ml-auto flex items-end gap-3">
+          <div className="min-w-[240px]">
+            <div className="flex items-center gap-2">
+              <SearchableDropdown
+                options={labOptions}
+                value={selectedLabId}
+                disabled={freezeTask === "Y"} 
+                onChange={(id) => handleSaveLab(id)}
+                placeholder="Select Lab"
+                displayFullValue={false}
+                isEmployeePage={true}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* <p className="text-muted-foreground">
-        Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
-        {tasks.length === 1 ? "" : "s"} • {overall.doneQ}/{overall.totalQ} done ({overall.pct}%)
-      </p> */}
+            Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
+            {tasks.length === 1 ? "" : "s"} • {overall.doneQ}/{overall.totalQ} done ({overall.pct}%)
+        </p> */}
 
       {/* one CARD per task */}
       {tasks.map((t) => {
@@ -200,18 +308,6 @@ const TaskDetailsPage: React.FC = () => {
                         {t.groupName} - {t.id} - {t.assignedTo}
                       </span>
                     </CardTitle>
-                    {/* <p className="text-sm text-muted-foreground">
-                      {t.employeeName} • {t.level} • Assigned To: {t.assignedTo || "—"}
-                    </p> */}
-                    {/* <div className="mt-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">
-                          {completed}/{totalTasks} completed
-                        </span>
-                        <span className="text-muted-foreground">{pct}%</span>
-                      </div>
-                      <ProgressBar value={pct} />
-                    </div> */}
                   </div>
                 </div>
 
@@ -222,7 +318,16 @@ const TaskDetailsPage: React.FC = () => {
                       Questions
                     </div>
                   </div>
-                  <Button variant="outline" className="gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    disabled={freezeTask === "Y"} 
+                    onClick={() => {
+                      setShowReassignModal(true);
+                      setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
+                      setReAssignTask(t.id.toString());
+                    }}
+                  >
                     <RefreshCw size={16} />
                     Reassign
                   </Button>
@@ -284,6 +389,54 @@ const TaskDetailsPage: React.FC = () => {
           </Card>
         );
       })}
+
+      {showReassignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Reassign Task</h2>
+
+            <div className="pt-4">
+              <label className="block text-sm font-medium mb-2">
+                Primary Group Lead
+              </label>
+              <SearchableDropdown
+                options={groupLeads}
+                value={primaryGroupLeadId}
+                onChange={(value) => setPrimaryGroupLeadId(value)}
+                placeholder="Select a group lead"
+                required
+                maxDisplayItems={4}
+                className="w-full"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-8">
+              {/* PRIMARY: actually triggers the reassign */}
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={reassignTask}
+                disabled={!primaryGroupLeadId}
+              >
+                Reassign Task
+              </Button>
+
+              {/* CANCEL: just closes */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setPrimaryGroupLeadId(undefined);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

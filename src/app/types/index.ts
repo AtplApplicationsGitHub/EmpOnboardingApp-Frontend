@@ -73,6 +73,7 @@ export interface Question {
 
 export interface Task {
   id: number;
+  employeeId: number;
   employeeName: string;
   level: string;
   department: string;
@@ -87,6 +88,7 @@ export interface Task {
   completedQuestions: number;
   status: string;
   doj: string;
+  freezeTask: string;
   questionList: TaskQuestions[];
   createdTime: string;
   updatedTime: string;
@@ -112,6 +114,7 @@ export interface TaskProjection {
   completedQuetions: number;
   pendingQuetions: number;
   status: string;
+  freeze:string
 }
 
 export interface AuthResponse {

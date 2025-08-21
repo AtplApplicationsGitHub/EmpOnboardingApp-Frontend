@@ -17,8 +17,8 @@ import {
 // Create axios instance
 const api = axios.create({
   // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -320,7 +320,7 @@ export const adminService = {
     labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
-    email:string
+    email: string;
   }): Promise<Employee> => {
     const response = await api.post<Employee>("/employee/saveEmployee", data);
     return response.data;
@@ -337,8 +337,7 @@ export const adminService = {
     labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
-     email:string
-
+    email: string;
   }): Promise<Employee> => {
     const response = await api.post<Employee>("/employee/updateEmployee", data);
     return response.data;
@@ -349,9 +348,9 @@ export const adminService = {
     return response.data;
   },
 
-deleteEmployee: async (id: number): Promise<void> => {
-  await api.delete(`/employee/deleteEmployee/${id}`);
-},
+  deleteEmployee: async (id: number): Promise<void> => {
+    await api.delete(`/employee/deleteEmployee/${id}`);
+  },
 
   excelExportEmployee: async (): Promise<PdfDto> => {
     const response = await api.post<PdfDto>(
@@ -464,18 +463,51 @@ export const taskService = {
     const search = params?.search ?? "null";
     const page = params?.page ?? 0;
     const response = await api.post<{
-     commonListDto: {
-      content: TaskProjection[];
-    };
+      commonListDto: {
+        content: TaskProjection[];
+      };
       totalElements: number;
     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
     return response.data;
   },
+  getTaskForGL: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/filteredTask/${search}/${page}`);
+    return response.data;
+  },
 
-  getTaskById: async ( id?: string ): Promise<Task[]> => {
-    const response = await api.get<Task[]>(
-      `/task/findById/${id}`
+  getTaskById: async (id?: string): Promise<Task[]> => {
+    const response = await api.get<Task[]>(`/task/findById/${id}`);
+    return response.data;
+  },
+
+  reassignTask: async (taskId: string, id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(
+      `/task/reassignTask/${taskId}/${id}`
     );
+    return response.data;
+  },
+
+  freezeTask: async (taskId: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/task/freezeTask/${taskId}`);
+    return response.data;
+  },
+
+  labAllocation: async (
+    id: number,
+    labAllocation: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(`/employee/labSave/${labAllocation}/${id}`);
     return response.data;
   },
 };

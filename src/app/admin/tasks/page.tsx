@@ -1,7 +1,12 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { taskService } from "../../services/api";
-import { Card, CardContent } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import { TaskProjection } from "@/app/types";
 import {
@@ -18,7 +23,12 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Eye,
+  Info,
+  Lock,
+  TicketCheck,
+  Unlock,
   Users,
+  Verified,
 } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -31,6 +41,8 @@ const TasksPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState("");
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -42,13 +54,11 @@ const TasksPage: React.FC = () => {
       setError(null);
       const params: Record<string, unknown> = {
         page: currentPage,
-        size: PAGE_SIZE, // keep UI and API aligned
+        size: PAGE_SIZE,
       };
       const search = searchFilter.trim();
       if (search) params.search = search;
-
       const response = await taskService.getTask(params);
-      console.log("Tasks fetched:", response);
       setTasks(response.commonListDto.content ?? []);
       setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
@@ -85,6 +95,18 @@ const TasksPage: React.FC = () => {
     return pages;
   };
 
+  const handleFreezeTask = async () => {
+    if (!selectedTaskId) return;
+    try {
+      await taskService.freezeTask(selectedTaskId);
+      await fetchTasks();
+      setShowFreezeModal(false);
+      setSelectedTaskId("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to delete group");
+    }
+  };
+
   const ProgressBar: React.FC<{ value: number }> = ({ value }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
@@ -105,7 +127,7 @@ const TasksPage: React.FC = () => {
               value={searchFilter}
               onChange={(e) => {
                 setSearchFilter(e.target.value);
-                setCurrentPage(0); // reset when filter changes
+                setCurrentPage(0);
               }}
               placeholder="Search…"
               className="w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
@@ -238,6 +260,7 @@ const TasksPage: React.FC = () => {
 
                       {/* Actions */}
                       <TableCell>
+                        {/* Always show Eye button */}
                         <Button
                           variant="outline"
                           size="icon"
@@ -249,6 +272,34 @@ const TasksPage: React.FC = () => {
                         >
                           <Eye size={16} />
                         </Button>
+
+                        {task.status?.toLowerCase() === "completed" &&
+                          task.freeze === "N" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg ml-2"
+                              aria-label="Completed"
+                              onClick={() => {
+                                setSelectedTaskId(task.taskIds);
+                                setShowFreezeModal(true);
+                              }}
+                            >
+                              <Unlock size={16} />
+                            </Button>
+                          )}
+                        {task.status?.toLowerCase() === "completed" &&
+                          task.freeze === "Y" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg ml-2"
+                              aria-label="Frozen"
+                              disabled
+                            >
+                              <Lock size={16} />
+                            </Button>
+                          )}
                       </TableCell>
                     </TableRow>
                   );
@@ -333,6 +384,40 @@ const TasksPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+      {showFreezeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Freeze Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to Freeze the Tasks{" "}
+                {/* <span className="font-semibold">{tasks.id}</span>? */}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleFreezeTask}
+                  className="flex-1"
+                >
+                  Yes, Freeze
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowFreezeModal(false);
+                    setSelectedTaskId("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

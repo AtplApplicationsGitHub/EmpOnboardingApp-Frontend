@@ -12,6 +12,7 @@ import {
   LogOut,
   UserPlus,
   Settings,
+  ClipboardListIcon,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -94,7 +95,7 @@ const Navbar: React.FC = () => {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <Settings className="h-4 w-4" />
+                  <ClipboardListIcon className="h-4 w-4" />
                   <span>Manage Tasks</span>
                 </Link>
                  <Link
