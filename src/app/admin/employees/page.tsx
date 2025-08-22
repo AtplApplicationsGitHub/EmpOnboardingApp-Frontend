@@ -1,83 +1,86 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "../../components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import {
-  Pencil,
-  Download,
-  Upload,
-  Plus,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Trash2,
-} from "lucide-react";
-import Button from "../../components/ui/button";
-import Input from "../../components/Input";
-import { Employee } from "../../types";
-import { adminService } from "../../services/api";
-import SearchableDropdown from "../../components/SearchableDropdown";
-import { toast } from "react-hot-toast";
+import React, { useState, useEffect } from 'react';
+import { Table, TableHeader, TableBody, TableRow, TableCell } from '../../components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Pencil, Download, Upload, Plus, Users, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2 } from 'lucide-react';
+import Button from '../../components/ui/button';
+import Input from '../../components/Input';
+import { Employee } from '../../types';
+import { adminService } from '../../services/api';
+import SearchableDropdown from '../../components/SearchableDropdown';
+import { toast } from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
 
+const formatDateForInput = (dateString: string | undefined | null) => {
+  // If the date is null, undefined, or an empty string, return an empty string.
+  if (!dateString) {
+    return '';
+  }
+
+  // If the date is already in YYYY-MM-DD format, return it directly
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateString;
+  }
+  
+  // Try to create a Date object
+  const date = new Date(dateString);
+
+  // Check if the date object is valid. isNaN() is the standard way to check for a valid date.
+  if (isNaN(date.getTime())) {
+    return ''; // Return an empty string if the date is invalid
+  }
+
+  // Get the year, month, and day as separate values
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed, so add 1
+  const day = date.getDate().toString().padStart(2, '0');
+
+  // Return the new date in YYYY-MM-DD format
+  return `${year}-${month}-${day}`;
+};
+
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchFilter, setSearchFilter] = useState("");
+  const [searchInput, setSearchInput] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  const [processing, setProcessing] = useState(false); 
 
   const [editMode, setEditMode] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
-    null
-  );
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
-    null
-  );
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
-    name: "",
-    date: "",
-    department: "",
-    role: "",
-    level: "L1",
-    totalExperience: "0",
-    pastOrganization: "",
-    labAllocation: "",
-    complianceDay: "3",
-    email: "",
+    name: '',
+    date: '',
+    department: '',
+    role: '',
+    level: 'L1',
+    totalExperience: '0',
+    pastOrganization: '',
+    labAllocation: '',
+    complianceDay: '3',
+    email: ''
   });
 
-  //Arrays for dropdown
-  const levelOptions = [
-    { id: 1, key: "L1", value: "L1" },
-    { id: 2, key: "L2", value: "L2" },
-    { id: 3, key: "L3", value: "L3" },
-    { id: 4, key: "L4", value: "L4" },
-  ];
+   //Arrays for dropdown
+ const levelOptions = [
+  { id: 1, key: 'L1', value: 'L1' },
+  { id: 2, key: 'L2', value: 'L2' },
+  { id: 3, key: 'L3', value: 'L3' },
+  { id: 4, key: 'L4', value: 'L4' },
+];
+
 
   const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+  { id: 101, key: 'Lab1', value: 'Lab1' },
+  { id: 102, key: 'Lab2', value: 'Lab2' },
+];
   useEffect(() => {
     fetchEmployees();
   }, [searchFilter, page]);
@@ -90,6 +93,7 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
+      console.log('Fetched employees after update:', data.commonListDto);
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -106,64 +110,52 @@ const EmployeesPage: React.FC = () => {
   };
 
   //create
-
-  const fromDateInputToISO = (
-    d: string | null | undefined
-  ): string | undefined => {
-    if (!d) return undefined; // d is 'YYYY-MM-DD'
-    // Create a Date in local time at midnight, then to ISO
-    const [y, m, day] = d.split("-").map(Number);
-    const iso = new Date(y, (m ?? 1) - 1, day ?? 1).toISOString();
-    return iso;
-  };
-
   const handleAddEmployee = async () => {
     if (!newEmployee.name) {
-      toast.error("Please fill in Candidate Name");
+      toast.error('Please fill in Candidate Name');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
+      toast.error('Please enter a valid email address.');
       return;
     }
 
     try {
       await adminService.createEmployee({
         name: newEmployee.name,
-        date:
-          fromDateInputToISO(newEmployee.date ?? null) ??
-          new Date().toISOString(),
-        department: newEmployee.department || "General",
-        role: newEmployee.role || "Employee",
+ date: newEmployee.date || new Date().toISOString().split('T')[0],
+         department: newEmployee.department || 'General',
+        role: newEmployee.role || 'Employee',
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
-        totalExperience: newEmployee.totalExperience || "0",
-        pastOrganization: newEmployee.pastOrganization || "N/A",
-        labAllocation: newEmployee.labAllocation || "N/A",
-        complianceDay: newEmployee.complianceDay || "3",
-        email: newEmployee.email || "N/A",
+        totalExperience: newEmployee.totalExperience || '0',
+        pastOrganization: newEmployee.pastOrganization || 'N/A',
+        labAllocation: newEmployee.labAllocation || 'N/A',
+        complianceDay: newEmployee.complianceDay || '3',
+        email: newEmployee.email || 'N/A'
+
       });
 
-      toast.success("Employee added successfully");
+      toast.success('Employee added successfully');
 
       // Reset the form
       setNewEmployee({
-        name: "",
-        date: "",
-        department: "",
-        role: "",
-        level: "L1",
-        totalExperience: "0",
-        pastOrganization: "",
-        labAllocation: "",
-        complianceDay: "3",
-        email: "",
+        name: '',
+        date: '',
+        department: '',
+        role: '',
+        level: 'L1',
+        totalExperience: '0',
+        pastOrganization: '',
+        labAllocation: '',
+        complianceDay: '3',
+        email: ''
       });
       setShowAddModal(false);
       fetchEmployees();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to add employee");
+      toast.error(err.response?.data?.message || 'Failed to add employee');
     }
   };
 
@@ -172,26 +164,18 @@ const EmployeesPage: React.FC = () => {
     if (!employeeId) return;
 
     try {
-      const emp: Employee = await adminService.findByEmployee(employeeId);
 
-      const toDateInput = (
-        d: string | number | Date | null | undefined
-      ): string => {
-        if (!d) return "";
-        const dt = typeof d === "string" ? new Date(d) : new Date(d);
-        if (Number.isNaN(dt.getTime())) return "";
-        // Get local date parts to avoid TZ shift
-        const yyyy = dt.getFullYear();
-        const mm = String(dt.getMonth() + 1).padStart(2, "0");
-        const dd = String(dt.getDate()).padStart(2, "0");
-        return `${yyyy}-${mm}-${dd}`;
-      };
-      // const formattedDate = new Date(emp.date).toISOString().split("T")[0];
+      const emp: Employee = await adminService.findByEmployee(employeeId);
+ console.log('Received from backend:', emp); 
+      
+      // const formattedDate = new Date(emp.date).toISOString().split('T')[0];
+       const formattedDate = formatDateForInput(emp.date);
+       console.log('Formatted date:', formattedDate); 
 
       // Prefill the modal form with fetched employee data
       setNewEmployee({
         name: emp.name,
-        date: toDateInput(emp.date),
+        date: formattedDate,
         department: emp.department,
         role: emp.role,
         level: emp.level,
@@ -199,12 +183,13 @@ const EmployeesPage: React.FC = () => {
         pastOrganization: emp.pastOrganization,
         labAllocation: emp.labAllocation,
         complianceDay: emp.complianceDay,
-        email: emp.email,
+        email: emp.email
       });
 
       setEditMode(true);
       setSelectedEmployeeId(employeeId);
       setShowAddModal(true);
+
     } catch (err: any) {
       toast.error("Failed to load employee data");
     }
@@ -217,55 +202,54 @@ const EmployeesPage: React.FC = () => {
     if (!selectedEmployeeId) return;
 
     if (!newEmployee.name?.trim()) {
-      toast.error("Candidate Name is required.");
+      toast.error('Candidate Name is required.');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
+    toast.error('Please enter a valid email address.');
+    return;
+  }
 
     try {
+
       const updatePayload = {
         id: selectedEmployeeId,
         name: newEmployee.name,
-        date:
-          fromDateInputToISO(newEmployee.date ?? null) ??
-          new Date().toISOString(),
-        department: newEmployee.department,
-        role: newEmployee.role,
+date: newEmployee.date || undefined,
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
         totalExperience: newEmployee.totalExperience,
         pastOrganization: newEmployee.pastOrganization,
         labAllocation: newEmployee.labAllocation,
         complianceDay: newEmployee.complianceDay,
-        email: newEmployee.email,
+        email:newEmployee.email
       };
-
+console.log('Sending to backend:', updatePayload);
       await adminService.updateEmployee(updatePayload as Employee);
 
-      toast.success("Employee updated successfully!");
+      toast.success('Employee updated successfully!');
 
       // Reset state and close the modal
       setNewEmployee({
-        name: "",
-        date: "",
-        department: "",
-        role: "",
-        level: "L1",
-        totalExperience: "0",
-        pastOrganization: "",
-        labAllocation: "",
-        complianceDay: "3",
-        email: "",
+        name: '',
+        date: '',
+        department: '',
+        role: '',
+        level: 'L1',
+        totalExperience: '0',
+        pastOrganization: '',
+        labAllocation: '',
+        complianceDay: '3',
+        email:''
+
       });
       setShowAddModal(false);
       setEditMode(false);
       setSelectedEmployeeId(null);
       fetchEmployees();
+
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update employee.");
+      toast.error(err.response?.data?.message || 'Failed to update employee.');
     }
   };
 
@@ -275,60 +259,60 @@ const EmployeesPage: React.FC = () => {
 
     try {
       await adminService.deleteEmployee(employeeToDelete.id);
-      toast.success("Employee deleted successfully!");
+      toast.success('Employee deleted successfully!');
       fetchEmployees();
       setShowDeleteModal(false);
       setEmployeeToDelete(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to delete employee.");
+      toast.error(err.response?.data?.message || 'Failed to delete employee.');
     }
   };
 
-  //download template
+//download template
 
-  const base64ToBlob = (b64: string, mime: string) => {
-    const byteString = atob(b64);
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uint8Array = new Uint8Array(arrayBuffer);
+const base64ToBlob = (b64: string, mime: string) => {
+  const byteString = atob(b64);
+  const arrayBuffer = new ArrayBuffer(byteString.length);
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-    for (let i = 0; i < byteString.length; i++) {
-      uint8Array[i] = byteString.charCodeAt(i);
-    }
+  for (let i = 0; i < byteString.length; i++) {
+    uint8Array[i] = byteString.charCodeAt(i);
+  }
 
-    return new Blob([uint8Array], { type: mime });
-  };
+  return new Blob([uint8Array], { type: mime });
+};
 
-  const handleDownloadTemplate = async () => {
-    try {
-      setProcessing(true);
-      const data = await adminService.excelExportEmployee();
-      const base64: string = data.pdf;
-      if (!base64) throw new Error("No base64 file content in response.");
+const handleDownloadTemplate = async () => {
+  try {
+    setProcessing(true);
+    const data = await adminService.excelExportEmployee();
+    const base64: string = data.pdf;
+    if (!base64) throw new Error("No base64 file content in response.");
 
-      const fileName: string =
-        data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
-      const blob = base64ToBlob(
-        base64,
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
+    const fileName: string =
+      data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
+    const blob = base64ToBlob(
+      base64,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      toast.success("Excel downloaded successfully!");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message ?? "Failed to download file");
-    } finally {
-      setProcessing(false);
-    }
-  };
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    
+    toast.success("Excel downloaded successfully!");
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.response?.data?.message ?? "Failed to download file");
+  } finally {
+    setProcessing(false);
+  }
+};
   // Pagination logic
   const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
@@ -341,15 +325,11 @@ const EmployeesPage: React.FC = () => {
     if (totalPages <= 7) {
       for (let i = 0; i < totalPages; i++) pages.push(i);
     } else {
-      if (page > 3) pages.push(0, "...");
-      for (
-        let i = Math.max(1, page - 2);
-        i <= Math.min(totalPages - 2, page + 2);
-        i++
-      ) {
+      if (page > 3) pages.push(0, '...');
+      for (let i = Math.max(1, page - 2); i <= Math.min(totalPages - 2, page + 2); i++) {
         pages.push(i);
       }
-      if (page < totalPages - 4) pages.push("...", totalPages - 1);
+      if (page < totalPages - 4) pages.push('...', totalPages - 1);
       else if (page < totalPages - 3) pages.push(totalPages - 1);
     }
     return pages;
@@ -372,21 +352,12 @@ const EmployeesPage: React.FC = () => {
               </form>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-                onClick={handleDownloadTemplate}
-              >
+              <Button variant="outline" size="sm" className="whitespace-nowrap flex-shrink-0"  onClick={handleDownloadTemplate}>
                 <Download size={14} className="mr-1" />
                 <span className="hidden sm:inline">Download Template</span>
                 <span className="sm:hidden">Download</span>
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-              >
+              <Button variant="outline" size="sm" className="whitespace-nowrap flex-shrink-0">
                 <Upload size={14} className="mr-1" />
                 <span className="hidden sm:inline">Import from Excel</span>
                 <span className="sm:hidden">Import</span>
@@ -399,15 +370,15 @@ const EmployeesPage: React.FC = () => {
                   setEditMode(false);
                   setSelectedEmployeeId(null);
                   setNewEmployee({
-                    name: "",
-                    date: "",
-                    department: "",
-                    role: "",
-                    level: "L1",
-                    totalExperience: "0",
-                    pastOrganization: "",
-                    labAllocation: "",
-                    complianceDay: "3",
+                    name: '',
+                    date: '',
+                    department: '',
+                    role: '',
+                    level: 'L1',
+                    totalExperience: '0',
+                    pastOrganization: '',
+                    labAllocation: '',
+                    complianceDay: '3'
                   });
                 }}
               >
@@ -423,9 +394,9 @@ const EmployeesPage: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableCell></TableCell>
-                <TableCell className="w-44">Name</TableCell>
+                <TableCell className='w-44'>Name</TableCell>
                 <TableCell>Email</TableCell>
-                <TableCell className="w-24">DOJ</TableCell>
+                <TableCell className='w-24'>DOJ</TableCell>
                 <TableCell>Department</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Level</TableCell>
@@ -439,9 +410,7 @@ const EmployeesPage: React.FC = () => {
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        No employees found
-                      </p>
+                      <p className="text-muted-foreground">No employees found</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -449,56 +418,39 @@ const EmployeesPage: React.FC = () => {
                 employees.map((emp) => (
                   <TableRow key={emp.id}>
                     <TableCell className="flex gap-0.5">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditEmployee(emp.id)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => handleEditEmployee(emp.id)}>
                         <Pencil size={14} />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-500"
-                        onClick={() => {
-                          setEmployeeToDelete(emp);
-                          setShowDeleteModal(true);
-                        }}
-                      >
+                      <Button size="sm" variant="ghost" className="text-red-500" onClick={() => {
+                        setEmployeeToDelete(emp);
+                        setShowDeleteModal(true);
+                      }}>
                         <Trash2 size={14} />
                       </Button>
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">
-                      {emp.name}
-                    </TableCell>
-                    <TableCell className=" whitespace-nowrap">
-                      {emp.email}
-                    </TableCell>
+                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">{emp.name}</TableCell>
+                    <TableCell className=" whitespace-nowrap">{emp.email}</TableCell>
 
-                    <TableCell className="whitespace-nowrap w-24">
-                      {emp.date}
+                    <TableCell className='whitespace-nowrap w-24'>{emp.date}
                     </TableCell>
-                    <TableCell>{emp.department || "N/A"}</TableCell>
-                    <TableCell>{emp.role || "N/A"}</TableCell>
+                    <TableCell>{emp.department || 'N/A'}</TableCell>
+                    <TableCell>{emp.role || 'N/A'}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          emp.level === "L1"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            : emp.level === "L2"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : emp.level === "L3"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
+                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === 'L1'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : emp.level === 'L2'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : emp.level === 'L3'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          }`}
                       >
-                        {emp.level || "L1"}
+                        {emp.level || 'L1'}
                       </span>
                     </TableCell>
-                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
-                    <TableCell className="w-20">
-                      Day {emp.complianceDay || "3"}
-                    </TableCell>
+                    <TableCell>{emp.labAllocation || 'N/A'}</TableCell>
+                    <TableCell className="w-20">Day {emp.complianceDay || '3'}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -514,33 +466,19 @@ const EmployeesPage: React.FC = () => {
                 Page {page + 1} of {totalPages}
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(0)}
-                  disabled={page === 0}
-                  className="p-2"
-                >
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(0)} disabled={page === 0} className="p-2">
                   <ChevronsLeft size={16} />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 0}
-                  className="p-2"
-                >
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page === 0} className="p-2">
                   <ChevronLeft size={16} />
                 </Button>
                 {generatePageNumbers().map((p, idx) =>
-                  p === "..." ? (
-                    <span key={idx} className="px-3 py-2 text-muted-foreground">
-                      ...
-                    </span>
+                  p === '...' ? (
+                    <span key={idx} className="px-3 py-2 text-muted-foreground">...</span>
                   ) : (
                     <Button
                       key={idx}
-                      variant={p === page ? "default" : "outline"}
+                      variant={p === page ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => handlePageChange(p as number)}
                       className="min-w-[40px]"
@@ -549,22 +487,10 @@ const EmployeesPage: React.FC = () => {
                     </Button>
                   )
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages - 1}
-                  className="p-2"
-                >
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(page + 1)} disabled={page === totalPages - 1} className="p-2">
                   <ChevronRight size={16} />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages - 1)}
-                  disabled={page === totalPages - 1}
-                  className="p-2"
-                >
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages - 1)} disabled={page === totalPages - 1} className="p-2">
                   <ChevronsRight size={16} />
                 </Button>
               </div>
@@ -572,226 +498,159 @@ const EmployeesPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                {editMode ? "Edit User" : "Create New User"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Candidate Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newEmployee.name ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Joining
-                  </label>
-                  <input
-                    type="date"
-                    value={newEmployee.date ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, date: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    value={newEmployee.department ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        department: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Engineering, HR, Sales"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Role</label>
-                  <input
-                    type="text"
-                    value={newEmployee.role ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, role: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Software Engineer, Manager"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Level
-                  </label>
-                  <SearchableDropdown
-                    options={levelOptions}
-                    value={
-                      levelOptions.find(
-                        (option) => option.value === newEmployee.level
-                      )?.id
-                    }
-                    onChange={(id) => {
-                      const selectedLevel = levelOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        level: selectedLevel as "L1" | "L2" | "L3" | "L4",
-                      });
-                    }}
-                    displayFullValue={false}
-                    isEmployeePage={true}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Total Experience (years)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={newEmployee.totalExperience ?? "0"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        totalExperience: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., 3"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Past Organization
-                  </label>
-                  <input
-                    type="text"
-                    value={newEmployee.pastOrganization ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        pastOrganization: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Previous company name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Lab Allocation
-                  </label>
-                  <SearchableDropdown
-                    options={labOptions}
-                    value={
-                      labOptions.find(
-                        (option) => option.value === newEmployee.labAllocation
-                      )?.id
-                    }
-                    onChange={(id) => {
-                      const selectedLab = labOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        labAllocation: selectedLab as "Lab1" | "Lab2",
-                      });
-                    }}
-                    placeholder="Select Lab"
-                    displayFullValue={false}
-                    isEmployeePage={true}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Compliance Day
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={newEmployee.complianceDay ?? "3"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        complianceDay: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Number of compliance days"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={newEmployee.email ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Enter email address"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
-                  className="flex-1"
-                >
-                  {editMode ? "Update User" : "Create User"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setNewEmployee({
-                      name: "",
-                      date: "",
-                      department: "",
-                      role: "",
-                      level: "L1",
-                      totalExperience: "0",
-                      pastOrganization: "",
-                      labAllocation: "",
-                      complianceDay: "3",
-                      email: "",
-                    });
-                    setSelectedEmployeeId(null);
-                    setEditMode(false);
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+     {showAddModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <CardHeader>
+        <CardTitle>{editMode ? 'Edit User' : 'Create New User'}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Candidate Name *</label>
+            <input
+              type="text"
+              value={newEmployee.name as string ?? ''}
+              onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Date of Joining</label>
+           <input
+  type="date"
+  value={newEmployee.date ?? ''}
+  onChange={(e) => setNewEmployee({ ...newEmployee, date: e.target.value })}
+  className="w-full px-3 py-2 border rounded-md bg-background"
+/>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Department</label>
+            <input
+              type="text"
+              value={newEmployee.department ?? ''}
+              onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              placeholder="e.g., Engineering, HR, Sales"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
+            <input
+              type="text"
+              value={newEmployee.role ?? ''}
+              onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              placeholder="e.g., Software Engineer, Manager"
+            />
+          </div>
+          <div>
+  <label className="block text-sm font-medium mb-1">Level</label>
+  <SearchableDropdown
+  options={levelOptions}
+  value={levelOptions.find(option => option.value === newEmployee.level)?.id}
+  onChange={(id) => {
+    const selectedLevel = levelOptions.find(option => option.id === id)?.value;
+    setNewEmployee({ ...newEmployee, level: selectedLevel as 'L1' | 'L2' | 'L3' | 'L4' });
+  }}
+  displayFullValue={false}
+   isEmployeePage={true}
+  
+ 
+/>
+</div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Total Experience (years)</label>
+            <input
+              type="number"
+              min={0}
+              value={newEmployee.totalExperience ?? '0'}
+              onChange={(e) => setNewEmployee({ ...newEmployee, totalExperience: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              placeholder="e.g., 3"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Past Organization</label>
+            <input
+              type="text"
+              value={newEmployee.pastOrganization ?? ''}
+              onChange={(e) => setNewEmployee({ ...newEmployee, pastOrganization: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              placeholder="Previous company name"
+            />
+          </div>
+          <div>
+  <label className="block text-sm font-medium mb-1">Lab Allocation</label>
+ <SearchableDropdown
+  options={labOptions}
+  value={labOptions.find(option => option.value === newEmployee.labAllocation)?.id}
+  onChange={(id) => {
+    const selectedLab = labOptions.find(option => option.id === id)?.value;
+    setNewEmployee({ ...newEmployee, labAllocation: selectedLab as 'Lab1' | 'Lab2' });
+  }}
+  placeholder="Select Lab"
+  displayFullValue={false} 
+   isEmployeePage={true}
+/>
+</div>
+          
+            <div>
+              <label className="block text-sm font-medium mb-1">Compliance Day</label>
+              <input
+                type="number"
+                min={1}
+                value={newEmployee.complianceDay ?? '3'}
+                onChange={(e) => setNewEmployee({ ...newEmployee, complianceDay: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md bg-background"
+                placeholder="Number of compliance days"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input
+                type="email"
+                value={newEmployee.email ?? ''}
+                onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md bg-background"
+                placeholder="Enter email address"
+              />
+            </div>
+          </div>
+      
+        <div className="flex gap-3 pt-4">
+          <Button onClick={editMode ? handleUpdateEmployee : handleAddEmployee} className="flex-1">
+            {editMode ? 'Update User' : 'Create User'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowAddModal(false);
+              setNewEmployee({
+                name: '',
+                date: '',
+                department: '',
+                role: '',
+                level: 'L1',
+                totalExperience: '0',
+                pastOrganization: '',
+                labAllocation: '',
+                complianceDay: '3',
+                email: ''
+              });
+              setSelectedEmployeeId(null);
+              setEditMode(false);
+            }}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
         </div>
-      )}
+      </CardContent>
+    </Card>
+  </div>
+)}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && employeeToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
