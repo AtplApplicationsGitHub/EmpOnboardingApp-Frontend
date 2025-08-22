@@ -482,7 +482,7 @@ export const taskService = {
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/filteredTask/${search}/${page}`);
+    }>(`/task/findFilteredTask/${search}/${page}`);
     return response.data;
   },
 
@@ -510,184 +510,142 @@ export const taskService = {
     const response = await api.post<boolean>(`/employee/labSave/${labAllocation}/${id}`);
     return response.data;
   },
+
+  updateResponse: async (
+    id: number,
+    value: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(`/task/taskQuestionAnswer/${id}/${value}`);
+    return response.data;
+  },
 };
 
-// Helper function to convert TaskProjection to Task format for group leaders
-const convertTaskProjectionToTask = (projection: TaskProjection): Task => {
-  return {
-    id: parseInt(projection.taskIds) || 0,
-    employeeName: projection.name,
-    employeeId: projection.employeeId,
-    level: projection.level,
-    department: projection.department,
-    role: projection.role,
-    lab: "", // Not available in TaskProjection
-    groupName: "", // Not available in TaskProjection
-    pastExperience: "", // Not available in TaskProjection
-    prevCompany: "", // Not available in TaskProjection
-    complianceDay: "", // Not available in TaskProjection
-    assignedTo: "", // Not available in TaskProjection
-    totalQuestions: projection.totalQuetions,
-    completedQuestions: projection.completedQuetions,
-    status: projection.status,
-    doj: "", // Not available in TaskProjection
-    questionList: [], // Not available in TaskProjection
-    createdTime: "",
-    updatedTime: "",
-  };
-};
 
 // Group Lead Services
-export const groupLeadService = {
-  getTasks: async (): Promise<Task[]> => {
-    // Use the admin task endpoint (temporary until group lead endpoint is deployed)
-    const response = await api.post<{
-      commonListDto: {
-        content: TaskProjection[];
-      };
-      totalElements: number;
-    }>("/task/filteredTaskForAdmin/null/0");
+// export const groupLeadService = {
+//   getTasks: async (): Promise<Task[]> => {
+//     // Use the admin task endpoint (temporary until group lead endpoint is deployed)
+//     const response = await api.post<{
+//       commonListDto: {
+//         content: TaskProjection[];
+//       };
+//       totalElements: number;
+//     }>("/task/filteredTaskForAdmin/null/0");
     
-    // Convert TaskProjection[] to Task[] for compatibility
-    return response.data.commonListDto.content.map(convertTaskProjectionToTask);
-  },
+//     // Convert TaskProjection[] to Task[] for compatibility
+//     return response.data.commonListDto.content.map(convertTaskProjectionToTask);
+//   },
 
-  getTasksPaginated: async (params?: {
-    search?: string;
-    page?: number;
-  }): Promise<{
-    commonListDto: {
-      content: Task[];
-    };
-    totalElements: number;
-  }> => {
-    const search = params?.search ?? "null";
-    const page = params?.page ?? 0;
-    const response = await api.post<{
-      commonListDto: {
-        content: TaskProjection[];
-      };
-      totalElements: number;
-    }>(`/task/filteredTaskForAdmin/${search}/${page}`);
+//   getTasksPaginated: async (params?: {
+//     search?: string;
+//     page?: number;
+//   }): Promise<{
+//     commonListDto: {
+//       content: Task[];
+//     };
+//     totalElements: number;
+//   }> => {
+//     const search = params?.search ?? "null";
+//     const page = params?.page ?? 0;
+//     const response = await api.post<{
+//       commonListDto: {
+//         content: TaskProjection[];
+//       };
+//       totalElements: number;
+//     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
     
-    // Convert TaskProjection[] to Task[] for compatibility
-    const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
+//     // Convert TaskProjection[] to Task[] for compatibility
+//     const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
     
-    return {
-      commonListDto: {
-        content: convertedContent,
-      },
-      totalElements: response.data.totalElements,
-    };
-  },
+//     return {
+//       commonListDto: {
+//         content: convertedContent,
+//       },
+//       totalElements: response.data.totalElements,
+//     };
+//   },
 
-  completeTask: async (taskId: number, response: string): Promise<Task> => {
-    // TODO: Implement backend endpoint - for now return mock response
-    console.warn("Complete task endpoint not implemented yet. Using mock response.");
-    return {
-      id: taskId,
-      employeeName: "Mock Employee",
-      employeeId: 1,
-      level: "L1",
-      department: "IT",
-      role: "Developer",
-      lab: "Lab 1",
-      groupName: "Group 1",
-      pastExperience: "2 years",
-      prevCompany: "Previous Co",
-      complianceDay: "30",
-      assignedTo: "Group Lead",
-      totalQuestions: 5,
-      completedQuestions: 5,
-      status: "Completed",
-      doj: new Date().toISOString(),
-      questionList: [],
-      createdTime: new Date().toISOString(),
-      updatedTime: new Date().toISOString(),
-    };
-  },
+//   completeTask: async (taskId: number, response: string): Promise<Task> => {
+//     // TODO: Implement backend endpoint - for now return mock response
+//     console.warn("Complete task endpoint not implemented yet. Using mock response.");
+//     return {
+//       id: taskId,
+//       employeeName: "Mock Employee",
+//       employeeId: 1,
+//       level: "L1",
+//       department: "IT",
+//       role: "Developer",
+//       lab: "Lab 1",
+//       groupName: "Group 1",
+//       pastExperience: "2 years",
+//       prevCompany: "Previous Co",
+//       complianceDay: "30",
+//       assignedTo: "Group Lead",
+//       totalQuestions: 5,
+//       completedQuestions: 5,
+//       status: "Completed",
+//       doj: new Date().toISOString(),
+//       questionList: [],
+//       createdTime: new Date().toISOString(),
+//       updatedTime: new Date().toISOString(),
+//     };
+//   },
 
-  saveTaskResponse: async (taskId: number, response: string): Promise<Task> => {
-    // TODO: Implement backend endpoint - for now return mock response
-    console.warn("Save task response endpoint not implemented yet. Using mock response.");
-    return {
-      id: taskId,
-      employeeName: "Mock Employee",
-      employeeId: 1,
-      level: "L1",
-      department: "IT",
-      role: "Developer",
-      lab: "Lab 1",
-      groupName: "Group 1",
-      pastExperience: "2 years",
-      prevCompany: "Previous Co",
-      complianceDay: "30",
-      assignedTo: "Group Lead",
-      totalQuestions: 5,
-      completedQuestions: 3,
-      status: "In Progress",
-      doj: new Date().toISOString(),
-      questionList: [],
-      createdTime: new Date().toISOString(),
-      updatedTime: new Date().toISOString(),
-    };
-  },
+//   // User Management for Group Leads
+//   getUsers: async (): Promise<User[]> => {
+//     const response = await api.get<User[]>("/group-lead/users");
+//     return response.data;
+//   },
 
-  // User Management for Group Leads
-  getUsers: async (): Promise<User[]> => {
-    const response = await api.get<User[]>("/group-lead/users");
-    return response.data;
-  },
+//   createUser: async (data: {
+//     name: string;
+//     email: string;
+//     password: string;
+//   }): Promise<User> => {
+//     const response = await api.post<User>("/group-lead/users", data);
+//     return response.data;
+//   },
 
-  createUser: async (data: {
-    name: string;
-    email: string;
-    password: string;
-  }): Promise<User> => {
-    const response = await api.post<User>("/group-lead/users", data);
-    return response.data;
-  },
+//   // Task Reassignment
+//   getGroupLeaders: async (): Promise<User[]> => {
+//     const response = await api.get<User[]>("/group-lead/group-leaders");
+//     return response.data;
+//   },
 
-  // Task Reassignment
-  getGroupLeaders: async (): Promise<User[]> => {
-    const response = await api.get<User[]>("/group-lead/group-leaders");
-    return response.data;
-  },
+//   reassignTask: async (
+//     taskId: number,
+//     newAssigneeId: number,
+//     reason?: string
+//   ): Promise<{
+//     message: string;
+//     task: Task;
+//     previous_assignee_id: number;
+//     new_assignee: User;
+//     reason: string;
+//   }> => {
+//     const response = await api.put(`/group-lead/tasks/${taskId}/reassign`, {
+//       new_assignee_id: newAssigneeId,
+//       reason,
+//     });
+//     return response.data;
+//   },
 
-  reassignTask: async (
-    taskId: number,
-    newAssigneeId: number,
-    reason?: string
-  ): Promise<{
-    message: string;
-    task: Task;
-    previous_assignee_id: number;
-    new_assignee: User;
-    reason: string;
-  }> => {
-    const response = await api.put(`/group-lead/tasks/${taskId}/reassign`, {
-      new_assignee_id: newAssigneeId,
-      reason,
-    });
-    return response.data;
-  },
-
-  bulkReassignTasks: async (
-    taskIds: number[],
-    newAssigneeId: number,
-    reason?: string
-  ): Promise<{
-    message: string;
-    reassigned_count: number;
-    new_assignee: User;
-    tasks: Task[];
-    reason: string;
-  }> => {
-    const response = await api.put("/group-lead/tasks/bulk-reassign", {
-      task_ids: taskIds,
-      new_assignee_id: newAssigneeId,
-      reason,
-    });
-    return response.data;
-  },
-};
+//   bulkReassignTasks: async (
+//     taskIds: number[],
+//     newAssigneeId: number,
+//     reason?: string
+//   ): Promise<{
+//     message: string;
+//     reassigned_count: number;
+//     new_assignee: User;
+//     tasks: Task[];
+//     reason: string;
+//   }> => {
+//     const response = await api.put("/group-lead/tasks/bulk-reassign", {
+//       task_ids: taskIds,
+//       new_assignee_id: newAssigneeId,
+//       reason,
+//     });
+//     return response.data;
+//   },
+// };

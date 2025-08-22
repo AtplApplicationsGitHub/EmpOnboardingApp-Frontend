@@ -363,7 +363,7 @@ const TaskDetailsPage: React.FC = () => {
                         <TableCell className="font-medium">
                           {q.questionId || `Q${q.id}`}
                           <div className="text-xs text-muted-foreground">
-                            {q.response === "text" ? "Text" : "Yes/No"}
+                            {q.responseType === "text" ? "Text" : "Yes/No"}
                           </div>
                         </TableCell>
 

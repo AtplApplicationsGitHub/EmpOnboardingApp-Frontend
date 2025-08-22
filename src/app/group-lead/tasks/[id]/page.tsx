@@ -1,164 +1,262 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { groupLeadService } from "../../../services/api";
-import { Task } from "../../../types";
-import { Card, CardHeader, CardTitle, CardContent } from "../../../components/ui/card";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+
 import Button from "../../../components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../../../components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "../../../components/ui/table";
-import { 
-  ArrowLeft, 
-  User, 
-  Users, 
-  CheckCircle, 
-  Clock, 
+
+import { adminService, taskService } from "@/app/services/api";
+import { DropDownDTO, Task, TaskQuestions } from "@/app/types";
+
+import {
+  ArrowLeft,
+  User2,
+  Clock,
   AlertCircle,
-  Save,
-  ChevronLeft,
-  ChevronRight
+  CheckCircle2,
+  RefreshCw,
+  Users,
 } from "lucide-react";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 import toast from "react-hot-toast";
 
-const PAGE_SIZE = 10;
+/* ---------- Helpers for editable responses ---------- */
+
+// Build a stable key for a task-question pair
+const qKey = (
+  tId: string | number | undefined,
+  qId: string | number | undefined
+) => `${String(tId ?? "")}:${String(qId ?? "")}`;
+
+// Derive the initial response string from a question (adjust fallbacks if needed)
+const getInitialResp = (q: TaskQuestions) =>
+  (q as any).answer ??
+  (q as any).responseValue ??
+  (q as any).userResponse ??
+  (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
+  "";
+
+// Determine if question expects text vs yes/no
+// Based on your logic: q.response === "text" ? Text : Yes/No
+const isTextType = (q: TaskQuestions) =>
+  String(q.responseType ?? "").toLowerCase() === "text";
 
 const GroupLeadTaskDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  const employeeId = params.id as string;
-  const employeeName = searchParams.get('name') ?? 'Unknown Employee';
-  const groupName = searchParams.get('group') ?? 'Unknown Group';
-  
+
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [responses, setResponses] = useState<Record<number, string>>({});
-  const [savingStates, setSavingStates] = useState<Record<number, boolean>>({});
-  const [currentPage, setCurrentPage] = useState(0);
 
-  // Fetch tasks for this specific employee
+  // Reassign modal
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<number | undefined>(undefined);
+  const [reAssignTask, setReAssignTask] = useState<string>();
+
+  // Params
+  const taskId = params.id as string;
+
+  // Lab allocation UI
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
+  const labOptions = [
+    { id: 101, key: "Lab1", value: "Lab1" },
+    { id: 102, key: "Lab2", value: "Lab2" },
+  ];
+
+  // Per-question editable values and saving flags
+  const [respValues, setRespValues] = useState<Record<string, string>>({});
+  const [respSaving, setRespSaving] = useState<Record<string, boolean>>({});
+
+  // Load tasks
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const t = await taskService.getTaskById(taskId);
+      const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
+      setTasks(list);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [taskId]);
+
   useEffect(() => {
-    const fetchEmployeeTasks = async () => {
-      try {
-        setLoading(true);
-        const allTasks = await groupLeadService.getTasks();
-        
-        // Filter tasks for this specific employee and group
-        const employeeTasks = allTasks.filter(
-          task => (task.employeeId?.toString() === employeeId || 
-                   task.id?.toString() === employeeId ||
-                   task.employeeName === decodeURIComponent(employeeName)) &&
-                   task.groupName === decodeURIComponent(groupName)
-        );
-        
-        setTasks(employeeTasks);
-        
-        // Initialize responses with existing task responses
-        const initialResponses: Record<number, string> = {};
-        employeeTasks.forEach(task => {
-          if (task.response) {
-            initialResponses[task.id] = task.response;
-          }
-        });
-        setResponses(initialResponses);
-        
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to load employee tasks');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchTasks();
+  }, [fetchTasks]);
 
-    fetchEmployeeTasks();
-  }, [employeeId, employeeName, groupName]);
+  // Load group leads
+  const fetchGroupLeads = useCallback(async () => {
+    try {
+      const groupLeadsData = await adminService.getAllGroupLeads();
+      setGroupLeads(groupLeadsData);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
 
-  const handleResponseChange = (taskId: number, value: string) => {
-    setResponses(prev => ({
-      ...prev,
-      [taskId]: value
-    }));
+  useEffect(() => {
+    fetchGroupLeads();
+  }, [fetchGroupLeads]);
+
+  const getLeadIdByName = (name?: string) => {
+    if (!name) return undefined;
+    const found = groupLeads.find((lead) => lead.key === name);
+    return found ? Number(found.id) : undefined;
   };
 
-  const handleSaveResponse = async (taskId: number) => {
-    const response = responses[taskId];
-    if (!response || response.trim() === '') {
-      toast.error('Please provide a response before saving');
+  const reassignTask = () => {
+    if (!reAssignTask) {
+      setError("Missing task id to reassign.");
       return;
     }
+    if (primaryGroupLeadId == null) {
+      setError("Please select a group lead.");
+      return;
+    }
+    taskService
+      .reassignTask(reAssignTask, primaryGroupLeadId)
+      .then(() => {
+        setShowReassignModal(false);
+        setPrimaryGroupLeadId(undefined);
+        toast.success("Task reassigned successfully");
+        fetchTasks();
+      })
+      .catch((err: any) => {
+        setError(err.response?.data?.message || "Failed to reassign tasks");
+      });
+  };
 
+  // Top-of-page fields
+  const employeeId = tasks[0]?.employeeId;
+  const employeeName = tasks[0]?.employeeName;
+  const employeeLevel = tasks[0]?.level;
+  const department = tasks[0]?.department;
+  const role = tasks[0]?.role;
+  const doj = tasks[0]?.doj;
+  const lab = tasks[0]?.lab;
+  const freezeTask = tasks[0]?.freezeTask; // 'Y' | 'N'
+
+  // Initialize lab dropdown selection from current lab
+  useEffect(() => {
+    const id = labOptions.find((opt) => opt.value === lab)?.id;
+    setSelectedLabId(id);
+  }, [lab]);
+
+  // Initialize editable response cache when tasks change
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    tasks.forEach((task) => {
+      (task.questionList ?? []).forEach((q) => {
+        map[qKey(task.id, q.id)] = getInitialResp(q);
+      });
+    });
+    setRespValues(map);
+    setRespSaving({});
+  }, [tasks]);
+
+  // Save lab allocation (auto-save on change)
+  const handleSaveLab = async (id?: number) => {
+    setSelectedLabId(id);
+    const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
+    if (!selectedLabValue) {
+      toast.error("Invalid lab selection.");
+      return;
+    }
+    if (!employeeId) {
+      toast.error("Missing employee id.");
+      return;
+    }
+    if (selectedLabValue === lab) {
+      toast.success("Lab already up to date.");
+      return;
+    }
     try {
-      setSavingStates(prev => ({ ...prev, [taskId]: true }));
-      
-      await groupLeadService.saveTaskResponse(taskId, response);
-      
-      // Update the task in local state
-      setTasks(prevTasks =>
-        prevTasks.map(t =>
-          t.id === taskId
-            ? { ...t, response, status: 'completed' }
-            : t
-        )
-      );
-      
-      toast.success('Response saved successfully');
-      
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save response');
+      await taskService.labAllocation(employeeId, selectedLabValue);
+      toast.success("Lab updated");
+      await fetchTasks();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Failed to update lab allocation");
+      const prevId = labOptions.find((o) => o.value === lab)?.id;
+      setSelectedLabId(prevId);
+    }
+  };
+
+  // Save a single question response
+  const saveQuestionResponse = async (
+    tId: string | number,
+    q: TaskQuestions,
+    value: string
+  ) => {
+    const key = qKey(tId, q.id);
+    try {
+      setRespSaving((s) => ({ ...s, [key]: true }));
+      await taskService.updateResponse(q.id, value);
+      setRespValues((v) => ({ ...v, [key]: value }));
+      toast.success("Response saved");
+      fetchTasks();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Failed to save response");
     } finally {
-      setSavingStates(prev => ({ ...prev, [taskId]: false }));
+      setRespSaving((s) => ({ ...s, [key]: false }));
     }
   };
 
-  const getTaskStatus = (task: Task) => {
-    if (task.status === 'completed' || (task.response && task.response.trim() !== '')) {
-      return { icon: CheckCircle, text: 'Completed', color: 'text-green-600' };
-    }
-    
-    if (task.status === 'overdue') {
-      return { icon: AlertCircle, text: 'Overdue', color: 'text-red-600' };
-    }
-    
-    return { icon: Clock, text: 'Pending', color: 'text-amber-600' };
-  };
+  const overall = useMemo(() => {
+    const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
+    const doneQ = tasks.reduce((s, x) => s + (x.completedQuestions ?? 0), 0);
+    const pct = totalQ ? Math.round((doneQ / totalQ) * 100) : 0;
+    return { totalQ, doneQ, pct };
+  }, [tasks]);
 
-  const getResponseInputType = (question: string) => {
-    // Simple logic to determine input type based on question content
-    const lowerQuestion = question.toLowerCase();
-    if (lowerQuestion.includes('yes') && lowerQuestion.includes('no')) {
-      return 'select';
-    }
-    return 'textarea';
-  };
+  const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
+    const status = (q.status || "Pending").toLowerCase();
+    const overdue = q.overDueFlag;
 
-  // Pagination
-  const totalPages = Math.ceil(tasks.length / PAGE_SIZE);
-  const startIndex = currentPage * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, tasks.length);
-  const currentTasks = tasks.slice(startIndex, endIndex);
+    const base =
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
+    const pending = "bg-muted/40 text-foreground/80 border border-border";
+    const done = "bg-green-500/15 text-green-500 border border-green-500/20";
+    const late = "bg-red-500/15 text-red-500 border border-red-500/20";
 
-  const handlePageChange = (page: number) => {
-    if (page >= 0 && page < totalPages) {
-      setCurrentPage(page);
-    }
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`${base} ${status === "completed" ? done : pending}`}>
+          {status === "completed" ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+          {status === "completed" ? "Completed" : "Pending"}
+        </span>
+        {overdue === true && (
+          <span className={`${base} ${late}`}>
+            <AlertCircle size={12} />
+            Overdue
+          </span>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
     return (
       <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading tasks...</p>
-          </div>
-        </div>
+        <div className="text-center py-12 text-muted-foreground">Loading…</div>
       </div>
     );
   }
@@ -166,232 +264,259 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
-          Error: {error}
+        <div className="text-center py-12">
+          <div className="text-destructive mb-4">{error}</div>
+          <Button onClick={() => router.push("/group-lead/tasks")}>Back to Tasks</Button>
         </div>
       </div>
     );
   }
 
-  const completedTasks = tasks.filter(task => 
-    task.status === 'completed' || (task.response && task.response.trim() !== '')
-  ).length;
+  if (!tasks.length) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <div className="text-destructive">Task not found</div>
+          <Button onClick={() => router.push("/group-lead/tasks")} className="mt-4">
+            Back to Tasks
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-6 md:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={() => router.back()}
-          aria-label="Go back"
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/group-lead/tasks")}
+          className="flex items-center gap-2"
         >
           <ArrowLeft size={16} />
+          Back to Tasks
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <User className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-3xl font-bold">{employeeName}</h1>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>{groupName}</span>
+        <h3 className="text-xl font-semibold">
+          Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
+          {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
+        </h3>
+        <div className="ml-auto flex items-end gap-3">
+          <div className="min-w-[240px]">
+            <div className="flex items-center gap-2">
+              <SearchableDropdown
+                options={labOptions}
+                value={selectedLabId}
+                disabled={freezeTask === "Y"}
+                onChange={(id) => handleSaveLab(id)}
+                placeholder="Select Lab"
+                displayFullValue={false}
+                isEmployeePage={true}
+                className="w-full"
+              />
             </div>
-            <span>•</span>
-            <span>{completedTasks} of {tasks.length} tasks completed</span>
           </div>
         </div>
       </div>
 
-      {/* Progress Summary */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Task Progress</h3>
-            <div className="text-sm text-muted-foreground">
-              {Math.round((completedTasks / tasks.length) * 100)}% Complete
-            </div>
-          </div>
-          <div className="w-full bg-muted/40 rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(completedTasks / tasks.length) * 100}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tasks */}
+      {tasks.map((t) => {
+        const qList = t.questionList ?? [];
+        const totalTasks = qList.length;
 
-      {/* Tasks Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Onboarding Questions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead className="w-80">Response</TableHead>
-                <TableHead className="w-32">Status</TableHead>
-                <TableHead className="w-32">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentTasks.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <AlertCircle size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">No tasks found for this employee</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                currentTasks.map((task, index) => {
-                  const statusInfo = getTaskStatus(task);
-                  const globalIndex = startIndex + index + 1;
-                  const inputType = getResponseInputType(task.questionText || '');
-                  const isCompleted = task.status === 'completed' || (task.response && task.response.trim() !== '');
-                  const isSaving = savingStates[task.id];
+        return (
+          <Card key={t.id}>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <User2 className="text-muted-foreground" size={18} />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">
+                      <span className="font-semibold">
+                        {t.groupName} - {t.id} - {t.assignedTo}
+                      </span>
+                    </CardTitle>
+                  </div>
+                </div>
 
-                  return (
-                    <TableRow key={task.id}>
-                      {/* Question Number */}
-                      <TableCell className="font-medium text-center">
-                        {globalIndex}
-                      </TableCell>
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{totalTasks}</div>
+                    <div className="text-xs text-muted-foreground">Questions</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    disabled={freezeTask === "Y"}
+                    onClick={() => {
+                      setShowReassignModal(true);
+                      setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
+                      setReAssignTask(t.id.toString());
+                    }}
+                  >
+                    <RefreshCw size={16} />
+                    Reassign
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
 
-                      {/* Question Text */}
-                      <TableCell>
-                        <div className="max-w-md">
-                          <p className="text-sm leading-relaxed">
-                            {task.questionText || 'Question text not available'}
-                          </p>
-                          {task.complianceDay && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Due: Day {task.complianceDay}
-                            </p>
-                          )}
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Question</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Compliance Day</TableHead>
+                    <TableHead>Response</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={48} className="text-muted-foreground" />
+                          <p className="text-muted-foreground">No questions found for this task.</p>
                         </div>
-                      </TableCell>
-
-                      {/* Response Input */}
-                      <TableCell>
-                        <div className="space-y-2">
-                          {inputType === 'select' ? (
-                            <select
-                              value={responses[task.id] || ''}
-                              onChange={(e) => handleResponseChange(task.id, e.target.value)}
-                              className="w-full p-2 border rounded-md bg-background text-sm"
-                              disabled={isCompleted}
-                            >
-                              <option value="">Select response...</option>
-                              <option value="yes">Yes</option>
-                              <option value="no">No</option>
-                            </select>
-                          ) : (
-                            <textarea
-                              value={responses[task.id] || ''}
-                              onChange={(e) => handleResponseChange(task.id, e.target.value)}
-                              placeholder="Enter your response..."
-                              className="w-full p-2 border rounded-md bg-background text-sm resize-none"
-                              rows={3}
-                              disabled={isCompleted}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell>
-                        <div className={`flex items-center gap-2 ${statusInfo.color}`}>
-                          <statusInfo.icon size={16} />
-                          <span className="text-sm font-medium">{statusInfo.text}</span>
-                        </div>
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell>
-                        {!isCompleted && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSaveResponse(task.id)}
-                            disabled={isSaving || !responses[task.id]?.trim()}
-                            className="flex items-center gap-2"
-                          >
-                            {isSaving ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                            ) : (
-                              <Save size={14} />
-                            )}
-                            {isSaving ? 'Saving...' : 'Save'}
-                          </Button>
-                        )}
-                        {isCompleted && (
-                          <span className="text-sm text-muted-foreground">Completed</span>
-                        )}
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  ) : (
+                    qList.map((q) => {
+                      const key = qKey(t.id, q.id);
+                      const initial = getInitialResp(q);
+                      const value = respValues[key] ?? initial;
+                      const saving = respSaving[key] === true;
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {endIndex} of {tasks.length} tasks
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 0}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft size={16} />
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <Button
-                      key={i}
-                      variant={i === currentPage ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(i)}
-                      className="min-w-[40px]"
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages - 1}
-                  className="flex items-center gap-2"
-                >
-                  Next
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
+                      return (
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
+                          <TableCell className="font-medium">
+                            {q.questionId || `Q${q.id}`}
+                            <div className="text-xs text-muted-foreground">
+                              {isTextType(q) ? "Text" : "Yes/No"}
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <StatusPills q={q} />
+                          </TableCell>
+
+                          <TableCell className="text-muted-foreground">
+                            {q.complianceDay ?? (q as any).complainceDay ?? "—"}
+                          </TableCell>
+
+                          <TableCell className="min-w-[240px]">
+                            {isTextType(q) ? (
+                              <input
+                                type="text"
+                                className="w-full max-w-sm rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+                                placeholder="Type response and leave the field"
+                                value={value}
+                                onChange={(e) =>
+                                  setRespValues((v) => ({
+                                    ...v,
+                                    [key]: e.target.value,
+                                  }))
+                                }
+                                onBlur={(e) => {
+                                  const newVal = e.target.value.trim();
+                                  if (newVal === (initial ?? "")) return; // no change
+                                  if (saving) return;
+                                  if (freezeTask === "Y") return;
+                                  saveQuestionResponse(t.id, q, newVal);
+                                }}
+                                disabled={saving || freezeTask === "Y"}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {(() => {
+                                  const lower = String(value || "").toLowerCase();
+                                  const isYes =
+                                    lower === "yes" || lower === "y" || lower === "true";
+                                  const isNo =
+                                    lower === "no" || lower === "n" || lower === "false";
+
+                                  return (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant={isYes ? "default" : "outline"}
+                                        disabled={saving || freezeTask === "Y"}
+                                        onClick={() => saveQuestionResponse(t.id, q, "YES")}
+                                      >
+                                        Yes
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant={isNo ? "default" : "outline"}
+                                        disabled={saving || freezeTask === "Y"}
+                                        onClick={() => saveQuestionResponse(t.id, q, "NO")}
+                                      >
+                                        No
+                                      </Button>
+                                      {saving && (
+                                        <span className="text-xs text-muted-foreground">Saving…</span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {showReassignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Reassign Task</h2>
+
+            <div className="pt-4">
+              <label className="block text-sm font-medium mb-2">Primary Group Lead</label>
+              <SearchableDropdown
+                options={groupLeads}
+                value={primaryGroupLeadId}
+                onChange={(value) => setPrimaryGroupLeadId(value)}
+                placeholder="Select a group lead"
+                required
+                maxDisplayItems={4}
+                className="w-full"
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="flex gap-3 pt-8">
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={reassignTask}
+                disabled={!primaryGroupLeadId}
+              >
+                Reassign Task
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setPrimaryGroupLeadId(undefined);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

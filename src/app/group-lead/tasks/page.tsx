@@ -1,7 +1,12 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { groupLeadService } from "../../services/api";
-import { Card, CardContent } from "../../components/ui/card";
+import { taskService } from "../../services/api";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import { Task } from "@/app/types";
 import {
@@ -18,6 +23,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Eye,
+  Lock,
+  Unlock,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -34,7 +41,7 @@ interface GroupedTask {
   role: string;
   totalTasks: number;
   completedTasks: number;
-  status: 'completed' | 'overdue' | 'in_progress';
+  status: "completed" | "overdue" | "in_progress";
   dueDate: string;
   tasks: Task[];
 }
@@ -44,133 +51,44 @@ const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 const GroupLeadTasksPage: React.FC = () => {
   const router = useRouter();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
-  const [groupedTasks, setGroupedTasks] = useState<GroupedTask[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<GroupedTask[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState("");
 
   const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE)),
-    [filteredTasks.length]
+    () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
+    [totalElements]
   );
-
-  // Group tasks by group and employee
-  const groupTasksByGroupAndEmployee = useCallback((tasks: Task[]): GroupedTask[] => {
-    const groupMap = new Map<string, GroupedTask>();
-
-    tasks.forEach(task => {
-      // Create a unique key for group + employee combination
-      const key = `${task.groupName}-${task.employeeName}`;
-      
-      if (!groupMap.has(key)) {
-        // Calculate status based on task completion and due dates
-        const completedCount = tasks.filter(t => 
-          t.groupName === task.groupName && 
-          t.employeeName === task.employeeName && 
-          t.status === 'completed'
-        ).length;
-        
-        const totalCount = tasks.filter(t => 
-          t.groupName === task.groupName && 
-          t.employeeName === task.employeeName
-        ).length;
-
-        // Determine overall status
-        let status: 'completed' | 'overdue' | 'in_progress' = 'in_progress';
-        
-        if (completedCount === totalCount) {
-          status = 'completed';
-        } else {
-          // Check if any task is overdue
-          const hasOverdue = tasks.some(t => 
-            t.groupName === task.groupName && 
-            t.employeeName === task.employeeName && 
-            t.status === 'overdue'
-          );
-          status = hasOverdue ? 'overdue' : 'in_progress';
-        }
-
-        groupMap.set(key, {
-          groupId: task.groupId || 1, // Default to 1 if not available
-          groupName: task.groupName,
-          employeeId: task.employeeId?.toString() || task.id?.toString() || '',
-          employeeName: task.employeeName,
-          level: task.level,
-          department: task.department,
-          role: task.role,
-          totalTasks: totalCount,
-          completedTasks: completedCount,
-          status: status,
-          dueDate: task.doj, // Using date of joining as due date reference
-          tasks: tasks.filter(t => 
-            t.groupName === task.groupName && 
-            t.employeeName === task.employeeName
-          ),
-        });
-      }
-    });
-
-    return Array.from(groupMap.values()).sort((a, b) => {
-      // Sort by status priority: overdue first, then in_progress, then completed
-      const statusPriority = { overdue: 0, in_progress: 1, completed: 2 };
-      if (a.status !== b.status) {
-        return statusPriority[a.status] - statusPriority[b.status];
-      }
-      
-      // Then sort by completion percentage (lowest first for in_progress)
-      const aPercent = (a.completedTasks / a.totalTasks) * 100;
-      const bPercent = (b.completedTasks / b.totalTasks) * 100;
-      
-      return aPercent - bPercent;
-    });
-  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const tasksData = await groupLeadService.getTasks();
-      setAllTasks(tasksData);
-      
-      const grouped = groupTasksByGroupAndEmployee(tasksData);
-      setGroupedTasks(grouped);
-      setFilteredTasks(grouped);
-      
+      const params: Record<string, unknown> = {
+        page: currentPage,
+        size: PAGE_SIZE,
+      };
+      const search = searchFilter.trim();
+      if (search) params.search = search;
+      const response = await taskService.getTaskForGL(params);
+      setAllTasks(response.commonListDto ?? []);
+      setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setAllTasks([]);
-      setGroupedTasks([]);
-      setFilteredTasks([]);
+      setTotalElements(0);
     } finally {
-      setLoading(false);
+      setLoading(false); // <-- add
     }
-  }, [groupTasksByGroupAndEmployee]);
+  }, [currentPage, searchFilter]);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
-
-  // Filter tasks based on search
-  useEffect(() => {
-    if (!searchFilter.trim()) {
-      setFilteredTasks(groupedTasks);
-      setCurrentPage(0);
-      return;
-    }
-
-    const filtered = groupedTasks.filter(task =>
-      task.employeeName.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      task.groupName.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      task.department.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      task.role.toLowerCase().includes(searchFilter.toLowerCase())
-    );
-    
-    setFilteredTasks(filtered);
-    setCurrentPage(0);
-  }, [searchFilter, groupedTasks]);
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -195,6 +113,18 @@ const GroupLeadTasksPage: React.FC = () => {
     return pages;
   };
 
+  const handleFreezeTask = async () => {
+    if (!selectedTaskId) return;
+    try {
+      await taskService.freezeTask(selectedTaskId);
+      await fetchTasks();
+      setShowFreezeModal(false);
+      setSelectedTaskId("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to delete group");
+    }
+  };
+
   const ProgressBar: React.FC<{ value: number }> = ({ value }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
@@ -205,15 +135,12 @@ const GroupLeadTasksPage: React.FC = () => {
   );
 
   const handleViewTasks = (groupedTask: GroupedTask) => {
-    // Navigate to employee tasks detail page
-    router.push(`/group-lead/tasks/${groupedTask.employeeId}?name=${encodeURIComponent(groupedTask.employeeName)}&group=${encodeURIComponent(groupedTask.groupName)}`);
+    router.push(
+      `/group-lead/tasks/${groupedTask.employeeId}?name=${encodeURIComponent(
+        groupedTask.employeeName
+      )}&group=${encodeURIComponent(groupedTask.groupName)}`
+    );
   };
-
-  // Paginate the filtered tasks
-  const paginatedTasks = filteredTasks.slice(
-    currentPage * PAGE_SIZE,
-    (currentPage + 1) * PAGE_SIZE
-  );
 
   if (loading) {
     return (
@@ -254,7 +181,8 @@ const GroupLeadTasksPage: React.FC = () => {
             />
           </div>
           <div className="text-sm text-muted-foreground">
-            {filteredTasks.length} employee task group{filteredTasks.length !== 1 ? 's' : ''} found
+            {allTasks.length} employee task group
+            {allTasks.length !== 1 ? "s" : ""} found
           </div>
         </CardContent>
       </Card>
@@ -271,10 +199,12 @@ const GroupLeadTasksPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Group</TableHead>
+                <TableHead>Task ID</TableHead>
+                <TableHead>Employee Name</TableHead>
+                <TableHead>Group ID</TableHead>
                 <TableHead>Level</TableHead>
-                <TableHead>Role & Department</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -282,60 +212,44 @@ const GroupLeadTasksPage: React.FC = () => {
             </TableHeader>
 
             <TableBody>
-              {paginatedTasks.length === 0 ? (
+              {allTasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={9} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        {searchFilter ? 'No tasks found matching your search' : 'No tasks found'}
-                      </p>
+                      <p className="text-muted-foreground">No tasks found</p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedTasks.map((groupedTask, index) => {
-                  const percent = groupedTask.totalTasks
-                    ? Math.round((groupedTask.completedTasks / groupedTask.totalTasks) * 100)
+                allTasks.map((task) => {
+                  const completed =
+                    (task as any).completedQuetions ??
+                    (task as any).completedQuestions ??
+                    0;
+                  const totalQ =
+                    (task as any).totalQuetions ??
+                    (task as any).totalQuestions ??
+                    0;
+                  const percent = totalQ
+                    ? Math.round((completed / totalQ) * 100)
                     : 0;
 
                   return (
-                    <TableRow key={`${groupedTask.groupName}-${groupedTask.employeeName}-${index}`}>
-                      {/* Employee Name */}
+                    <TableRow key={(task as any).id ?? (task as any).id}>
                       <TableCell className="font-semibold">
-                        {groupedTask.employeeName}
+                        {(task as any).id}
                       </TableCell>
-
-                      {/* Group Name */}
-                      <TableCell className="font-medium">
-                        {groupedTask.groupName}
-                      </TableCell>
-
-                      {/* Level */}
-                      <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          {groupedTask.level}
-                        </span>
-                      </TableCell>
-
-                      {/* Role & Department */}
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-base font-semibold">
-                            {groupedTask.role}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {groupedTask.department}
-                          </span>
-                        </div>
-                      </TableCell>
-
-                      {/* Progress */}
+                      <TableCell>{(task as any).employeeName}</TableCell>
+                      <TableCell>{(task as any).groupName}</TableCell>
+                      <TableCell>{(task as any).level}</TableCell>
+                      <TableCell>{(task as any).role}</TableCell>
+                      <TableCell>{(task as any).department}</TableCell>
                       <TableCell className="min-w-[220px]">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold">
-                              {groupedTask.completedTasks}/{groupedTask.totalTasks}
+                              {completed}/{totalQ}
                             </span>
                             <span className="text-muted-foreground">
                               {percent}%
@@ -348,10 +262,11 @@ const GroupLeadTasksPage: React.FC = () => {
                       {/* Status */}
                       <TableCell>
                         {(() => {
+                          const status = (task.status || "").toLowerCase();
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
 
-                          if (groupedTask.status === "overdue") {
+                          if (status === "overdue") {
                             return (
                               <span
                                 className={`${base} bg-red-600/20 text-red-600`}
@@ -361,7 +276,7 @@ const GroupLeadTasksPage: React.FC = () => {
                             );
                           }
 
-                          if (groupedTask.status === "completed") {
+                          if (status === "completed") {
                             return (
                               <span
                                 className={`${base} bg-green-600/20 text-green-600`}
@@ -387,11 +302,39 @@ const GroupLeadTasksPage: React.FC = () => {
                           variant="outline"
                           size="icon"
                           className="rounded-lg"
-                          onClick={() => handleViewTasks(groupedTask)}
-                          aria-label="View task details"
+                          onClick={() => router.push(`/group-lead/tasks/${task.id}`)}
+                          aria-label="View details"
                         >
                           <Eye size={16} />
                         </Button>
+
+                        {task.status?.toLowerCase() === "completed" &&
+                          task.freezeTask === "N" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg ml-2"
+                              aria-label="Completed"
+                              onClick={() => {
+                                setSelectedTaskId(task.id.toString());
+                                setShowFreezeModal(true);
+                              }}
+                            >
+                              <Unlock size={16} />
+                            </Button>
+                          )}
+                        {task.status?.toLowerCase() === "completed" &&
+                          task.freezeTask === "Y" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg ml-2"
+                              aria-label="Frozen"
+                              disabled
+                            >
+                              <Lock size={16} />
+                            </Button>
+                          )}
                       </TableCell>
                     </TableRow>
                   );
@@ -408,7 +351,7 @@ const GroupLeadTasksPage: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Page {currentPage + 1} of {totalPages} • Showing {paginatedTasks.length} of {filteredTasks.length} employee task groups
+                Page {currentPage + 1} of {totalPages}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -476,6 +419,40 @@ const GroupLeadTasksPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+      {showFreezeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Freeze Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to Freeze the Tasks{" "}
+                {/* <span className="font-semibold">{tasks.id}</span>? */}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleFreezeTask}
+                  className="flex-1"
+                >
+                  Yes, Freeze
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowFreezeModal(false);
+                    setSelectedTaskId("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

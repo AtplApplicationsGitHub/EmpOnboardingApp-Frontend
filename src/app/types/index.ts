@@ -40,6 +40,7 @@ export interface Employee {
   complianceDay: string;
   createdTime: string;
   updatedTime: string;
+  deleteFlag?: boolean;
 }
 
 export interface EmployeeImportResult {
@@ -75,7 +76,6 @@ export interface Task {
   id: number;
   employeeId: number;
   employeeName: string;
-  employeeId?: number | string;
   level: string;
   department: string;
   role: string;
@@ -108,6 +108,7 @@ export interface TaskQuestions {
   id: number;
   questionId: string;
   response: string;
+  responseType: "yes_no" | "text";
   status: string;
   complianceDay: string;
   overDueFlag: boolean;
