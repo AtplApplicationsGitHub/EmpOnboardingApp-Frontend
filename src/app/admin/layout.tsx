@@ -32,7 +32,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-48">
         <main className="p-6">
           {children}
         </main>

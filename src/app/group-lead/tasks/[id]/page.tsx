@@ -32,55 +32,64 @@ import {
   Users,
 } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
-import { set } from "react-hook-form";
 import toast from "react-hot-toast";
 
-// small progress pill
-const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
-  const pct = Math.max(0, Math.min(100, value));
-  return (
-    <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
-      <div
-        className="h-full bg-muted-foreground/60"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-};
+/* ---------- Helpers for editable responses ---------- */
 
-const TaskDetailsPage: React.FC = () => {
+// Build a stable key for a task-question pair
+const qKey = (
+  tId: string | number | undefined,
+  qId: string | number | undefined
+) => `${String(tId ?? "")}:${String(qId ?? "")}`;
+
+// Derive the initial response string from a question (adjust fallbacks if needed)
+const getInitialResp = (q: TaskQuestions) =>
+  (q as any).answer ??
+  (q as any).responseValue ??
+  (q as any).userResponse ??
+  (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
+  "";
+
+// Determine if question expects text vs yes/no
+// Based on your logic: q.response === "text" ? Text : Yes/No
+const isTextType = (q: TaskQuestions) =>
+  String(q.responseType ?? "").toLowerCase() === "text";
+
+const GroupLeadTaskDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Reassign modal
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
-  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<
-    number | undefined
-  >(undefined);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<number | undefined>(undefined);
   const [reAssignTask, setReAssignTask] = useState<string>();
+
+  // Params
   const taskId = params.id as string;
-  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
-    undefined
-  );
+
+  // Lab allocation UI
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
   const labOptions = [
     { id: 101, key: "Lab1", value: "Lab1" },
     { id: 102, key: "Lab2", value: "Lab2" },
   ];
 
-  useEffect(() => {
-    fetchTasks();
-  }, [taskId]);
+  // Per-question editable values and saving flags
+  const [respValues, setRespValues] = useState<Record<string, string>>({});
+  const [respSaving, setRespSaving] = useState<Record<string, boolean>>({});
 
+  // Load tasks
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const t = await taskService.getTaskById(taskId);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
-      console.log("Fetched tasks:", list);
       setTasks(list);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load task(s)");
@@ -90,6 +99,11 @@ const TaskDetailsPage: React.FC = () => {
     }
   }, [taskId]);
 
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  // Load group leads
   const fetchGroupLeads = useCallback(async () => {
     try {
       const groupLeadsData = await adminService.getAllGroupLeads();
@@ -98,6 +112,10 @@ const TaskDetailsPage: React.FC = () => {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
   }, []);
+
+  useEffect(() => {
+    fetchGroupLeads();
+  }, [fetchGroupLeads]);
 
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
@@ -119,7 +137,7 @@ const TaskDetailsPage: React.FC = () => {
       .then(() => {
         setShowReassignModal(false);
         setPrimaryGroupLeadId(undefined);
-        toast.success("Task Reassign successfully");
+        toast.success("Task reassigned successfully");
         fetchTasks();
       })
       .catch((err: any) => {
@@ -127,10 +145,7 @@ const TaskDetailsPage: React.FC = () => {
       });
   };
 
-  useEffect(() => {
-    fetchGroupLeads();
-  }, [fetchGroupLeads]);
-
+  // Top-of-page fields
   const employeeId = tasks[0]?.employeeId;
   const employeeName = tasks[0]?.employeeName;
   const employeeLevel = tasks[0]?.level;
@@ -138,15 +153,28 @@ const TaskDetailsPage: React.FC = () => {
   const role = tasks[0]?.role;
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
-  const freezeTask = tasks[0]?.freezeTask;
+  const freezeTask = tasks[0]?.freezeTask; // 'Y' | 'N'
 
+  // Initialize lab dropdown selection from current lab
   useEffect(() => {
     const id = labOptions.find((opt) => opt.value === lab)?.id;
     setSelectedLabId(id);
   }, [lab]);
 
+  // Initialize editable response cache when tasks change
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    tasks.forEach((task) => {
+      (task.questionList ?? []).forEach((q) => {
+        map[qKey(task.id, q.id)] = getInitialResp(q);
+      });
+    });
+    setRespValues(map);
+    setRespSaving({});
+  }, [tasks]);
+
+  // Save lab allocation (auto-save on change)
   const handleSaveLab = async (id?: number) => {
-    console.log("handleSaveLab called with id:", id);
     setSelectedLabId(id);
     const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
     if (!selectedLabValue) {
@@ -166,11 +194,29 @@ const TaskDetailsPage: React.FC = () => {
       toast.success("Lab updated");
       await fetchTasks();
     } catch (e: any) {
-      toast.error(
-        e?.response?.data?.message ?? "Failed to update lab allocation"
-      );
+      toast.error(e?.response?.data?.message ?? "Failed to update lab allocation");
       const prevId = labOptions.find((o) => o.value === lab)?.id;
       setSelectedLabId(prevId);
+    }
+  };
+
+  // Save a single question response
+  const saveQuestionResponse = async (
+    tId: string | number,
+    q: TaskQuestions,
+    value: string
+  ) => {
+    const key = qKey(tId, q.id);
+    try {
+      setRespSaving((s) => ({ ...s, [key]: true }));
+      await taskService.updateResponse(q.id, value);
+      setRespValues((v) => ({ ...v, [key]: value }));
+      toast.success("Response saved");
+      fetchTasks();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Failed to save response");
+    } finally {
+      setRespSaving((s) => ({ ...s, [key]: false }));
     }
   };
 
@@ -194,11 +240,7 @@ const TaskDetailsPage: React.FC = () => {
     return (
       <div className="flex items-center gap-2">
         <span className={`${base} ${status === "completed" ? done : pending}`}>
-          {status === "completed" ? (
-            <CheckCircle2 size={12} />
-          ) : (
-            <Clock size={12} />
-          )}
+          {status === "completed" ? <CheckCircle2 size={12} /> : <Clock size={12} />}
           {status === "completed" ? "Completed" : "Pending"}
         </span>
         {overdue === true && (
@@ -224,9 +266,7 @@ const TaskDetailsPage: React.FC = () => {
       <div className="p-8">
         <div className="text-center py-12">
           <div className="text-destructive mb-4">{error}</div>
-          <Button onClick={() => router.push("/admin/tasks")}>
-            Back to Tasks
-          </Button>
+          <Button onClick={() => router.push("/group-lead/tasks")}>Back to Tasks</Button>
         </div>
       </div>
     );
@@ -237,7 +277,7 @@ const TaskDetailsPage: React.FC = () => {
       <div className="p-8">
         <div className="text-center py-12">
           <div className="text-destructive">Task not found</div>
-          <Button onClick={() => router.push("/admin/tasks")} className="mt-4">
+          <Button onClick={() => router.push("/group-lead/tasks")} className="mt-4">
             Back to Tasks
           </Button>
         </div>
@@ -247,18 +287,17 @@ const TaskDetailsPage: React.FC = () => {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      {/* page header */}
+      {/* Header */}
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          onClick={() => router.push("/admin/tasks")}
+          onClick={() => router.push("/group-lead/tasks")}
           className="flex items-center gap-2"
         >
           <ArrowLeft size={16} />
           Back to Tasks
         </Button>
         <h3 className="text-xl font-semibold">
-          {" "}
           Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
           {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
         </h3>
@@ -268,7 +307,7 @@ const TaskDetailsPage: React.FC = () => {
               <SearchableDropdown
                 options={labOptions}
                 value={selectedLabId}
-                disabled={freezeTask === "Y"} 
+                disabled={freezeTask === "Y"}
                 onChange={(id) => handleSaveLab(id)}
                 placeholder="Select Lab"
                 displayFullValue={false}
@@ -280,19 +319,10 @@ const TaskDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* <p className="text-muted-foreground">
-            Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
-            {tasks.length === 1 ? "" : "s"} • {overall.doneQ}/{overall.totalQ} done ({overall.pct}%)
-        </p> */}
-
-      {/* one CARD per task */}
+      {/* Tasks */}
       {tasks.map((t) => {
         const qList = t.questionList ?? [];
         const totalTasks = qList.length;
-        const completed = qList.filter(
-          (q) => (q.status || "").toLowerCase() === "completed"
-        ).length;
-        const pct = totalTasks ? Math.round((completed / totalTasks) * 100) : 0;
 
         return (
           <Card key={t.id}>
@@ -314,14 +344,12 @@ const TaskDetailsPage: React.FC = () => {
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold">{totalTasks}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Questions
-                    </div>
+                    <div className="text-xs text-muted-foreground">Questions</div>
                   </div>
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={freezeTask === "Y"} 
+                    disabled={freezeTask === "Y"}
                     onClick={() => {
                       setShowReassignModal(true);
                       setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
@@ -351,37 +379,95 @@ const TaskDetailsPage: React.FC = () => {
                       <TableCell colSpan={4} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
-                          <p className="text-muted-foreground">
-                            No questions found for this task.
-                          </p>
+                          <p className="text-muted-foreground">No questions found for this task.</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    qList.map((q) => (
-                      <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
-                        <TableCell className="font-medium">
-                          {q.questionId || `Q${q.id}`}
-                          <div className="text-xs text-muted-foreground">
-                            {q.responseType === "text" ? "Text" : "Yes/No"}
-                          </div>
-                        </TableCell>
+                    qList.map((q) => {
+                      const key = qKey(t.id, q.id);
+                      const initial = getInitialResp(q);
+                      const value = respValues[key] ?? initial;
+                      const saving = respSaving[key] === true;
 
-                        <TableCell>
-                          <StatusPills q={q} />
-                        </TableCell>
+                      return (
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
+                          <TableCell className="font-medium">
+                            {q.questionId || `Q${q.id}`}
+                            <div className="text-xs text-muted-foreground">
+                              {isTextType(q) ? "Text" : "Yes/No"}
+                            </div>
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {q.complianceDay ?? (q as any).complainceDay ?? "—"}
-                        </TableCell>
+                          <TableCell>
+                            <StatusPills q={q} />
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {q.response && String(q.response).trim().length > 0
-                            ? q.response
-                            : "No response yet"}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          <TableCell className="text-muted-foreground">
+                            {q.complianceDay ?? (q as any).complainceDay ?? "—"}
+                          </TableCell>
+
+                          <TableCell className="min-w-[240px]">
+                            {isTextType(q) ? (
+                              <input
+                                type="text"
+                                className="w-full max-w-sm rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+                                placeholder="Type response and leave the field"
+                                value={value}
+                                onChange={(e) =>
+                                  setRespValues((v) => ({
+                                    ...v,
+                                    [key]: e.target.value,
+                                  }))
+                                }
+                                onBlur={(e) => {
+                                  const newVal = e.target.value.trim();
+                                  if (newVal === (initial ?? "")) return; // no change
+                                  if (saving) return;
+                                  if (freezeTask === "Y") return;
+                                  saveQuestionResponse(t.id, q, newVal);
+                                }}
+                                disabled={saving || freezeTask === "Y"}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {(() => {
+                                  const lower = String(value || "").toLowerCase();
+                                  const isYes =
+                                    lower === "yes" || lower === "y" || lower === "true";
+                                  const isNo =
+                                    lower === "no" || lower === "n" || lower === "false";
+
+                                  return (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant={isYes ? "default" : "outline"}
+                                        disabled={saving || freezeTask === "Y"}
+                                        onClick={() => saveQuestionResponse(t.id, q, "YES")}
+                                      >
+                                        Yes
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant={isNo ? "default" : "outline"}
+                                        disabled={saving || freezeTask === "Y"}
+                                        onClick={() => saveQuestionResponse(t.id, q, "NO")}
+                                      >
+                                        No
+                                      </Button>
+                                      {saving && (
+                                        <span className="text-xs text-muted-foreground">Saving…</span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -396,9 +482,7 @@ const TaskDetailsPage: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">Reassign Task</h2>
 
             <div className="pt-4">
-              <label className="block text-sm font-medium mb-2">
-                Primary Group Lead
-              </label>
+              <label className="block text-sm font-medium mb-2">Primary Group Lead</label>
               <SearchableDropdown
                 options={groupLeads}
                 value={primaryGroupLeadId}
@@ -411,7 +495,6 @@ const TaskDetailsPage: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-8">
-              {/* PRIMARY: actually triggers the reassign */}
               <Button
                 type="button"
                 className="flex-1"
@@ -420,8 +503,6 @@ const TaskDetailsPage: React.FC = () => {
               >
                 Reassign Task
               </Button>
-
-              {/* CANCEL: just closes */}
               <Button
                 type="button"
                 variant="outline"
@@ -441,4 +522,4 @@ const TaskDetailsPage: React.FC = () => {
   );
 };
 
-export default TaskDetailsPage;
+export default GroupLeadTaskDetailPage;

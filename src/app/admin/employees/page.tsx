@@ -1,277 +1,312 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { adminService } from "../../services/api";
-import {
-  Group,
-  Employee,
-  QueueEmployee,
-  EmployeeProcessingResponse,
-  EmployeeImportResponse,
-} from "../../types";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../../components/ui/card";
-import Button from "../../components/ui/button";
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
+  TableBody,
   TableRow,
+  TableCell,
 } from "../../components/ui/table";
 import {
-  Plus,
-  Play,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  Trash2,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Pencil,
   Download,
   Upload,
+  Plus,
+  Users,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Trash2,
+  Clock,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import Button from "../../components/ui/button";
+import Input from "../../components/Input";
+import { Employee } from "../../types";
+import { adminService } from "../../services/api";
+import SearchableDropdown from "../../components/SearchableDropdown";
+import { toast } from "react-hot-toast";
 
-const EmployeeProcessingPage: React.FC = () => {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [importErrors, setImportErrors] = useState<string[]>([]);
-  const [queueEmployees, setQueueEmployees] = useState<QueueEmployee[]>([]);
+const PAGE_SIZE = 10;
+
+const formatDateForInput = (dateString: string | undefined | null) => {
+  // If the date is null, undefined, or an empty string, return an empty string.
+  if (!dateString) {
+    return "";
+  }
+
+  // If the date is already in YYYY-MM-DD format, return it directly
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateString;
+  }
+
+  // Try to create a Date object
+  const date = new Date(dateString);
+
+  // Check if the date object is valid. isNaN() is the standard way to check for a valid date.
+  if (isNaN(date.getTime())) {
+    return ""; // Return an empty string if the date is invalid
+  }
+
+  // Get the year, month, and day as separate values
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-indexed, so add 1
+  const day = date.getDate().toString().padStart(2, "0");
+
+  // Return the new date in YYYY-MM-DD format
+  return `${year}-${month}-${day}`;
+};
+
+const EmployeesPage: React.FC = () => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [lastProcessingResult, setLastProcessingResult] =
-    useState<EmployeeProcessingResponse | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [editingCell, setEditingCell] = useState<{
-    row: number;
-    field: string;
-  } | null>(null);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const [newEmployee, setNewEmployee] = useState<Partial<QueueEmployee>>({
-    sr_no: 0,
-    candidate_name: "",
-    doj: "",
+  const [editMode, setEditMode] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
+    null
+  );
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+    null
+  );
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
+    name: "",
+    date: "",
     department: "",
     role: "",
     level: "L1",
-    total_experience: 0,
-    past_organization: "",
-    lab_allocation: "",
-    compliance_day: 3,
+    totalExperience: "0",
+    pastOrganization: "",
+    labAllocation: "",
+    complianceDay: "3",
+    email: "",
   });
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
+  //Arrays for dropdown
+  const levelOptions = [
+    { id: 1, key: "L1", value: "L1" },
+    { id: 2, key: "L2", value: "L2" },
+    { id: 3, key: "L3", value: "L3" },
+    { id: 4, key: "L4", value: "L4" },
+  ];
 
-  const fetchGroups = async () => {
+  const labOptions = [
+    { id: 101, key: "Lab1", value: "Lab1" },
+    { id: 102, key: "Lab2", value: "Lab2" },
+  ];
+  useEffect(() => {
+    fetchEmployees();
+  }, [searchFilter, page]);
+
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const groupsData = await adminService.getGroups();
-      setGroups(groupsData);
+      const params: any = { page };
+      if (searchFilter && searchFilter.trim() !== "") {
+        params.search = searchFilter.trim();
+      }
+      const data = await adminService.getEmployee(params);
+      console.log("Fetched employees after update:", data.commonListDto);
+      setEmployees(data.commonListDto || []);
+      setTotalElements(data.totalElements || 0);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load groups");
+      toast.error(err.response?.data?.message || "Failed to load employees");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddEmployee = () => {
-    if (!newEmployee.candidate_name) {
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchFilter(searchInput);
+    setPage(0);
+  };
+
+  //create
+  const handleAddEmployee = async () => {
+    if (!newEmployee.name) {
       toast.error("Please fill in Candidate Name");
       return;
     }
 
-    const employee: QueueEmployee = {
-      sr_no: queueEmployees.length + 1,
-      candidate_name: newEmployee.candidate_name as string,
-      doj: newEmployee.doj || new Date().toISOString().split("T")[0],
-      department: newEmployee.department || "General",
-      role: newEmployee.role || "Employee",
-      level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
-      total_experience: newEmployee.total_experience || 0,
-      past_organization: newEmployee.past_organization || "N/A",
-      lab_allocation: newEmployee.lab_allocation || "N/A",
-      compliance_day: newEmployee.compliance_day || 3,
-    };
-
-    setQueueEmployees([...queueEmployees, employee]);
-    setNewEmployee({
-      sr_no: 0,
-      candidate_name: "",
-      doj: "",
-      department: "",
-      role: "",
-      level: "L1",
-      total_experience: 0,
-      past_organization: "",
-      lab_allocation: "",
-      compliance_day: 3,
-    });
-    setShowAddModal(false);
-    toast.success("Employee added to processing queue");
-  };
-
-  const handleRemoveEmployee = (index: number) => {
-    const actualIndex = (currentPage - 1) * itemsPerPage + index;
-    const updated = queueEmployees.filter((_, i) => i !== actualIndex);
-
-    // Renumber the remaining employees
-    const renumberedEmployees = updated.map((emp, i) => ({
-      ...emp,
-      sr_no: i + 1,
-    }));
-
-    setQueueEmployees(renumberedEmployees);
-    toast.success("Employee removed from queue");
-  };
-
-  const handleProcessQueue = async () => {
-    if (queueEmployees.length === 0) {
-      toast.error("No employees in queue to process");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     try {
-      setProcessing(true);
+      await adminService.createEmployee({
+        name: newEmployee.name,
+        date: newEmployee.date || new Date().toISOString().split("T")[0],
+        department: newEmployee.department || "General",
+        role: newEmployee.role || "Employee",
+        level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
+        totalExperience: newEmployee.totalExperience || "0",
+        pastOrganization: newEmployee.pastOrganization || "N/A",
+        labAllocation: newEmployee.labAllocation || "N/A",
+        complianceDay: newEmployee.complianceDay || "3",
+        email: newEmployee.email || "N/A",
+      });
 
-      // Convert QueueEmployee to Employee format for API
-      const employeesToProcess: Employee[] = queueEmployees.map((qe) => ({
-        employee_id: qe.candidate_name.toLowerCase().replace(/\s+/g, "."),
-        employee_name: qe.candidate_name,
-        employee_level: qe.level,
-        group_id: 1, // Default group - could be made configurable
-      }));
+      toast.success("Employee added successfully");
 
-      const result = await adminService.processEmployeeQueue(
-        employeesToProcess
-      );
-      setLastProcessingResult(result);
-      setQueueEmployees([]); // Clear the queue after successful processing
-      toast.success(
-        `Successfully processed ${result.processed_employees.length} employees!`
-      );
+      // Reset the form
+      setNewEmployee({
+        name: "",
+        date: "",
+        department: "",
+        role: "",
+        level: "L1",
+        totalExperience: "0",
+        pastOrganization: "",
+        labAllocation: "",
+        complianceDay: "3",
+        email: "",
+      });
+      setShowAddModal(false);
+      fetchEmployees();
     } catch (err: any) {
-      console.error("Processing error:", err);
-      toast.error(
-        err.response?.data?.message || "Failed to process employee queue"
-      );
-    } finally {
-      setProcessing(false);
+      toast.error(err.response?.data?.message || "Failed to add employee");
     }
   };
 
-  const handleClearAllTasks = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to clear ALL existing tasks? This action cannot be undone."
-      )
-    ) {
+  //edit
+  const handleEditEmployee = async (employeeId: number) => {
+    if (!employeeId) return;
+
+    try {
+      const emp: Employee = await adminService.findByEmployee(employeeId);
+      console.log("Received from backend:", emp);
+
+      // const formattedDate = new Date(emp.date).toISOString().split('T')[0];
+      const formattedDate = formatDateForInput(emp.date);
+      console.log("Formatted date:", formattedDate);
+
+      // Prefill the modal form with fetched employee data
+      setNewEmployee({
+        name: emp.name,
+        date: formattedDate,
+        department: emp.department,
+        role: emp.role,
+        level: emp.level,
+        totalExperience: emp.totalExperience,
+        pastOrganization: emp.pastOrganization,
+        labAllocation: emp.labAllocation,
+        complianceDay: emp.complianceDay,
+        email: emp.email,
+      });
+
+      setEditMode(true);
+      setSelectedEmployeeId(employeeId);
+      setShowAddModal(true);
+    } catch (err: any) {
+      toast.error("Failed to load employee data");
+    }
+  };
+
+  //update
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedEmployeeId) return;
+
+    if (!newEmployee.name?.trim()) {
+      toast.error("Candidate Name is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     try {
-      setProcessing(true);
-      const result = await adminService.clearAllTasks();
-      toast.success(`Successfully cleared ${result.deleted_count} tasks`);
-      setLastProcessingResult(null);
+      const updatePayload = {
+        id: selectedEmployeeId,
+        name: newEmployee.name,
+        department: newEmployee.department,
+        role: newEmployee.role,
+        date: newEmployee.date || undefined,
+        level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
+        totalExperience: newEmployee.totalExperience,
+        pastOrganization: newEmployee.pastOrganization,
+        labAllocation: newEmployee.labAllocation,
+        complianceDay: newEmployee.complianceDay,
+        email: newEmployee.email,
+      };
+
+      console.log("Sending to backend:", updatePayload);
+      await adminService.updateEmployee(updatePayload as Employee);
+
+      toast.success("Employee updated successfully!");
+
+      // Reset state and close the modal
+      setNewEmployee({
+        name: "",
+        date: "",
+        department: "",
+        role: "",
+        level: "L1",
+        totalExperience: "0",
+        pastOrganization: "",
+        labAllocation: "",
+        complianceDay: "",
+        email: "",
+      });
+      setShowAddModal(false);
+      setEditMode(false);
+      setSelectedEmployeeId(null);
+      fetchEmployees();
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to clear tasks");
-    } finally {
-      setProcessing(false);
+      toast.error(err.response?.data?.message || "Failed to update employee.");
     }
   };
 
-  const handleDownloadTemplate = async () => {
+  //delete
+  const handleDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+
     try {
-      setProcessing(true);
-      const blob = await adminService.downloadEmployeeTemplate();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Employee_Processing_Template.xlsx";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Template downloaded successfully!");
+      await adminService.deleteEmployee(employeeToDelete.id);
+      toast.success("Employee deleted successfully!");
+      fetchEmployees();
+      setShowDeleteModal(false);
+      setEmployeeToDelete(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to download template");
-    } finally {
-      setProcessing(false);
+      toast.error(err.response?.data?.message || "Failed to delete employee.");
     }
   };
 
-  const handleImportFromExcel1 = async () => {
-    if (!importFile) {
-      toast.error("Please select a file to import");
-      return;
+  //download template
+
+  const base64ToBlob = (b64: string, mime: string) => {
+    const byteString = atob(b64);
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
     }
 
-    try {
-      setImportLoading(true);
-      const result: EmployeeImportResponse =
-        await adminService.importEmployeeTemplate(importFile);
-
-      // Convert processed employees to QueueEmployee format for the queue
-      const queueEmployeesFromResult: QueueEmployee[] =
-        result.processed_employees.map((pe, index) => ({
-          sr_no: queueEmployees.length + index + 1,
-          candidate_name: pe.employee_name || "",
-          doj: pe.doj || "",
-          department: pe.department || "",
-          role: pe.role || "",
-          level: (pe.employee_level as "L1" | "L2" | "L3" | "L4") || "L1",
-          total_experience: pe.total_experience
-            ? parseFloat(pe.total_experience)
-            : 0,
-          past_organization: pe.past_organization || "",
-          lab_allocation: pe.lab_allocation || "",
-          compliance_day: pe.compliance_day ? parseInt(pe.compliance_day) : 3,
-        }));
-
-      setQueueEmployees([...queueEmployees, ...queueEmployeesFromResult]);
-      setImportFile(null);
-      setShowImportModal(false);
-      toast.success(
-        `Successfully imported ${result.processed_employees.length} employees to queue`
-      );
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message ?? "Failed to import template";
-      const errors = err.response?.data?.errors;
-
-      if (errors && Array.isArray(errors)) {
-        // Show first few errors in toast, rest in console
-        const displayErrors = errors.slice(0, 3).join("; ");
-        toast.error(
-          `Import errors: ${displayErrors}${errors.length > 3 ? "..." : ""}`
-        );
-        console.error("All import errors:", errors);
-      } else {
-        toast.error(errorMessage);
-      }
-    } finally {
-      setImportLoading(false);
-    }
+    return new Blob([uint8Array], { type: mime });
   };
 
   const handleImportFromExcel = async () => {
@@ -286,81 +321,46 @@ const EmployeeProcessingPage: React.FC = () => {
     }
 
     try {
-    setImportLoading(true);
-    setImportErrors([]);
-    debugger;
-    const result = await adminService.importEmployees(importFile);
-    const errorCount: number = result.errorCount ?? 0;
-    const rawErrors = result.errors ?? [];
-    const normalizedErrors: string[] = Array.isArray(rawErrors)
-      ? rawErrors.map((e: any) =>
-          typeof e === "string" ? e : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
-        )
-      : [];
-          if (errorCount > 0) {
-      setImportErrors(normalizedErrors);
-      const preview = normalizedErrors.slice(0, 3).join("; ");
-      toast.error(`Import reported ${errorCount} error(s). ${preview}${normalizedErrors.length > 3 ? "..." : ""}`);
+      setImportLoading(true);
+      setImportErrors([]);
+      debugger;
+      const result = await adminService.importEmployees(importFile);
+      const errorCount: number = result.errorCount ?? 0;
+      const rawErrors = result.errors ?? [];
+      const normalizedErrors: string[] = Array.isArray(rawErrors)
+        ? rawErrors.map((e: any) =>
+            typeof e === "string"
+              ? e
+              : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
+          )
+        : [];
+      if (errorCount > 0) {
+        setImportErrors(normalizedErrors);
+        const preview = normalizedErrors.slice(0, 3).join("; ");
+        toast.error(
+          `Import reported ${errorCount} error(s). ${preview}${
+            normalizedErrors.length > 3 ? "..." : ""
+          }`
+        );
+      }
+      fetchEmployees();
+      setImportFile(null);
+      setShowImportModal(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to import employees");
+    } finally {
+      setImportLoading(false);
     }
-    setImportFile(null);
-    setShowImportModal(false);
-  } catch (err: any) {
-    console.error(err);
-    toast.error(err.message ?? "Failed to import employees");
-  } finally {
-    setImportLoading(false);
-  }
-  };
-  const handleCellEdit = (rowIndex: number, field: string, value: any) => {
-    const actualIndex = (currentPage - 1) * itemsPerPage + rowIndex;
-    const updatedEmployees = [...queueEmployees];
-    updatedEmployees[actualIndex] = {
-      ...updatedEmployees[actualIndex],
-      [field]: value,
-    };
-    setQueueEmployees(updatedEmployees);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const triggerDownload = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  const base64ToBlob = (b64: string, mime: string) => {
-    const byteChars = atob(b64);
-    const sliceSize = 1024 * 1024;
-    const byteArrays: Uint8Array[] = [];
-    for (let offset = 0; offset < byteChars.length; offset += sliceSize) {
-      const slice = byteChars.slice(offset, offset + sliceSize);
-      const nums = new Array(slice.length);
-      for (let i = 0; i < slice.length; i++) nums[i] = slice.charCodeAt(i);
-      byteArrays.push(new Uint8Array(nums));
-    }
-    return new Blob(byteArrays, {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-  };
-
-  const handleDownloadExcel = async () => {
+  const handleDownloadTemplate = async () => {
     try {
+      setProcessing(true);
       const data = await adminService.excelExportEmployee();
       const base64: string = data.pdf;
       if (!base64) throw new Error("No base64 file content in response.");
+
       const fileName: string =
         data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
       const blob = base64ToBlob(
@@ -368,86 +368,76 @@ const EmployeeProcessingPage: React.FC = () => {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       );
 
-      triggerDownload(blob, fileName);
-    } catch (err) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success("Excel downloaded successfully!");
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.response?.data?.message ?? "Failed to download file");
+    } finally {
+      setProcessing(false);
     }
   };
+  // Pagination logic
+  const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
-  const getGroupName = (groupId: number) => {
-    return groups.find((g: Group) => g.id === groupId)?.name ?? "Unknown Group";
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) setPage(newPage);
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(queueEmployees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, queueEmployees.length);
-  const currentEmployees = queueEmployees.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    setEditingCell(null); // Clear any editing state when changing pages
+  const generatePageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 0; i < totalPages; i++) pages.push(i);
+    } else {
+      if (page > 3) pages.push(0, "...");
+      for (
+        let i = Math.max(1, page - 2);
+        i <= Math.min(totalPages - 2, page + 2);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (page < totalPages - 4) pages.push("...", totalPages - 1);
+      else if (page < totalPages - 3) pages.push(totalPages - 1);
+    }
+    return pages;
   };
-
-  const handlePerPageChange = (newPerPage: number) => {
-    setItemsPerPage(newPerPage);
-    setCurrentPage(1); // Reset to first page
-    setEditingCell(null); // Clear any editing state
-  };
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header Section */}
-        <div className="bg-card rounded-xl shadow-sm border p-6">
-          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-            <div className="space-y-2 flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground">
-                Employee Processing
-              </h1>
-              <p className="text-muted-foreground text-sm max-w-2xl">
-                Streamline your employee onboarding by adding employees to the
-                processing queue and automatically assigning tasks across all
-                groups based on their levels.
-              </p>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <form onSubmit={handleSearchSubmit} className="w-full">
+                <Input
+                  type="text"
+                  placeholder="Search employees..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-64"
+                />
+              </form>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0 overflow-x-auto">
+            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0">
               <Button
-                onClick={handleClearAllTasks}
-                disabled={processing}
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 whitespace-nowrap flex-shrink-0"
-              >
-                <Trash2 size={14} className="mr-1" />
-                <span className="hidden sm:inline">Clear All Tasks</span>
-                <span className="sm:hidden">Clear</span>
-              </Button>
-
-              <Button
-                onClick={handleDownloadExcel}
-                disabled={processing}
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap flex-shrink-0"
+                onClick={handleDownloadTemplate}
               >
                 <Download size={14} className="mr-1" />
                 <span className="hidden sm:inline">Download Template</span>
                 <span className="sm:hidden">Download</span>
               </Button>
-
               <Button
                 onClick={() => setShowImportModal(true)}
                 disabled={processing}
@@ -459,12 +449,25 @@ const EmployeeProcessingPage: React.FC = () => {
                 <span className="hidden sm:inline">Import from Excel</span>
                 <span className="sm:hidden">Import</span>
               </Button>
-
               <Button
-                onClick={() => setShowAddModal(true)}
-                disabled={processing}
                 size="sm"
                 className="whitespace-nowrap flex-shrink-0"
+                onClick={() => {
+                  setShowAddModal(true);
+                  setEditMode(false);
+                  setSelectedEmployeeId(null);
+                  setNewEmployee({
+                    name: "",
+                    date: "",
+                    department: "",
+                    role: "",
+                    level: "L1",
+                    totalExperience: "0",
+                    pastOrganization: "",
+                    labAllocation: "",
+                    complianceDay: "",
+                  });
+                }}
               >
                 <Plus size={14} className="mr-1" />
                 <span className="hidden sm:inline">Add Employee</span>
@@ -472,589 +475,169 @@ const EmployeeProcessingPage: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent className="p-0 space-y-4 ">
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableCell></TableCell>
+                <TableCell className="w-44">Name</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell className="w-24">DOJ</TableCell>
+                <TableCell>Department</TableCell>
+                <TableCell>Role</TableCell>
+                <TableCell>Level</TableCell>
+                <TableCell>Lab</TableCell>
+                <TableCell>Compliance Day</TableCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {employees.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-2">
+                      <Users size={48} className="text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        No employees found
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                employees.map((emp) => (
+                  <TableRow key={emp.id}>
+                    <TableCell className="flex gap-0.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditEmployee(emp.id)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500"
+                        disabled={!emp.deleteFlag}
+                        onClick={() => {
+                          setEmployeeToDelete(emp);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">
+                      {emp.name}
+                    </TableCell>
+                    <TableCell className=" whitespace-nowrap">
+                      {emp.email}
+                    </TableCell>
 
-        {/* Processing Queue Table */}
+                    <TableCell className="whitespace-nowrap w-24">
+                      {emp.date}
+                    </TableCell>
+                    <TableCell>{emp.department || "N/A"}</TableCell>
+                    <TableCell>{emp.role || "N/A"}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          emp.level === "L1"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : emp.level === "L2"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : emp.level === "L3"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        }`}
+                      >
+                        {emp.level || "L1"}
+                      </span>
+                    </TableCell>
+                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
+                    <TableCell className="w-20">
+                      Day {emp.complianceDay || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      {totalPages > 1 && (
         <Card>
-          <CardHeader>
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Users size={20} />
-                Processing Queue
-                <span className="text-sm font-normal text-muted-foreground">
-                  ({queueEmployees.length} employee
-                  {queueEmployees.length !== 1 ? "s" : ""})
-                </span>
-              </CardTitle>
-
-              {/* Per-page selector */}
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Show:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handlePerPageChange(Number(e.target.value))}
-                  className="px-2 py-1 rounded border border-border bg-background"
+              <div className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(0)}
+                  disabled={page === 0}
+                  className="p-2"
                 >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-muted-foreground">per page</span>
+                  <ChevronsLeft size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 0}
+                  className="p-2"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                {generatePageNumbers().map((p, idx) =>
+                  p === "..." ? (
+                    <span key={idx} className="px-3 py-2 text-muted-foreground">
+                      ...
+                    </span>
+                  ) : (
+                    <Button
+                      key={idx}
+                      variant={p === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(p as number)}
+                      className="min-w-[40px]"
+                    >
+                      {(p as number) + 1}
+                    </Button>
+                  )
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === totalPages - 1}
+                  className="p-2"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(totalPages - 1)}
+                  disabled={page === totalPages - 1}
+                  className="p-2"
+                >
+                  <ChevronsRight size={16} />
+                </Button>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {queueEmployees.length === 0 ? (
-              <div className="text-center py-12">
-                <Users
-                  size={48}
-                  className="mx-auto text-muted-foreground mb-4"
-                />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No employees in queue
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Add employees manually or import from Excel to get started.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button onClick={() => setShowAddModal(true)}>
-                    <Plus size={16} className="mr-2" />
-                    Add Employee
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowImportModal(true)}
-                  >
-                    <Upload size={16} className="mr-2" />
-                    Import from Excel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">Sr No</TableHead>
-                        <TableHead className="min-w-[150px]">
-                          Candidate Name
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">DOJ</TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Department
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">Role</TableHead>
-                        <TableHead className="w-20">Level</TableHead>
-                        <TableHead className="w-24">Experience</TableHead>
-                        <TableHead className="min-w-[150px]">
-                          Past Organization
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Lab Allocation
-                        </TableHead>
-                        <TableHead className="w-24">Compliance Day</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentEmployees.map((employee, index) => (
-                        <TableRow key={`${employee.sr_no}-${index}`}>
-                          <TableCell className="font-medium">
-                            {employee.sr_no}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "candidate_name" ? (
-                              <input
-                                type="text"
-                                value={employee.candidate_name}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "candidate_name",
-                                    e.target.value
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "candidate_name",
-                                  })
-                                }
-                              >
-                                {employee.candidate_name}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "doj" ? (
-                              <input
-                                type="date"
-                                value={employee.doj}
-                                onChange={(e) =>
-                                  handleCellEdit(index, "doj", e.target.value)
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({ row: index, field: "doj" })
-                                }
-                              >
-                                {formatDate(employee.doj)}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "department" ? (
-                              <input
-                                type="text"
-                                value={employee.department}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "department",
-                                    e.target.value
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "department",
-                                  })
-                                }
-                              >
-                                {employee.department}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "role" ? (
-                              <input
-                                type="text"
-                                value={employee.role}
-                                onChange={(e) =>
-                                  handleCellEdit(index, "role", e.target.value)
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({ row: index, field: "role" })
-                                }
-                              >
-                                {employee.role}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "level" ? (
-                              <select
-                                value={employee.level}
-                                onChange={(e) =>
-                                  handleCellEdit(index, "level", e.target.value)
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              >
-                                <option value="L1">L1</option>
-                                <option value="L2">L2</option>
-                                <option value="L3">L3</option>
-                                <option value="L4">L4</option>
-                              </select>
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({ row: index, field: "level" })
-                                }
-                              >
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    employee.level === "L1"
-                                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                      : employee.level === "L2"
-                                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                      : employee.level === "L3"
-                                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                  }`}
-                                >
-                                  {employee.level}
-                                </span>
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "total_experience" ? (
-                              <input
-                                type="number"
-                                min="0"
-                                value={employee.total_experience}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "total_experience",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "total_experience",
-                                  })
-                                }
-                              >
-                                {employee.total_experience} yr
-                                {employee.total_experience !== 1 ? "s" : ""}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "past_organization" ? (
-                              <input
-                                type="text"
-                                value={employee.past_organization}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "past_organization",
-                                    e.target.value
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "past_organization",
-                                  })
-                                }
-                              >
-                                {employee.past_organization}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "lab_allocation" ? (
-                              <input
-                                type="text"
-                                value={employee.lab_allocation}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "lab_allocation",
-                                    e.target.value
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "lab_allocation",
-                                  })
-                                }
-                              >
-                                {employee.lab_allocation}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {editingCell?.row === index &&
-                            editingCell?.field === "compliance_day" ? (
-                              <input
-                                type="number"
-                                min="1"
-                                value={employee.compliance_day}
-                                onChange={(e) =>
-                                  handleCellEdit(
-                                    index,
-                                    "compliance_day",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                onBlur={() => setEditingCell(null)}
-                                onKeyPress={(e) =>
-                                  e.key === "Enter" && setEditingCell(null)
-                                }
-                                className="w-full px-2 py-1 text-sm border rounded bg-background"
-                                autoFocus
-                              />
-                            ) : (
-                              <div
-                                className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                                onClick={() =>
-                                  setEditingCell({
-                                    row: index,
-                                    field: "compliance_day",
-                                  })
-                                }
-                              >
-                                Day {employee.compliance_day}
-                              </div>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveEmployee(index)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {startIndex + 1} to {endIndex} of{" "}
-                      {queueEmployees.length} employees
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(1)}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronsLeft size={16} />
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft size={16} />
-                      </Button>
-
-                      <span className="text-sm px-3 py-1">
-                        {currentPage} of {totalPages}
-                      </span>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronRight size={16} />
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(totalPages)}
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronsRight size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Process Queue Button */}
-                <div className="flex justify-center mt-6 pt-4 border-t border-border">
-                  <Button
-                    onClick={handleProcessQueue}
-                    disabled={processing || queueEmployees.length === 0}
-                    size="lg"
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
-                  >
-                    {processing ? (
-                      <>
-                        <Clock size={20} className="mr-2 animate-spin" />
-                        Processing Queue...
-                      </>
-                    ) : (
-                      <>
-                        <Play size={20} className="mr-2" />
-                        Process Queue ({queueEmployees.length})
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
-
-        {/* Processing Results */}
-        {lastProcessingResult && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {lastProcessingResult.processed_employees.length > 0 ? (
-                  <CheckCircle size={20} className="text-green-600" />
-                ) : (
-                  <AlertCircle size={20} className="text-red-600" />
-                )}
-                Processing Results
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-600" />
-                    <span>
-                      Processed:{" "}
-                      {lastProcessingResult.processed_employees.length}
-                    </span>
-                  </div>
-                  {lastProcessingResult.errors &&
-                    lastProcessingResult.errors.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <AlertCircle size={16} className="text-red-600" />
-                        <span>
-                          Errors: {lastProcessingResult.errors.length}
-                        </span>
-                      </div>
-                    )}
-                </div>
-
-                {lastProcessingResult.processed_employees.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">
-                      Successfully Processed:
-                    </h4>
-                    <div className="grid gap-2">
-                      {lastProcessingResult.processed_employees.map(
-                        (emp, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 text-sm bg-green-50 dark:bg-green-900/20 p-2 rounded"
-                          >
-                            <CheckCircle size={14} className="text-green-600" />
-                            <span>
-                              {emp.employee_name} ({emp.employee_level})
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {lastProcessingResult.errors &&
-                  lastProcessingResult.errors.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Errors:</h4>
-                      <div className="grid gap-2">
-                        {lastProcessingResult.errors.map((error, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded"
-                          >
-                            <AlertCircle size={14} className="text-red-600" />
-                            <span>{error}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Add Employee Modal */}
+      )}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>Add Employee to Queue</CardTitle>
+              <CardTitle>
+                {editMode ? "Edit User" : "Create New User"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1064,39 +647,34 @@ const EmployeeProcessingPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={newEmployee.candidate_name}
+                    value={(newEmployee.name as string) ?? ""}
                     onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        candidate_name: e.target.value,
-                      })
+                      setNewEmployee({ ...newEmployee, name: e.target.value })
                     }
                     className="w-full px-3 py-2 border rounded-md bg-background"
                     placeholder="Enter full name"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Date of Joining
                   </label>
                   <input
                     type="date"
-                    value={newEmployee.doj}
+                    value={newEmployee.date ?? ""}
                     onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, doj: e.target.value })
+                      setNewEmployee({ ...newEmployee, date: e.target.value })
                     }
                     className="w-full px-3 py-2 border rounded-md bg-background"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Department
                   </label>
                   <input
                     type="text"
-                    value={newEmployee.department}
+                    value={newEmployee.department ?? ""}
                     onChange={(e) =>
                       setNewEmployee({
                         ...newEmployee,
@@ -1107,12 +685,11 @@ const EmployeeProcessingPage: React.FC = () => {
                     placeholder="e.g., Engineering, HR, Sales"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">Role</label>
                   <input
                     type="text"
-                    value={newEmployee.role}
+                    value={newEmployee.role ?? ""}
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, role: e.target.value })
                     }
@@ -1120,121 +697,186 @@ const EmployeeProcessingPage: React.FC = () => {
                     placeholder="e.g., Software Engineer, Manager"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Level
                   </label>
-                  <select
-                    value={newEmployee.level}
-                    onChange={(e) =>
+                  <SearchableDropdown
+                    options={levelOptions}
+                    value={
+                      levelOptions.find(
+                        (option) => option.value === newEmployee.level
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedLevel = levelOptions.find(
+                        (option) => option.id === id
+                      )?.value;
                       setNewEmployee({
                         ...newEmployee,
-                        level: e.target.value as "L1" | "L2" | "L3" | "L4",
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                  >
-                    <option value="L1">L1</option>
-                    <option value="L2">L2</option>
-                    <option value="L3">L3</option>
-                    <option value="L4">L4</option>
-                  </select>
+                        level: selectedLevel as "L1" | "L2" | "L3" | "L4",
+                      });
+                    }}
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                  />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Total Experience (years)
                   </label>
                   <input
                     type="number"
-                    min="0"
-                    value={newEmployee.total_experience}
+                    min={0}
+                    value={newEmployee.totalExperience ?? "0"}
                     onChange={(e) =>
                       setNewEmployee({
                         ...newEmployee,
-                        total_experience: Number(e.target.value),
+                        totalExperience: e.target.value,
                       })
                     }
                     className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="e.g., 3"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Past Organization
                   </label>
                   <input
                     type="text"
-                    value={newEmployee.past_organization}
+                    value={newEmployee.pastOrganization ?? ""}
                     onChange={(e) =>
                       setNewEmployee({
                         ...newEmployee,
-                        past_organization: e.target.value,
+                        pastOrganization: e.target.value,
                       })
                     }
                     className="w-full px-3 py-2 border rounded-md bg-background"
                     placeholder="Previous company name"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Lab Allocation
                   </label>
-                  <input
-                    type="text"
-                    value={newEmployee.lab_allocation}
-                    onChange={(e) =>
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={
+                      labOptions.find(
+                        (option) => option.value === newEmployee.labAllocation
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedLab = labOptions.find(
+                        (option) => option.id === id
+                      )?.value;
                       setNewEmployee({
                         ...newEmployee,
-                        lab_allocation: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Lab or workspace assignment"
+                        labAllocation: selectedLab as "Lab1" | "Lab2",
+                      });
+                    }}
+                    placeholder="Select Lab"
+                    displayFullValue={false}
+                    isEmployeePage={true}
                   />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium mb-1">
                     Compliance Day
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    value={newEmployee.compliance_day}
+                    min={1}
+                    value={newEmployee.complianceDay ?? "3"}
                     onChange={(e) =>
                       setNewEmployee({
                         ...newEmployee,
-                        compliance_day: Number(e.target.value),
+                        complianceDay: e.target.value,
                       })
                     }
                     className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="Number of compliance days"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newEmployee.email ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="Enter email address"
                   />
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button onClick={handleAddEmployee} className="flex-1">
-                  Add to Queue
+                <Button
+                  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
+                  className="flex-1"
+                >
+                  {editMode ? "Update User" : "Create User"}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowAddModal(false);
                     setNewEmployee({
-                      sr_no: 0,
-                      candidate_name: "",
-                      doj: "",
+                      name: "",
+                      date: "",
                       department: "",
                       role: "",
                       level: "L1",
-                      total_experience: 0,
-                      past_organization: "",
-                      lab_allocation: "",
-                      compliance_day: 3,
+                      totalExperience: "0",
+                      pastOrganization: "",
+                      labAllocation: "",
+                      complianceDay: "3",
+                      email: "",
                     });
+                    setSelectedEmployeeId(null);
+                    setEditMode(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && employeeToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Employee</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the employee{" "}
+                <span className="font-semibold">{employeeToDelete.name}</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteEmployee}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setEmployeeToDelete(null);
                   }}
                   className="flex-1"
                 >
@@ -1246,7 +888,7 @@ const EmployeeProcessingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Import Modal */}
+            {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -1323,4 +965,4 @@ const EmployeeProcessingPage: React.FC = () => {
   );
 };
 
-export default EmployeeProcessingPage;
+export default EmployeesPage;

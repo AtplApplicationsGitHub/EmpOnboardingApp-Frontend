@@ -12,6 +12,7 @@ import {
   LogOut,
   UserPlus,
   Settings,
+  ClipboardListIcon,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -29,7 +30,7 @@ const Navbar: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border ${
+      className={`fixed inset-y-0 left-0 z-50 w-56 bg-card border-r border-border ${
         isVisible ? animationClasses.slideInLeft : "opacity-0"
       }`}
     >
@@ -94,8 +95,20 @@ const Navbar: React.FC = () => {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <Settings className="h-4 w-4" />
+                  <ClipboardListIcon className="h-4 w-4" />
                   <span>Manage Tasks</span>
+                </Link>
+                 <Link
+                  href="/admin/users"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/users"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Manage Users</span>
                 </Link>
               </>
             )}
@@ -112,6 +125,18 @@ const Navbar: React.FC = () => {
                 >
                   <Home className="h-4 w-4" />
                   <span>Dashboard</span>
+                </Link>
+                <Link
+                  href="/group-lead/tasks"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/group-lead/tasks"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Manage Tasks</span>
                 </Link>
               </>
             )}

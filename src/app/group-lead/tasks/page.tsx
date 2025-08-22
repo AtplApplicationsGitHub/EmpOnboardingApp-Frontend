@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { TaskProjection } from "@/app/types";
+import { Task } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -23,22 +23,37 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Eye,
-  Info,
   Lock,
-  TicketCheck,
   Unlock,
   Users,
-  Verified,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const PAGE_SIZE = 10;
 
+interface GroupedTask {
+  groupId: number;
+  groupName: string;
+  employeeId: string;
+  employeeName: string;
+  level: string;
+  department: string;
+  role: string;
+  totalTasks: number;
+  completedTasks: number;
+  status: "completed" | "overdue" | "in_progress";
+  dueDate: string;
+  tasks: Task[];
+}
+
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
-const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<TaskProjection[]>([]);
+const GroupLeadTasksPage: React.FC = () => {
+  const router = useRouter();
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
@@ -51,6 +66,7 @@ const TasksPage: React.FC = () => {
 
   const fetchTasks = useCallback(async () => {
     try {
+      setLoading(true);
       setError(null);
       const params: Record<string, unknown> = {
         page: currentPage,
@@ -58,13 +74,15 @@ const TasksPage: React.FC = () => {
       };
       const search = searchFilter.trim();
       if (search) params.search = search;
-      const response = await taskService.getTask(params);
-      setTasks(response.commonListDto.content ?? []);
+      const response = await taskService.getTaskForGL(params);
+      setAllTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
-      setTasks([]);
+      setAllTasks([]);
       setTotalElements(0);
+    } finally {
+      setLoading(false); // <-- add
     }
   }, [currentPage, searchFilter]);
 
@@ -116,23 +134,55 @@ const TasksPage: React.FC = () => {
     </div>
   );
 
+  const handleViewTasks = (groupedTask: GroupedTask) => {
+    router.push(
+      `/group-lead/tasks/${groupedTask.employeeId}?name=${encodeURIComponent(
+        groupedTask.employeeName
+      )}&group=${encodeURIComponent(groupedTask.groupName)}`
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading tasks...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6">
-      {/* Header / Search */}
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Task Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage tasks grouped by employee and group
+          </p>
+        </div>
+      </div>
+
+      {/* Search Filter */}
       <Card>
         <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={searchFilter}
-              onChange={(e) => {
-                setSearchFilter(e.target.value);
-                setCurrentPage(0);
-              }}
-              placeholder="Search…"
-              className="w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+              onChange={(e) => setSearchFilter(e.target.value)}
+              placeholder="Search by employee, group, department, or role..."
+              className="w-96 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
               aria-label="Search tasks"
             />
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {allTasks.length} employee task group
+            {allTasks.length !== 1 ? "s" : ""} found
           </div>
         </CardContent>
       </Card>
@@ -149,9 +199,12 @@ const TasksPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
+                <TableHead>Task ID</TableHead>
+                <TableHead>Employee Name</TableHead>
+                <TableHead>Group ID</TableHead>
                 <TableHead>Level</TableHead>
-                <TableHead>Role & Department</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -159,9 +212,9 @@ const TasksPage: React.FC = () => {
             </TableHeader>
 
             <TableBody>
-              {tasks.length === 0 ? (
+              {allTasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={9} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
                       <p className="text-muted-foreground">No tasks found</p>
@@ -169,7 +222,7 @@ const TasksPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                tasks.map((task) => {
+                allTasks.map((task) => {
                   const completed =
                     (task as any).completedQuetions ??
                     (task as any).completedQuestions ??
@@ -183,30 +236,15 @@ const TasksPage: React.FC = () => {
                     : 0;
 
                   return (
-                    <TableRow
-                      key={(task as any).id ?? (task as any).employeeId}
-                    >
-                      {/* Employee Name */}
+                    <TableRow key={(task as any).id ?? (task as any).id}>
                       <TableCell className="font-semibold">
-                        {(task as any).name}
+                        {(task as any).id}
                       </TableCell>
-
-                      {/* Level */}
+                      <TableCell>{(task as any).employeeName}</TableCell>
+                      <TableCell>{(task as any).groupName}</TableCell>
                       <TableCell>{(task as any).level}</TableCell>
-
-                      {/* Role & Department */}
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-base font-semibold">
-                            {(task as any).role}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {(task as any).department}
-                          </span>
-                        </div>
-                      </TableCell>
-
-                      {/* Progress */}
+                      <TableCell>{(task as any).role}</TableCell>
+                      <TableCell>{(task as any).department}</TableCell>
                       <TableCell className="min-w-[220px]">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-sm">
@@ -260,28 +298,25 @@ const TasksPage: React.FC = () => {
 
                       {/* Actions */}
                       <TableCell>
-                        {/* Always show Eye button */}
                         <Button
                           variant="outline"
                           size="icon"
                           className="rounded-lg"
-                          onClick={() =>
-                            (window.location.href = `/admin/tasks/${task.taskIds}`)
-                          }
+                          onClick={() => router.push(`/group-lead/tasks/${task.id}`)}
                           aria-label="View details"
                         >
                           <Eye size={16} />
                         </Button>
 
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && (
+                          task.freezeTask === "N" && (
                             <Button
                               variant="outline"
                               size="icon"
                               className="rounded-lg ml-2"
                               aria-label="Completed"
                               onClick={() => {
-                                setSelectedTaskId(task.taskIds);
+                                setSelectedTaskId(task.id.toString());
                                 setShowFreezeModal(true);
                               }}
                             >
@@ -289,7 +324,7 @@ const TasksPage: React.FC = () => {
                             </Button>
                           )}
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "Y" && (
+                          task.freezeTask === "Y" && (
                             <Button
                               variant="outline"
                               size="icon"
@@ -423,4 +458,4 @@ const TasksPage: React.FC = () => {
   );
 };
 
-export default TasksPage;
+export default GroupLeadTasksPage;

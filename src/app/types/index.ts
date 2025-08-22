@@ -40,6 +40,7 @@ export interface Employee {
   complianceDay: string;
   createdTime: string;
   updatedTime: string;
+  deleteFlag?: boolean;
 }
 
 export interface EmployeeImportResult {
@@ -65,6 +66,7 @@ export interface Question {
   response: "yes_no" | "text";
   complainceDay: string;
   questionLevel: string[];
+  period: string;
   groupId: number;
   createdTime: string;
   updatedTime: string;
@@ -72,10 +74,14 @@ export interface Question {
 
 export interface Task {
   id: number;
+  employeeId: number;
   employeeName: string;
   level: string;
+  department: string;
   role: string;
   lab: string;
+  groupName: string;
+  groupId?: number;
   pastExperience: string;
   prevCompany: string;
   complianceDay: string;
@@ -83,38 +89,43 @@ export interface Task {
   totalQuestions: number;
   completedQuestions: number;
   status: string;
+  doj: string;
+  freezeTask: string;
   questionList: TaskQuestions[];
+  questionText?: string;
+  response?: string;
   createdTime: string;
   updatedTime: string;
+  
+  // Additional fields that might come from API
+  mock_employee_id?: string;
+  mock_employee_name?: string;
+  mock_employee_level?: string;
+  completed_at?: string;
 }
 
 export interface TaskQuestions {
   id: number;
   questionId: string;
   response: string;
+  responseType: "yes_no" | "text";
   status: string;
-
+  complianceDay: string;
+  overDueFlag: boolean;
 }
 
-export interface TaskP {
-  id: number;
-  question_id: number;
-  mock_employee_id: string;
-  mock_employee_name: string;
-  mock_employee_level: string; // 'L1', 'L2', 'L3', or 'L4'
-  assignee_id: number;
-  escalation_user_id: number;
-  status: "pending" | "completed" | "reassigned";
-  response?: string;
-  due_date: string;
-  created_at: string;
-  updated_at: string;
-  completed_at?: string;
-  question: string;
-  response_type: "yes_no" | "text";
-  compliance_day: number;
-  assignee_name: string;
-  escalation_user_name: string;
+export interface TaskProjection {
+  employeeId: string;
+  name: string;
+  department: string;
+  role: string;
+  level: string;
+  taskIds: string;
+  totalQuetions: number;
+  completedQuetions: number;
+  pendingQuetions: number;
+  status: string;
+  freeze:string
 }
 
 export interface AuthResponse {
