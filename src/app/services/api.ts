@@ -368,7 +368,6 @@ export const adminService = {
       form,
       {
         headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
       }
     );
     return data;
