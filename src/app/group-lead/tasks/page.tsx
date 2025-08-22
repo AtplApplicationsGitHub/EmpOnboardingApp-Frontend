@@ -53,7 +53,7 @@ const GroupLeadTasksPage: React.FC = () => {
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
@@ -66,7 +66,6 @@ const GroupLeadTasksPage: React.FC = () => {
 
   const fetchTasks = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const params: Record<string, unknown> = {
         page: currentPage,
@@ -82,7 +81,6 @@ const GroupLeadTasksPage: React.FC = () => {
       setAllTasks([]);
       setTotalElements(0);
     } finally {
-      setLoading(false); // <-- add
     }
   }, [currentPage, searchFilter]);
 
@@ -308,7 +306,7 @@ const GroupLeadTasksPage: React.FC = () => {
                           <Eye size={16} />
                         </Button>
 
-                        {task.status?.toLowerCase() === "completed" &&
+                        {task.freezeButton &&
                           task.freezeTask === "N" && (
                             <Button
                               variant="outline"
@@ -323,7 +321,7 @@ const GroupLeadTasksPage: React.FC = () => {
                               <Unlock size={16} />
                             </Button>
                           )}
-                        {task.status?.toLowerCase() === "completed" &&
+                        {task.freezeButton &&
                           task.freezeTask === "Y" && (
                             <Button
                               variant="outline"

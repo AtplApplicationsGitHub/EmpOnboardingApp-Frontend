@@ -91,6 +91,7 @@ export interface Task {
   status: string;
   doj: string;
   freezeTask: string;
+  freezeButton: boolean;
   questionList: TaskQuestions[];
   questionText?: string;
   response?: string;

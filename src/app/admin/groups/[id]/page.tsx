@@ -12,6 +12,7 @@ import {
 } from "../../../components/ui/card";
 import Button from "../../../components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 const PAGE_SIZE = 10;
 
@@ -36,11 +37,17 @@ const GroupDetailsPage: React.FC = () => {
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
 
+  const periodOptions = [
+    { id: 101, key: "after", value: "after" },
+    { id: 102, key: "before", value: "before" },
+  ];
+
   // Form states
   const [formData, setFormData] = useState({
     id: 0,
     text: "",
     response: "yes_no" as "yes_no" | "text",
+    period: "after",
     complainceDay: "1",
     questionLevel: [] as string[],
     groupId: groupId.toString(),
@@ -128,11 +135,13 @@ const GroupDetailsPage: React.FC = () => {
   };
 
   const openEditModal = (question: Question) => {
+    console.log("Editing question:", question);
     setEditingQuestion(question);
     setFormData({
       id: question.id,
       text: question.text,
       response: question.response,
+      period: question.period,
       complainceDay: question.complainceDay || "1",
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
@@ -145,6 +154,7 @@ const GroupDetailsPage: React.FC = () => {
       id: 0,
       text: "",
       response: "yes_no",
+      period: "after",
       complainceDay: "1",
       questionLevel: [],
       groupId: groupId.toString(),
@@ -411,6 +421,37 @@ const GroupDetailsPage: React.FC = () => {
                       />
                       Text Response
                     </label>
+                  </div>
+                </div>
+
+                {/* Period */}
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Period *
+                  </label>
+                  <div className="flex gap-4">
+                    <SearchableDropdown
+                    className="w-full"
+                      options={periodOptions}
+                      value={
+                        periodOptions.find(
+                          (opt) => opt.value === formData.period
+                        )?.id
+                      }
+                      onChange={(id) => {
+                        const selectedValue =
+                          periodOptions.find((opt) => opt.id === id)?.value ??
+                          "";
+                        setFormData((prev) => ({
+                          ...prev,
+                          period: selectedValue as typeof prev.period,
+                        }));
+                      }}
+                      placeholder="Select period"
+                      displayFullValue={false}
+                      isEmployeePage={true}
+                    />
                   </div>
                 </div>
 
