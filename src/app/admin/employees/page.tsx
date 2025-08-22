@@ -95,7 +95,7 @@ const EmployeesPage: React.FC = () => {
     totalExperience: "0",
     pastOrganization: "",
     labAllocation: "",
-    complianceDay: "3",
+    complianceDay: "",
     email: "",
   });
 
@@ -145,7 +145,6 @@ const EmployeesPage: React.FC = () => {
       toast.error("Please fill in Candidate Name");
       return;
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
       toast.error("Please enter a valid email address.");
@@ -162,7 +161,7 @@ const EmployeesPage: React.FC = () => {
         totalExperience: newEmployee.totalExperience || "0",
         pastOrganization: newEmployee.pastOrganization || "N/A",
         labAllocation: newEmployee.labAllocation || "N/A",
-        complianceDay: newEmployee.complianceDay || "3",
+        complianceDay: newEmployee.complianceDay || "",
         email: newEmployee.email || "N/A",
       });
 
@@ -178,7 +177,7 @@ const EmployeesPage: React.FC = () => {
         totalExperience: "0",
         pastOrganization: "",
         labAllocation: "",
-        complianceDay: "3",
+        complianceDay: "",
         email: "",
       });
       setShowAddModal(false);
@@ -482,7 +481,7 @@ const EmployeesPage: React.FC = () => {
               <TableRow>
                 <TableCell></TableCell>
                 <TableCell className="w-44">Name</TableCell>
-                <TableCell>Email</TableCell>
+                <TableCell className="w-40">Email</TableCell>
                 <TableCell className="w-24">DOJ</TableCell>
                 <TableCell>Department</TableCell>
                 <TableCell>Role</TableCell>
@@ -530,7 +529,7 @@ const EmployeesPage: React.FC = () => {
                     <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">
                       {emp.name}
                     </TableCell>
-                    <TableCell className=" whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis">
                       {emp.email}
                     </TableCell>
 
@@ -556,7 +555,7 @@ const EmployeesPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{emp.labAllocation || "N/A"}</TableCell>
                     <TableCell className="w-20">
-                      Day {emp.complianceDay || "-"}
+                    {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </TableCell>
                   </TableRow>
                 ))
@@ -699,7 +698,7 @@ const EmployeesPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Level
+                    Level *
                   </label>
                   <SearchableDropdown
                     options={levelOptions}
@@ -719,6 +718,7 @@ const EmployeesPage: React.FC = () => {
                     }}
                     displayFullValue={false}
                     isEmployeePage={true}
+                    disabled={editMode}  
                   />
                 </div>
                 <div>
@@ -802,17 +802,18 @@ const EmployeesPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Email
+                    Email *
                   </label>
-                  <input
-                    type="email"
-                    value={newEmployee.email ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Enter email address"
-                  />
+                   <Input
+    type="email"
+    value={newEmployee.email ?? ""}
+    onChange={(e) =>
+      setNewEmployee({ ...newEmployee, email: e.target.value })
+    }
+    className="w-full px-3 py-2 border rounded-md bg-background"
+    placeholder="Enter email address"
+    disabled={editMode}
+  />
                 </div>
               </div>
 
@@ -820,6 +821,7 @@ const EmployeesPage: React.FC = () => {
                 <Button
                   onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
                   className="flex-1"
+                  disabled={!newEmployee.name || !newEmployee.email || !newEmployee.level}
                 >
                   {editMode ? "Update User" : "Create User"}
                 </Button>
