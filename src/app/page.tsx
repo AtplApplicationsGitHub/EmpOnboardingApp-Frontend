@@ -12,7 +12,23 @@ export default function Home() {
     if (!isLoading) {
       if (user) {
         // Redirect based on user role
-        const redirectPath = user.role === 'admin' ? '/admin' : '/group-lead';
+        let redirectPath: string;
+        
+        switch (user.role) {
+          case 'admin':
+            redirectPath = '/admin';
+            break;
+          case 'group_lead':
+            redirectPath = '/group-lead';
+            break;
+          case 'employee':
+            redirectPath = '/employee';
+            break;
+          default:
+            redirectPath = '/auth/login';
+            break;
+        }
+        
         router.push(redirectPath);
       } else {
         // Redirect to login if not authenticated

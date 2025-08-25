@@ -66,6 +66,95 @@ export const authService = {
     });
     return response.data;
   },
+  
+  // Check user role by email for two-step login
+  checkUserRole: async (email: string): Promise<{ role: "admin" | "group_lead" | "employee"; exists: boolean }> => {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { role: 'employee', exists: false };
+    }
+    
+    // TODO: Replace with actual API call to check user role
+    // GET /api/auth/check-user-role?email={email}
+    const userRoleLookup: Record<string, 'admin' | 'group_lead'> = {
+      // Admin users from screenshot
+      'admin@mailinator.com': 'admin',
+      'a2@mailinator.com': 'admin',
+      'a3@mailinator.com': 'admin',
+      'a4@mailinator.com': 'admin',
+      '1@1.com': 'admin',
+      '2@mailinator.com': 'admin',
+      'admin123@mailinator.com': 'admin',
+      'a4@example.com': 'admin',
+      'g21@mailinator.com': 'admin',
+      
+      // Group leader users from screenshot
+      'gl1@mailinator.com': 'group_lead',
+      'gl2@mailinator.com': 'group_lead',
+      '3@mailinator.com': 'group_lead',
+      '4gl@mailinator.com': 'group_lead',
+      '5gl@mailinator.com': 'group_lead',
+      'a1@mailinator.com': 'group_lead',
+      'g1@example.com': 'group_lead',
+      'g2@example.com': 'group_lead',
+      'g2@mailinator.com': 'group_lead',
+      'a2@example.com': 'group_lead',
+      'a1@example.com': 'group_lead'
+    };
+    
+    const userRole = userRoleLookup[email.toLowerCase()];
+    
+    if (userRole) {
+      return { role: userRole, exists: true };
+    } else {
+      return { role: 'employee', exists: true };
+    }
+  },
+  
+  sendOtp: async (email: string): Promise<{ success: boolean; message: string }> => {
+    // TODO: Implement actual OTP sending API
+    // POST /api/auth/send-otp
+    
+    // Mock implementation for testing
+    const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    sessionStorage.setItem(`otp_${email}`, mockOtp);
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ 
+          success: true, 
+          message: `OTP sent successfully to ${email}. Check browser console for testing OTP: ${mockOtp}` 
+        });
+      }, 1000);
+    });
+  },
+  
+  verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
+    // TODO: Implement actual OTP verification API
+    // POST /api/auth/verify-otp
+    
+    // Mock implementation for testing
+    const storedOtp = sessionStorage.getItem(`otp_${email}`);
+    
+    // Verify OTP matches stored value
+    if (otp === storedOtp) {
+      sessionStorage.removeItem(`otp_${email}`);
+      
+      return {
+        accessToken: 'mock-employee-token-' + Date.now(),
+        userName: email.split('@')[0],
+        userId: Math.floor(Math.random() * 1000) + 100,
+        success: true,
+        message: 'OTP verified successfully',
+        loginAttemptCount: 1,
+        newUser: false
+      };
+    } else {
+      throw new Error('Invalid OTP. Please check the code and try again.');
+    }
+  },
+  
   findById: async (id: number): Promise<User> => {
     const response = await api.get<User>(`/user/findById/${id}`);
     return response.data;
@@ -155,7 +244,6 @@ export const adminService = {
     complainceDay?: string;
     questionLevel?: string[];
   }): Promise<Question> => {
-    console.log("Updating question with data:", data);
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
@@ -269,7 +357,7 @@ export const adminService = {
     name: string;
     email: string;
     password: string;
-    role: "admin" | "group_lead";
+    role: "admin" | "group_lead" | "employee";
   }): Promise<User> => {
     const response = await api.post<User>("/user/saveUser", data);
     return response.data;
@@ -278,7 +366,7 @@ export const adminService = {
   updateUser: async (data: {
     id: number;
     name: string;
-    role: "admin" | "group_lead";
+    role: "admin" | "group_lead" | "employee";
   }): Promise<User> => {
     const response = await api.post<User>("/user/updateUser", data);
     return response.data;
@@ -481,7 +569,74 @@ export const taskService = {
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/findFilteredTask/${search}/${page}`);
+    }>(`/task/filteredTaskForAdmin/${search}/${page}`);
+    
+    // Convert TaskProjection[] to Task[] for compatibility
+    const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
+    
+    return {
+      commonListDto: {
+        content: convertedContent,
+      },
+      totalElements: response.data.totalElements,
+    };
+  },
+
+  completeTask: async (taskId: number, response: string): Promise<Task> => {
+    // TODO: API - Complete task endpoint
+    // POST /api/tasks/{taskId}/complete
+    return {
+      id: taskId,
+      employeeName: "Mock Employee",
+      employeeId: 1,
+      level: "L1",
+      department: "IT",
+      role: "Developer",
+      lab: "Lab 1",
+      groupName: "Group 1",
+      pastExperience: "2 years",
+      prevCompany: "Previous Co",
+      complianceDay: "30",
+      assignedTo: "Group Lead",
+      totalQuestions: 5,
+      completedQuestions: 5,
+      status: "Completed",
+      doj: new Date().toISOString(),
+      questionList: [],
+      createdTime: new Date().toISOString(),
+      updatedTime: new Date().toISOString(),
+    };
+  },
+
+  saveTaskResponse: async (taskId: number, response: string): Promise<Task> => {
+    // TODO: API - Save task response endpoint
+    // POST /api/tasks/{taskId}/save-response
+    return {
+      id: taskId,
+      employeeName: "Mock Employee",
+      employeeId: 1,
+      level: "L1",
+      department: "IT",
+      role: "Developer",
+      lab: "Lab 1",
+      groupName: "Group 1",
+      pastExperience: "2 years",
+      prevCompany: "Previous Co",
+      complianceDay: "30",
+      assignedTo: "Group Lead",
+      totalQuestions: 5,
+      completedQuestions: 3,
+      status: "In Progress",
+      doj: new Date().toISOString(),
+      questionList: [],
+      createdTime: new Date().toISOString(),
+      updatedTime: new Date().toISOString(),
+    };
+  },
+
+  // User Management for Group Leads
+  getUsers: async (): Promise<User[]> => {
+    const response = await api.get<User[]>("/group-lead/users");
     return response.data;
   },
 
@@ -519,6 +674,7 @@ export const taskService = {
   },
 };
 
+<<<<<<< Updated upstream
 
 // Group Lead Services
 // export const groupLeadService = {
@@ -647,4 +803,87 @@ export const taskService = {
 //     });
 //     return response.data;
 //   },
-// };
+};
+
+// Employee Services
+export const employeeService = {
+  // Get task groups assigned to the current employee
+  getTaskGroups: async (): Promise<any[]> => {
+    try {
+      const response = await api.get("/employee/task-groups");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching employee task groups:", error);
+      throw error;
+    }
+  },
+
+  // Get detailed information about a specific task group
+  getTaskGroupDetails: async (taskGroupId: string): Promise<any> => {
+    try {
+      const response = await api.get(`/employee/task-groups/${taskGroupId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching task group details:", error);
+      throw error;
+    }
+  },
+
+  // Save answers as draft
+  saveAnswers: async (
+    taskGroupId: string,
+    answers: Record<string, string>
+  ): Promise<any> => {
+    try {
+      const response = await api.put(`/employee/task-groups/${taskGroupId}/answers`, {
+        answers,
+        isDraft: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error saving answers:", error);
+      throw error;
+    }
+  },
+
+  // Submit final answers
+  submitAnswers: async (
+    taskGroupId: string,
+    answers: Record<string, string>,
+    feedback?: string
+  ): Promise<any> => {
+    try {
+      const response = await api.put(`/employee/task-groups/${taskGroupId}/submit`, {
+        answers,
+        feedback,
+        isDraft: false,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error submitting answers:", error);
+      throw error;
+    }
+  },
+
+  // Get employee profile
+  getProfile: async (): Promise<any> => {
+    try {
+      const response = await api.get("/employee/profile");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching employee profile:", error);
+      throw error;
+    }
+  },
+
+  // Update employee profile
+  updateProfile: async (profileData: any): Promise<any> => {
+    try {
+      const response = await api.put("/employee/profile", profileData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating employee profile:", error);
+      throw error;
+    }
+  },
+};
