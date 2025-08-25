@@ -4,47 +4,155 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../AuthContext';
+import { authService } from '../../services/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import OtpInput from '../../components/OtpInput';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useAnimation, animationClasses } from '../../lib/animations';
 
-interface LoginFormInputs {
+// Login step types
+type LoginStep = 'email' | 'password' | 'otp';
+
+interface EmailFormInputs {
   email: string;
+}
+
+interface PasswordFormInputs {
   password: string;
 }
 
+interface OtpFormInputs {
+  otp: string;
+}
+
 const LoginPage: React.FC = () => {
-  const { login, error, isLoading, user} = useAuth();
+  const { login, loginWithOtp, error, isLoading, user } = useAuth();
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
+  const [currentStep, setCurrentStep] = useState<LoginStep>('email');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userRole, setUserRole] = useState<'admin' | 'group_lead' | 'employee' | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [otpMessage, setOtpMessage] = useState<string>('');
   const isVisible = useAnimation();
-  
+
+  // Form configurations for each step
+  const emailForm = useForm<EmailFormInputs>();
+  const passwordForm = useForm<PasswordFormInputs>();
+  const otpForm = useForm<OtpFormInputs>();
+
   // Redirect if already logged in
   useEffect(() => {
-    // console.log('User Refresh', user);
     if (user) {
-      const redirectPath = user.role === 'admin' ? '/admin' : '/group-lead';
-      // const redirectPath = '/admin';
+      let redirectPath = '/';
+      switch (user.role) {
+        case 'admin':
+          redirectPath = '/admin';
+          break;
+        case 'group_lead':
+          redirectPath = '/group-lead';
+          break;
+        case 'employee':
+          redirectPath = '/employee';
+          break;
+        default:
+          redirectPath = '/';
+      }
       router.push(redirectPath);
     }
   }, [user, router]);
-  
-  const onSubmit = async (data: LoginFormInputs) => {
+
+  // Handle email submission (Step 1)
+  const onEmailSubmit = async (data: EmailFormInputs) => {
     try {
       setLoginError(null);
-      console.log('Attempting login with:', data.email);
-      await login(data.email, data.password);
-      console.log('Login successful');
-      // Navigation will happen automatically via useEffect above
+      
+      // TODO: API - Check user role and existence
+      // POST /api/auth/check-user-role
+      const roleResponse = await authService.checkUserRole(data.email);
+      
+      if (!roleResponse.exists) {
+        setLoginError('Email not found. Please check your email address.');
+        return;
+      }
+
+      setUserEmail(data.email);
+      setUserRole(roleResponse.role);
+
+      if (roleResponse.role === 'admin' || roleResponse.role === 'group_lead') {
+        setCurrentStep('password');
+      } else {
+        // TODO: API - Send OTP to employee email
+        // POST /api/auth/send-otp
+        try {
+          const otpResponse = await authService.sendOtp(data.email);
+          setOtpMessage(otpResponse.message);
+          setOtpSent(true);
+          setCurrentStep('otp');
+        } catch (error: any) {
+          setLoginError(error.message || 'Failed to send OTP');
+        }
+      }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Role check error:', error);
+      setLoginError(error.message || 'Failed to verify email');
+    }
+  };
+
+  // Handle password submission (Step 2a - Admin/Group Lead)
+  const onPasswordSubmit = async (data: PasswordFormInputs) => {
+    try {
+      setLoginError(null);
+      await login(userEmail, data.password);
+    } catch (error: any) {
       setLoginError(error.response?.data?.message || error.message || 'Login failed');
     }
   };
-  
+
+  const onOtpSubmit = async (data: OtpFormInputs) => {
+    try {
+      setLoginError(null);
+      await loginWithOtp(userEmail, data.otp);
+    } catch (error: any) {
+      setLoginError(error.message || 'OTP verification failed');
+    }
+  };
+
+  // Handle OTP completion from OtpInput component
+  const handleOtpComplete = (otp: string) => {
+    otpForm.setValue('otp', otp);
+    onOtpSubmit({ otp });
+  };
+
+  // Handle back button
+  const handleBack = () => {
+    if (currentStep === 'password' || currentStep === 'otp') {
+      setCurrentStep('email');
+      setUserEmail('');
+      setUserRole(null);
+      setOtpSent(false);
+      setOtpMessage('');
+      setLoginError(null);
+      passwordForm.reset();
+      otpForm.reset();
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    try {
+      setLoginError(null);
+      // TODO: API - Resend OTP to employee email
+      // POST /api/auth/send-otp
+      const otpResponse = await authService.sendOtp(userEmail);
+      setOtpMessage(otpResponse.message);
+    } catch (error: any) {
+      setLoginError(error.message || 'Failed to resend OTP');
+    }
+  };
+
   return (
     <div className={`min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
       {/* Theme toggle in top right corner */}
@@ -55,7 +163,21 @@ const LoginPage: React.FC = () => {
       <Card className={`w-full max-w-md ${animationClasses.hoverLift} ${isVisible ? animationClasses.scaleIn : 'opacity-0'}`}>
         <CardHeader className="text-center pb-8">
           <CardTitle className="text-3xl font-bold">Employee Onboarding</CardTitle>
-          <p className="mt-2 text-muted-foreground">Sign in to your account</p>
+          <p className="mt-2 text-muted-foreground">
+            {currentStep === 'email' && 'Enter your email to continue'}
+            {currentStep === 'password' && `Welcome back! Enter your password`}
+            {currentStep === 'otp' && 'Enter the OTP sent to your email'}
+          </p>
+          {currentStep !== 'email' && (
+            <div className="mt-2">
+              <button
+                onClick={handleBack}
+                className="text-sm text-primary hover:underline"
+              >
+                ← Back to email
+              </button>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent>
@@ -64,68 +186,136 @@ const LoginPage: React.FC = () => {
               {error || loginError}
             </div>
           )}
-          
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
-              <Input
-                id="email"
-                label="Email address"
-                type="email"
-                required
-                error={errors.email?.message}
-                {...register('email', { 
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
-                  }
-                })}
-              />
-            </div>
-            
-            <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
-              <Input
-                id="password"
-                label="Password"
-                type="password"
-                required
-                error={errors.password?.message}
-                {...register('password', { 
-                  required: 'Password is required',
-                  minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters'
-                  }
-                })}
-              />
-            </div>
-            
-            <div className={`${isVisible ? animationClasses.slideInUp : 'opacity-0'}`} style={{ animationDelay: '400ms' }}>
-              <Button
-                type="submit"
-                variant="primary"
-                className={`w-full ${isLoading ? animationClasses.pulse : animationClasses.hoverScale}`}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </div>
-          </form>
 
-          {/* Demo Accounts
-          <div className="mt-8 pt-6 border-t border-border">
-            <p className="text-sm text-muted-foreground text-center mb-4">Demo Accounts:</p>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Admin:</span>
-                <span>admin@example.com / admin123</span>
+          {currentStep === 'otp' && otpMessage && (
+            <div className={`bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 ${animationClasses.slideInUp}`}>
+              {otpMessage}
+            </div>
+          )}
+
+          {/* Step 1: Email Input */}
+          {currentStep === 'email' && (
+            <form className="space-y-6" onSubmit={emailForm.handleSubmit(onEmailSubmit)}>
+              <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
+                <Input
+                  id="email"
+                  label="Email address"
+                  type="email"
+                  required
+                  error={emailForm.formState.errors.email?.message}
+                  {...emailForm.register('email', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
+                />
               </div>
-              <div className="flex justify-between">
-                <span>Group Lead:</span>
-                <span>gl1@example.com / password</span>
+              
+              <div className={`${isVisible ? animationClasses.slideInUp : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className={`w-full ${isLoading ? animationClasses.pulse : animationClasses.hoverScale}`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Checking...' : 'Continue'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 2a: Password Input (Admin/Group Lead) */}
+          {currentStep === 'password' && (
+            <form className="space-y-6" onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+              <div className="text-sm text-muted-foreground mb-4">
+                <strong>Email:</strong> {userEmail}
+                <br />
+                <strong>Role:</strong> {userRole === 'group_lead' ? 'Group Leader' : 'Administrator'}
+              </div>
+              
+              <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
+                <Input
+                  id="password"
+                  label="Password"
+                  type="password"
+                  required
+                  error={passwordForm.formState.errors.password?.message}
+                  {...passwordForm.register('password', { 
+                    required: 'Password is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Password must be at least 6 characters'
+                    }
+                  })}
+                />
+              </div>
+              
+              <div className={`${isVisible ? animationClasses.slideInUp : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className={`w-full ${isLoading ? animationClasses.pulse : animationClasses.hoverScale}`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Signing in...' : 'Sign in'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 2b: OTP Input (Employee) */}
+          {currentStep === 'otp' && (
+            <div className="space-y-6">
+              <div className="text-sm text-muted-foreground mb-4">
+                <strong>Email:</strong> {userEmail}
+                <br />
+                <strong>Role:</strong> Employee
+              </div>
+              
+              <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
+                <label className="block text-sm font-medium mb-4 text-center">
+                  Enter the 6-digit OTP sent to your email
+                </label>
+                <OtpInput
+                  length={6}
+                  onComplete={handleOtpComplete}
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="space-y-3">
+                <div className={`${isVisible ? animationClasses.slideInUp : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className={`w-full ${isLoading ? animationClasses.pulse : animationClasses.hoverScale}`}
+                    onClick={() => {
+                      const currentOtp = otpForm.getValues('otp');
+                      if (currentOtp && currentOtp.length === 6) {
+                        onOtpSubmit({ otp: currentOtp });
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify OTP'}
+                  </Button>
+                </div>
+                
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    className="text-sm text-primary hover:underline"
+                    disabled={isLoading}
+                  >
+                    Didn't receive OTP? Resend
+                  </button>
+                </div>
               </div>
             </div>
-          </div> */}
+          )}
         </CardContent>
       </Card>
     </div>

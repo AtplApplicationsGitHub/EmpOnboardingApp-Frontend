@@ -37,30 +37,19 @@ import { toast } from "react-hot-toast";
 const PAGE_SIZE = 10;
 
 const formatDateForInput = (dateString: string | undefined | null) => {
-  // If the date is null, undefined, or an empty string, return an empty string.
   if (!dateString) {
     return "";
   }
-
-  // If the date is already in YYYY-MM-DD format, return it directly
   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return dateString;
   }
-
-  // Try to create a Date object
   const date = new Date(dateString);
-
-  // Check if the date object is valid. isNaN() is the standard way to check for a valid date.
   if (isNaN(date.getTime())) {
-    return ""; // Return an empty string if the date is invalid
+    return "";
   }
-
-  // Get the year, month, and day as separate values
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-indexed, so add 1
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-
-  // Return the new date in YYYY-MM-DD format
   return `${year}-${month}-${day}`;
 };
 
@@ -123,7 +112,6 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
-      console.log("Fetched employees after update:", data.commonListDto);
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -143,11 +131,6 @@ const EmployeesPage: React.FC = () => {
   const handleAddEmployee = async () => {
     if (!newEmployee.name) {
       toast.error("Please fill in Candidate Name");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -193,11 +176,9 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-      console.log("Received from backend:", emp);
 
-      // const formattedDate = new Date(emp.date).toISOString().split('T')[0];
       const formattedDate = formatDateForInput(emp.date);
-      console.log("Formatted date:", formattedDate);
+
 
       // Prefill the modal form with fetched employee data
       setNewEmployee({
@@ -231,11 +212,6 @@ const EmployeesPage: React.FC = () => {
       toast.error("Candidate Name is required.");
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
 
     try {
       const updatePayload = {
@@ -252,7 +228,7 @@ const EmployeesPage: React.FC = () => {
         email: newEmployee.email,
       };
 
-      console.log("Sending to backend:", updatePayload);
+
       await adminService.updateEmployee(updatePayload as Employee);
 
       toast.success("Employee updated successfully!");
@@ -328,17 +304,16 @@ const EmployeesPage: React.FC = () => {
       const rawErrors = result.errors ?? [];
       const normalizedErrors: string[] = Array.isArray(rawErrors)
         ? rawErrors.map((e: any) =>
-            typeof e === "string"
-              ? e
-              : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
-          )
+          typeof e === "string"
+            ? e
+            : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
+        )
         : [];
       if (errorCount > 0) {
         setImportErrors(normalizedErrors);
         const preview = normalizedErrors.slice(0, 3).join("; ");
         toast.error(
-          `Import reported ${errorCount} error(s). ${preview}${
-            normalizedErrors.length > 3 ? "..." : ""
+          `Import reported ${errorCount} error(s). ${preview}${normalizedErrors.length > 3 ? "..." : ""
           }`
         );
       }
@@ -480,8 +455,8 @@ const EmployeesPage: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableCell></TableCell>
-                <TableCell className="w-44">Name</TableCell>
-                <TableCell className="w-40">Email</TableCell>
+                <TableCell className="w-40">Name</TableCell>
+                <TableCell className="w-44">Email</TableCell>
                 <TableCell className="w-24">DOJ</TableCell>
                 <TableCell>Department</TableCell>
                 <TableCell>Role</TableCell>
@@ -526,10 +501,10 @@ const EmployeesPage: React.FC = () => {
                         <Trash2 size={14} />
                       </Button>
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">
+                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
                       {emp.name}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis">
+                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
                       {emp.email}
                     </TableCell>
 
@@ -540,22 +515,21 @@ const EmployeesPage: React.FC = () => {
                     <TableCell>{emp.role || "N/A"}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          emp.level === "L1"
+                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
                             ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                             : emp.level === "L2"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : emp.level === "L3"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                              : emp.level === "L3"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          }`}
                       >
                         {emp.level || "L1"}
                       </span>
                     </TableCell>
                     <TableCell>{emp.labAllocation || "N/A"}</TableCell>
-                    <TableCell className="w-20">
-                    {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
+                    <TableCell>
+                      {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </TableCell>
                   </TableRow>
                 ))
@@ -718,7 +692,7 @@ const EmployeesPage: React.FC = () => {
                     }}
                     displayFullValue={false}
                     isEmployeePage={true}
-                    disabled={editMode}  
+                    disabled={editMode}
                   />
                 </div>
                 <div>
@@ -804,16 +778,16 @@ const EmployeesPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-1">
                     Email *
                   </label>
-                   <Input
-    type="email"
-    value={newEmployee.email ?? ""}
-    onChange={(e) =>
-      setNewEmployee({ ...newEmployee, email: e.target.value })
-    }
-    className="w-full px-3 py-2 border rounded-md bg-background"
-    placeholder="Enter email address"
-    disabled={editMode}
-  />
+                  <Input
+                    type="email"
+                    value={newEmployee.email ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="Enter email address"
+                    disabled={editMode}
+                  />
                 </div>
               </div>
 
@@ -821,7 +795,7 @@ const EmployeesPage: React.FC = () => {
                 <Button
                   onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
                   className="flex-1"
-                  disabled={!newEmployee.name || !newEmployee.email || !newEmployee.level}
+                  disabled={!newEmployee.name || !newEmployee.level || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "")}
                 >
                   {editMode ? "Update User" : "Create User"}
                 </Button>
@@ -890,7 +864,7 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-            {/* Import Modal */}
+      {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
