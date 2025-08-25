@@ -361,7 +361,7 @@ const EmployeesPage: React.FC = () => {
       if (!base64) throw new Error("No base64 file content in response.");
 
       const fileName: string =
-        data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
+        data.fileName ?? `AddEmployee_${Date.now()}.xls`;
       const blob = base64ToBlob(
         base64,
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

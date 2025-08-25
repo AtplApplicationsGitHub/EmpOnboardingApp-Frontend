@@ -91,7 +91,6 @@ export interface Task {
   status: string;
   doj: string;
   freezeTask: string;
-  freezeButton: boolean;
   questionList: TaskQuestions[];
   questionText?: string;
   response?: string;
@@ -127,6 +126,8 @@ export interface TaskProjection {
   pendingQuetions: number;
   status: string;
   freeze:string
+  doj: string;
+  lab: string;
 }
 
 export interface AuthResponse {

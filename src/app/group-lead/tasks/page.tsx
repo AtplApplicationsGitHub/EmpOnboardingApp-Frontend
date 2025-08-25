@@ -155,16 +155,6 @@ const GroupLeadTasksPage: React.FC = () => {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Task Management</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage tasks grouped by employee and group
-          </p>
-        </div>
-      </div>
-
       {/* Search Filter */}
       <Card>
         <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -305,34 +295,6 @@ const GroupLeadTasksPage: React.FC = () => {
                         >
                           <Eye size={16} />
                         </Button>
-
-                        {task.freezeButton &&
-                          task.freezeTask === "N" && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg ml-2"
-                              aria-label="Completed"
-                              onClick={() => {
-                                setSelectedTaskId(task.id.toString());
-                                setShowFreezeModal(true);
-                              }}
-                            >
-                              <Unlock size={16} />
-                            </Button>
-                          )}
-                        {task.freezeButton &&
-                          task.freezeTask === "Y" && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg ml-2"
-                              aria-label="Frozen"
-                              disabled
-                            >
-                              <Lock size={16} />
-                            </Button>
-                          )}
                       </TableCell>
                     </TableRow>
                   );

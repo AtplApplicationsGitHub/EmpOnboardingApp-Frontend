@@ -255,6 +255,8 @@ const GroupDetailsPage: React.FC = () => {
                         : "Text Response"}
                     </span>
                     <span>Due: Day {question.complainceDay}</span>
+                    <span>Period: {question.period}</span>
+
                     <div className="flex items-center gap-1">
                       <span>Levels:</span>
                       {question.questionLevel.map((questionLevel) => (
@@ -432,7 +434,7 @@ const GroupDetailsPage: React.FC = () => {
                   </label>
                   <div className="flex gap-4">
                     <SearchableDropdown
-                    className="w-full"
+                      className="w-full"
                       options={periodOptions}
                       value={
                         periodOptions.find(

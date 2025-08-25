@@ -206,6 +206,14 @@ export const adminService = {
     return response.data;
   },
 
+  // LookUp
+
+  getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(`/lookup/items/${type}`); 
+    return response.data;
+  },
+
+
   // New admin reassignment methods
   reassignTaskToUser: async (
     taskId: number,
