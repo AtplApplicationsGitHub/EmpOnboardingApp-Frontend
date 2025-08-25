@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { authService } from '../services/api';
 import { User } from '../types';
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithOtp: (email: string, otp: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,39 +25,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in on app start
     const initializeAuth = async () => {
-      console.log('Initializing auth context...');
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      debugger;
-      if (token) {
-        // try {
-        //   // Try to verify token is still valid by fetching fresh user data
-        //   const userData = await authService.getCurrentUser();
-        //   setUser(userData);
-        //   // Update stored user data with fresh data
-        //   localStorage.setItem('user', JSON.stringify(userData));
-        // } catch (error) {
-        //   // If API call fails, try to use stored user data as fallback
-          if (storedUser) {
-            try {
-              const userData = JSON.parse(storedUser);
-              setUser(userData);
-              console.log('Using stored user data as fallback');
-            } catch (parseError) {
-              // If stored data is corrupt, clear everything
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              console.log('Stored user data corrupted, cleared');
-            }
-          } else {
-            // No fallback available, clear token
-            localStorage.removeItem('token');
-            console.log('Token validation failed, user logged out');
-          }
+      if (token && storedUser) {
+        // TODO: API - Verify token validity with backend
+        // GET /api/auth/verify-token
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+        } catch (parseError) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
-      // }
+      }
       setIsLoading(false);
     };
     
@@ -72,9 +54,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userResponse = await authService.findById(response.userId);
       localStorage.setItem('user', JSON.stringify(userResponse));
       setUser(userResponse);
-      console.log('Login successful, token stored');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Login failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithOtp = async (email: string, otp: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await authService.verifyOtp(email, otp);
+      localStorage.setItem('token', response.accessToken);
+      
+      // TODO: API - Get employee details after OTP verification
+      // GET /api/employees/{userId} or /api/auth/employee-profile
+      const mockEmployeeUser: User = {
+        id: response.userId,
+        name: response.userName || email.split('@')[0],
+        email: email,
+        role: 'employee',
+        createdTime: new Date().toISOString(),
+        updatedTime: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user', JSON.stringify(mockEmployeeUser));
+      setUser(mockEmployeeUser);
+    } catch (error: any) {
+      setError(error.message || 'OTP verification failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -86,16 +95,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('user');
     setUser(null);
     setError(null);
-    console.log('User logged out, tokens cleared');
   };
 
-  const value: AuthContextType = {
+  const value: AuthContextType = useMemo(() => ({
     user,
     isLoading,
     error,
     login,
+    loginWithOtp,
     logout,
-  };
+  }), [user, isLoading, error]);
 
   return (
     <AuthContext.Provider value={value}>

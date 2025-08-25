@@ -80,7 +80,6 @@ const EmployeeTasksPage: React.FC = () => {
   }, [employeeId, employeeName]);
 
   const handleResponseChange = (taskId: number, value: string) => {
-    console.log('Response change:', { taskId, valueLength: value.length, preview: value.substring(0, 50) });
     
     setResponses(prev => ({
       ...prev,

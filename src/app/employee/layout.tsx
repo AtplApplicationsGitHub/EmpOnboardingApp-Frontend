@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthContext';
 import Navbar from '../components/Navbar';
 
-const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect if not authenticated or not an admin
+  // Redirect if not authenticated or not an employee
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'admin')) {
+    if (!isLoading && (!user || user.role !== 'employee')) {
       router.push('/auth/login');
     }
   }, [user, isLoading, router]);
@@ -24,15 +24,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Don't render anything if not authenticated or not an admin
-  if (!user || user.role !== 'admin') {
+  // Don't render anything if not authenticated or not an employee
+  if (!user || user.role !== 'employee') {
     return null;
   }
 
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <div className="flex-1 ml-48">
+      <div className="flex-1 ml-64">
         <main className="p-6">
           {children}
         </main>
@@ -41,4 +41,4 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default AdminLayout;
+export default EmployeeLayout;

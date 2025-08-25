@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
 import { User } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
@@ -31,44 +31,50 @@ import toast from "react-hot-toast";
 const PAGE_SIZE = 10;
 
 const UsersPage: React.FC = () => {
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // 0-based paging
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Modal state for create/update
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    role: "group_lead" as "admin" | "group_lead",
+    role: "group_lead" as "admin" | "group_lead" | "employee",
   });
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line
-  }, [searchFilter, currentPage]);
+    if (showCreateModal && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [searchFilter, currentPage, showCreateModal]);
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const params: any = { page: currentPage };
       if (searchFilter && searchFilter.trim() !== "") {
         params.search = searchFilter.trim();
       }
       const response = await adminService.getUsers(params);
       setUsers(response.commonListDto || []);
+      console.log("Users fetched:", response.commonListDto);
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -121,6 +127,41 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const handleEmailChange = async (value: string) => {
+    setFormData({ ...formData, email: value });
+    if (!value || editMode) return;
+    setCheckingEmail(true);
+    try {
+      const res = await adminService.isEmailExists(value);
+      setEmailExists(res);
+    } catch (error) {
+      console.error("Email check failed", error);
+      setEmailExists(false);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const validatePassword = (password: string) => {
+    const rules = [
+      { regex: /.{8,}/, message: "At least 8 characters" },
+      { regex: /[A-Z]/, message: "At least one uppercase letter" },
+      { regex: /[a-z]/, message: "At least one lowercase letter" },
+      { regex: /[0-9]/, message: "At least one number" },
+      {
+        regex: /[!@#$%^&*(),.?":{}|<>]/,
+        message: "At least one special character",
+      },
+    ];
+
+    for (const rule of rules) {
+      if (!rule.regex.test(password)) {
+        return rule.message;
+      }
+    }
+    return null;
+  };
+
   // Reset Modal
   const resetForm = () => {
     setFormData({ name: "", email: "", password: "", role: "group_lead" });
@@ -139,13 +180,13 @@ const UsersPage: React.FC = () => {
   // For update: open modal, load user data by id
   const handleEditUser = async (userId: number) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const user = await adminService.findById(userId); // should return user object
       setFormData({
         name: user.name || "",
         email: user.email || "",
         password: "",
-        role: user.role as "admin" | "group_lead",
+        role: user.role as "admin" | "group_lead" | "employee",
       });
       setEditMode(true);
       setSelectedUserId(userId);
@@ -153,7 +194,7 @@ const UsersPage: React.FC = () => {
     } catch (err: any) {
       toast.error("Failed to load user");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -204,14 +245,6 @@ const UsersPage: React.FC = () => {
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-64"
           />
-          <Button
-            type="submit"
-            variant="outline"
-            className="flex items-center gap-1"
-          >
-            <Search size={16} />
-            Search
-          </Button>
         </form>
         <Button
           onClick={() => {
@@ -263,7 +296,6 @@ const UsersPage: React.FC = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Last Updated</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,12 +311,20 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>
+                    <TableCell className="flex items-center gap-2">
                       {user.role === "admin" ? (
                         <Shield size={16} className="text-red-500" />
                       ) : (
                         <UserCheck size={16} className="text-blue-500" />
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="p-1 hover:bg-transparent hover:text-primary"
+                        onClick={() => handleEditUser(user.id)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -306,17 +346,6 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.updatedTime}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        <Pencil size={14} />
-                        Update
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -410,6 +439,7 @@ const UsersPage: React.FC = () => {
                 <label className="block text-sm font-medium mb-2">Name</label>
                 <Input
                   id="name"
+                  ref={nameInputRef}
                   type="text"
                   value={formData.name}
                   onChange={(e) =>
@@ -425,13 +455,16 @@ const UsersPage: React.FC = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  disabled={editMode} // non-editable on update
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  disabled={editMode}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="Enter user's email address"
                   required
                 />
+                {!editMode && emailExists && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Email already exists
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
@@ -440,7 +473,7 @@ const UsersPage: React.FC = () => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as "admin" | "group_lead",
+                      role: e.target.value as "admin" | "group_lead" | "employee",
                     })
                   }
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -448,6 +481,7 @@ const UsersPage: React.FC = () => {
                 >
                   <option value="group_lead">Group Lead</option>
                   <option value="admin">Administrator</option>
+                  <option value="employee">Employee</option>
                 </select>
               </div>
 
@@ -461,12 +495,17 @@ const UsersPage: React.FC = () => {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, password: value });
+                      setPasswordError(validatePassword(value));
+                    }}
                     placeholder="Enter password"
                     required
                   />
+                  {passwordError && (
+                    <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                  )}
                 </div>
               )}
 
@@ -474,7 +513,14 @@ const UsersPage: React.FC = () => {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button
+                  type="submit"
+                  disabled={
+                    emailExists ||
+                    checkingEmail ||
+                    (!!passwordError && !editMode)
+                  }
+                >
                   {editMode ? "Update User" : "Create User"}
                 </Button>
               </div>

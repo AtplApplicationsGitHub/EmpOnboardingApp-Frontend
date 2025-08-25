@@ -4,53 +4,130 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'group_lead';
+  role: "admin" | "group_lead" | "employee";
   createdTime: string;
   updatedTime: string;
+}
+
+export interface DropDownDTO {
+  id: number;
+  key: string;
+  value: string;
 }
 
 export interface Group {
   id: number;
   name: string;
-  primary_group_lead_id?: number;
-  escalation_group_lead_id?: number;
-  primary_group_lead_name?: string;
-  escalation_group_lead_name?: string;
-  question_count?: number;
-  created_at: string;
-  updated_at: string;
+  pgLead?: string;
+  egLead?: string;
+  createdTime: string;
+  updatedTime: string;
+  quesCount?: number;
+  deleteFlag?: boolean;
 }
+
+export interface Employee {
+  id: number;
+  name: string;
+  date: string;
+  department: string;
+  role: string;
+  email: string;
+  level: "L1" | "L2" | "L3" | "L4";
+  totalExperience: string;
+  labAllocation: string;
+  pastOrganization: string;
+  complianceDay: string;
+  createdTime: string;
+  updatedTime: string;
+  deleteFlag?: boolean;
+}
+
+export interface EmployeeImportResult {
+  successCount: number;
+  errorCount: number;
+  errors?: Array<string | { row?: number; message?: string }>;
+}
+// export interface Group {
+//   id: number;
+//   name: string;
+//   pgLeadId?: number;
+//   egLeadId?: number;
+//   pgLeadName?: string;
+//   egLeadName?: string;
+//   question_count?: number;
+//   created_at: string;
+//   updated_at: string;
+// }
 
 export interface Question {
   id: number;
-  group_id: number;
-  question_text: string;
-  response_type: 'yes_no' | 'text';
-  compliance_day: number;
-  created_at: string;
-  updated_at: string;
-  levels: string[]; // 'L1', 'L2', 'L3', or 'L4'
+  text: string;
+  response: "yes_no" | "text";
+  complainceDay: string;
+  questionLevel: string[];
+  period: string;
+  groupId: number;
+  createdTime: string;
+  updatedTime: string;
 }
 
 export interface Task {
   id: number;
-  question_id: number;
-  mock_employee_id: string;
-  mock_employee_name: string;
-  mock_employee_level: string; // 'L1', 'L2', 'L3', or 'L4'
-  assignee_id: number;
-  escalation_user_id: number;
-  status: 'pending' | 'completed' | 'reassigned';
+  employeeId: number;
+  employeeName: string;
+  level: string;
+  department: string;
+  role: string;
+  lab: string;
+  groupName: string;
+  groupId?: number;
+  pastExperience: string;
+  prevCompany: string;
+  complianceDay: string;
+  assignedTo: string;
+  totalQuestions: number;
+  completedQuestions: number;
+  status: string;
+  doj: string;
+  freezeTask: string;
+  questionList: TaskQuestions[];
+  questionText?: string;
   response?: string;
-  due_date: string;
-  created_at: string;
-  updated_at: string;
+  createdTime: string;
+  updatedTime: string;
+  
+  // Additional fields that might come from API
+  mock_employee_id?: string;
+  mock_employee_name?: string;
+  mock_employee_level?: string;
   completed_at?: string;
-  question: string;
-  response_type: 'yes_no' | 'text';
-  compliance_day: number;
-  assignee_name: string;
-  escalation_user_name: string;
+}
+
+export interface TaskQuestions {
+  id: number;
+  questionId: string;
+  response: string;
+  responseType: "yes_no" | "text";
+  status: string;
+  complianceDay: string;
+  overDueFlag: boolean;
+}
+
+export interface TaskProjection {
+  employeeId: string;
+  name: string;
+  department: string;
+  role: string;
+  level: string;
+  taskIds: string;
+  totalQuetions: number;
+  completedQuetions: number;
+  pendingQuetions: number;
+  status: string;
+  freeze:string
+  doj: string;
+  lab: string;
 }
 
 export interface AuthResponse {
@@ -63,11 +140,10 @@ export interface AuthResponse {
   newUser: boolean;
 }
 
-
 export interface Employee {
   employee_id: string;
   employee_name: string;
-  employee_level: 'L1' | 'L2' | 'L3' | 'L4';
+  employee_level: "L1" | "L2" | "L3" | "L4";
   group_id?: number; // Optional since employees are assigned to all groups
 }
 
@@ -77,7 +153,7 @@ export interface QueueEmployee {
   doj: string;
   department: string;
   role: string;
-  level: 'L1' | 'L2' | 'L3' | 'L4';
+  level: "L1" | "L2" | "L3" | "L4";
   total_experience: number;
   past_organization: string;
   lab_allocation: string;
@@ -117,6 +193,11 @@ export interface ProcessedEmployee {
     escalation_group_lead?: string;
   }[];
   message?: string;
+}
+
+export interface PdfDto {
+  pdf: string;
+  fileName: string;
 }
 
 export interface EmployeeProcessingResponse {

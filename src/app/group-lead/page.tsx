@@ -71,9 +71,6 @@ const GroupLeadTaskPage: React.FC = () => {
   // Group tasks by employee
   const groupTasksByEmployee = (tasks: Task[]): EmployeeTask[] => {
     const employeeMap = new Map<string, EmployeeTask>();
-
-    console.log('=== DEBUGGING TASK GROUPING ===');
-    console.log('Total tasks received:', tasks.length);
     
     // First, let's create a mapping to normalize employee identification
     const employeeIdToName: Record<string, string> = {};
@@ -85,31 +82,26 @@ const GroupLeadTaskPage: React.FC = () => {
       const empName = task.mock_employee_name;
       
       // If ID looks like a proper employee ID (EMP###), map it to the name
-      if (empId.startsWith('EMP')) {
+      if (empId && empName && empId.startsWith('EMP')) {
         employeeIdToName[empId] = empName;
         employeeNameToId[empName] = empId;
       }
     });
     
-    console.log('Employee ID to Name mapping:', employeeIdToName);
-    console.log('Employee Name to ID mapping:', employeeNameToId);
-    
     // Group tasks by employee ID to see if there are duplicates
     const tasksByEmployeeId = new Map<string, Task[]>();
     
     tasks.forEach(task => {
-      let normalizedEmployeeId = task.mock_employee_id;
+      let normalizedEmployeeId = task.mock_employee_id || task.employeeName || 'unknown';
       
       // If the current ID is actually a name and we have a proper ID for this name, use that
-      if (employeeNameToId[task.mock_employee_id]) {
+      if (task.mock_employee_id && employeeNameToId[task.mock_employee_id]) {
         normalizedEmployeeId = employeeNameToId[task.mock_employee_id];
-        console.log(`Normalizing ${task.mock_employee_id} to ${normalizedEmployeeId}`);
       }
       // If the current ID doesn't start with EMP but we have a name, 
       // check if there's a proper EMP ID for this employee name
-      else if (!task.mock_employee_id.startsWith('EMP') && employeeNameToId[task.mock_employee_name]) {
+      else if (task.mock_employee_id && !task.mock_employee_id.startsWith('EMP') && task.mock_employee_name && employeeNameToId[task.mock_employee_name]) {
         normalizedEmployeeId = employeeNameToId[task.mock_employee_name];
-        console.log(`Using name-based mapping: ${task.mock_employee_id} -> ${normalizedEmployeeId} for ${task.mock_employee_name}`);
       }
       
       if (!tasksByEmployeeId.has(normalizedEmployeeId)) {
@@ -118,29 +110,18 @@ const GroupLeadTaskPage: React.FC = () => {
       tasksByEmployeeId.get(normalizedEmployeeId)!.push(task);
     });
 
-    console.log('Tasks grouped by normalized employee ID:');
-    tasksByEmployeeId.forEach((employeeTasks, employeeId) => {
-      console.log(`Employee ${employeeId}:`, {
-        count: employeeTasks.length,
-        names: [...new Set(employeeTasks.map(t => t.mock_employee_name))],
-        levels: [...new Set(employeeTasks.map(t => t.mock_employee_level))],
-        taskIds: employeeTasks.map(t => t.id),
-        originalIds: [...new Set(employeeTasks.map(t => t.mock_employee_id))]
-      });
-    });
-
     // Now process each group to create EmployeeTask objects
     tasksByEmployeeId.forEach((groupTasks, normalizedEmployeeId) => {
       const firstTask = groupTasks[0];
       
       const employeeTask: EmployeeTask = {
         employeeId: normalizedEmployeeId,
-        employeeName: firstTask.mock_employee_name,
-        employeeLevel: firstTask.mock_employee_level,
+        employeeName: firstTask.mock_employee_name || firstTask.employeeName || 'Unknown',
+        employeeLevel: firstTask.mock_employee_level || firstTask.level || 'Unknown',
         tasks: groupTasks,
         completedTasks: 0,
         totalTasks: groupTasks.length,
-        earliestDueDate: firstTask.due_date,
+        earliestDueDate: new Date().toISOString(), // Use current date as fallback
         isOverdue: false
       };
 
@@ -153,13 +134,15 @@ const GroupLeadTaskPage: React.FC = () => {
           employeeTask.completedTasks++;
         }
 
-        // Update earliest due date
-        if (new Date(task.due_date) < new Date(employeeTask.earliestDueDate)) {
-          employeeTask.earliestDueDate = task.due_date;
+        // Update earliest due date (using createdTime as fallback)
+        const taskDate = task.createdTime || new Date().toISOString();
+        if (new Date(taskDate) < new Date(employeeTask.earliestDueDate)) {
+          employeeTask.earliestDueDate = taskDate;
         }
 
-        // Check if any task is overdue (no response and past due date)
-        if (new Date(task.due_date) < new Date() && !hasResponse) {
+        // Check if any task is overdue (no response and past created date + some time)
+        const daysSinceCreated = (new Date().getTime() - new Date(taskDate).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceCreated > 7 && !hasResponse) { // Consider overdue after 7 days
           employeeTask.isOverdue = true;
         }
       });
@@ -173,13 +156,6 @@ const GroupLeadTaskPage: React.FC = () => {
       if (!a.isOverdue && b.isOverdue) return 1;
       return new Date(a.earliestDueDate).getTime() - new Date(b.earliestDueDate).getTime();
     });
-
-    console.log('Final grouped employees after normalization:', result.map(emp => ({
-      employeeId: emp.employeeId,
-      employeeName: emp.employeeName,
-      totalTasks: emp.totalTasks
-    })));
-    console.log('Total unique employees after normalization:', result.length);
 
     return result;
   };
@@ -197,18 +173,6 @@ const GroupLeadTaskPage: React.FC = () => {
       // 2. It doesn't have a response (null, undefined, or empty string)
       const hasResponse = task.response && task.response.trim() !== '';
       return task.status !== 'completed' && !hasResponse;
-    });
-    
-    console.log('Debug reassignment check:', {
-      employeeName: employee.employeeName,
-      totalTasks: employee.tasks.length,
-      tasksToReassign: tasksToReassign.length,
-      taskDetails: employee.tasks.map(task => ({
-        id: task.id,
-        status: task.status,
-        response: task.response,
-        hasResponse: task.response && task.response.trim() !== ''
-      }))
     });
     
     if (tasksToReassign.length === 0) {

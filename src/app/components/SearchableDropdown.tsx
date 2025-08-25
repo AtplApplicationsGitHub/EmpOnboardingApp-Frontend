@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search, X } from 'lucide-react';
 
 interface SearchableDropdownProps {
-  options: Array<{ id: number; name: string; email: string }>;
+  options: Array<{ id: number; key: string; value: string }>;
   value?: number;
   onChange: (value: number | undefined) => void;
   placeholder?: string;
@@ -10,6 +10,8 @@ interface SearchableDropdownProps {
   className?: string;
   disabled?: boolean;
   maxDisplayItems?: number;
+  displayFullValue?: boolean;
+  isEmployeePage?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -20,7 +22,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   required = false,
   className = "",
   disabled = false,
-  maxDisplayItems = 4
+  maxDisplayItems = 4,
+  displayFullValue = true,
+  isEmployeePage = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,8 +37,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   // Filter options based on search term
   const filteredOptions = options.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.email.toLowerCase().includes(searchTerm.toLowerCase())
+    option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    option.value.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, maxDisplayItems);
 
   // Close dropdown when clicking outside
@@ -87,7 +91,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, highlightedIndex, filteredOptions]);
 
-  const handleSelectOption = (option: { id: number; name: string; email: string }) => {
+  const handleSelectOption = (option: { id: number; key: string; value: string }) => {
     onChange(option.id);
     setIsOpen(false);
     setSearchTerm('');
@@ -146,11 +150,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           />
         ) : (
           <div className="flex-1 text-sm">
-            {selectedOption ? (
-              <span>{selectedOption.name} ({selectedOption.email})</span>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
+           {selectedOption ? (
+  // Conditionally render based on the new prop
+  <span>
+    {displayFullValue ? `${selectedOption.key} (${selectedOption.value})` : selectedOption.value}
+  </span>
+) : (
+  <span className="text-muted-foreground">{placeholder}</span>
+)}
           </div>
         )}
         
@@ -225,8 +232,21 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                   }
                 }}
               >
-                <div className="font-medium">{option.name}</div>
-                <div className="text-xs text-muted-foreground">{option.email}</div>
+                {isEmployeePage ? (
+  <div className="font-medium">
+    {option.key}
+  </div>
+) : (
+  <>
+    <div className="font-medium">
+      {option.key}
+    </div>
+    <div className="text-xs text-muted-foreground">
+      {option.value}
+    </div>
+  </>
+)}
+
               </div>
             ))
           ) : (
