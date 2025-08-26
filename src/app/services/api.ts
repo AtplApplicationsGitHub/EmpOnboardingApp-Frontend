@@ -295,7 +295,7 @@ export const adminService = {
   // LookUp
 
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/lookup/items/${type}`); 
+    const response = await api.get<DropDownDTO[]>(`/lookup/getCategoryItemByName/${type}`); 
     return response.data;
   },
 
