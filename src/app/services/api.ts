@@ -295,7 +295,7 @@ export const adminService = {
   // LookUp
 
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/lookup/items/${type}`); 
+    const response = await api.get<DropDownDTO[]>(`/lookup/getCategoryItemByName/${type}`); 
     return response.data;
   },
 
@@ -745,14 +745,174 @@ export const taskService = {
 
 // Employee Services
 export const employeeService = {
+  // Get all questions assigned to the current employee across all groups
+  getAllQuestions: async (): Promise<any[]> => {
+    try {
+      // TODO: API - Get all questions for employee across all groups
+      // GET /api/employees/{employeeId}/questions
+      
+      // Mock data - flattened questions from all groups with format matching screenshot
+      const mockQuestions = [
+        {
+          id: 'q1',
+          questionText: 'G3Q2',
+          questionType: 'Text Response',
+          status: 'pending',
+          groupName: 'G3 - T082500003 - GL1',
+          groupLeaderName: 'Group Leader 1',
+          groupId: '3'
+        },
+        {
+          id: 'q2',
+          questionText: 'G3Q1',
+          questionType: 'Yes/No/N/A Question',
+          status: 'pending',
+          groupName: 'G3 - T082500003 - GL1',
+          groupLeaderName: 'Group Leader 1',
+          groupId: '3'
+        },
+        {
+          id: 'q3',
+          questionText: 'G1Q1',
+          questionType: 'Yes/No/N/A Question',
+          status: 'answered',
+          groupLeaderAnswer: 'Yes',
+          answeredAt: '2025-08-20T10:30:00Z',
+          groupName: 'G1 - Frontend Development',
+          groupLeaderName: 'John Smith',
+          groupId: '1'
+        },
+        {
+          id: 'q4',
+          questionText: 'G1Q2',
+          questionType: 'Text Response',
+          status: 'answered',
+          groupLeaderAnswer: 'Good understanding of basic types and interfaces',
+          answeredAt: '2025-08-21T14:15:00Z',
+          groupName: 'G1 - Frontend Development',
+          groupLeaderName: 'John Smith',
+          groupId: '1'
+        },
+        {
+          id: 'q5',
+          questionText: 'G2Q1',
+          questionType: 'Text Response',
+          status: 'pending',
+          groupName: 'G2 - Backend Development',
+          groupLeaderName: 'Sarah Johnson',
+          groupId: '2'
+        },
+        {
+          id: 'q6',
+          questionText: 'G2Q2',
+          questionType: 'Yes/No/N/A Question',
+          status: 'answered',
+          groupLeaderAnswer: 'Yes',
+          answeredAt: '2025-08-22T11:20:00Z',
+          groupName: 'G2 - Backend Development',
+          groupLeaderName: 'Sarah Johnson',
+          groupId: '2'
+        }
+      ];
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return mockQuestions;
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.get("/employee/questions");
+      // return response.data;
+    } catch (error) {
+      console.error('Failed to fetch employee questions:', error);
+      throw error;
+    }
+  },
+
+  // Submit feedback for a specific group
+  submitGroupFeedback: async (groupId: string, feedback: { rating: number; comment: string }): Promise<any> => {
+    try {
+      // TODO: API - Submit employee feedback for specific group
+      // POST /api/employees/{employeeId}/groups/{groupId}/feedback
+      
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        success: true,
+        message: 'Feedback submitted successfully',
+        feedbackId: 'feedback_' + Date.now(),
+        groupId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        submittedAt: new Date().toISOString()
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.post(`/employee/groups/${groupId}/feedback`, {
+      //   rating: feedback.rating,
+      //   comment: feedback.comment
+      // });
+      // return response.data;
+    } catch (error) {
+      console.error('Failed to submit group feedback:', error);
+      throw error;
+    }
+  },
+
+  // Get employee dashboard statistics
+  getDashboardStats: async (): Promise<any> => {
+    try {
+      // TODO: API - Get employee dashboard statistics
+      // GET /api/employees/{employeeId}/dashboard-stats
+      
+      // Mock implementation - calculate from getAllQuestions
+      const questions = await employeeService.getAllQuestions();
+      
+      return {
+        totalQuestions: questions.length,
+        answeredQuestions: questions.filter(q => q.status === 'answered').length,
+        pendingQuestions: questions.filter(q => q.status === 'pending').length,
+        completionPercentage: Math.round((questions.filter(q => q.status === 'answered').length / questions.length) * 100)
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.get("/employee/dashboard-stats");
+      // return response.data;
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error);
+      throw error;
+    }
+  },
+
   // Get task groups assigned to the current employee
   getTaskGroups: async (): Promise<any[]> => {
     try {
       // TODO: API - Get employee's assigned task groups and questions
       // GET /api/employees/{employeeId}/task-groups
-      const response = await api.get("/employee/task-groups");
-      return response.data;
+      
+      // Mock implementation - use getAllQuestions and group them
+      const questions = await employeeService.getAllQuestions();
+      const groupedQuestions = questions.reduce((groups, question) => {
+        const groupKey = question.groupId;
+        if (!groups[groupKey]) {
+          groups[groupKey] = {
+            groupId: question.groupId,
+            groupName: question.groupName,
+            groupLeaderName: question.groupLeaderName,
+            questions: []
+          };
+        }
+        groups[groupKey].questions.push(question);
+        return groups;
+      }, {} as Record<string, any>);
+
+      return Object.values(groupedQuestions);
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.get("/employee/task-groups");
+      // return response.data;
     } catch (error) {
+      console.error('Failed to fetch task groups:', error);
       throw error;
     }
   },
@@ -762,9 +922,28 @@ export const employeeService = {
     try {
       // TODO: API - Get specific group details with questions for employee
       // GET /api/employees/{employeeId}/groups/{groupId}
-      const response = await api.get(`/employee/task-groups/${groupId}`);
-      return response.data;
+      
+      // Mock implementation
+      const allQuestions = await employeeService.getAllQuestions();
+      const groupQuestions = allQuestions.filter(q => q.groupId === groupId);
+      
+      if (groupQuestions.length === 0) {
+        throw new Error(`Group ${groupId} not found`);
+      }
+
+      return {
+        groupId,
+        groupName: groupQuestions[0].groupName,
+        groupLeaderName: groupQuestions[0].groupLeaderName,
+        questions: groupQuestions,
+        feedback: null // No feedback submitted yet
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.get(`/employee/task-groups/${groupId}`);
+      // return response.data;
     } catch (error) {
+      console.error('Failed to fetch task group details:', error);
       throw error;
     }
   },
@@ -772,9 +951,24 @@ export const employeeService = {
   // Save answers for task group questions
   saveAnswers: async (groupId: string, answers: any[]): Promise<any> => {
     try {
-      const response = await api.post(`/employee/task-groups/${groupId}/answers`, { answers });
-      return response.data;
+      // TODO: API - Save employee answers for group questions
+      // POST /api/employees/{employeeId}/groups/{groupId}/answers
+      
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return {
+        success: true,
+        message: 'Answers saved successfully',
+        groupId,
+        savedAt: new Date().toISOString()
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.post(`/employee/task-groups/${groupId}/answers`, { answers });
+      // return response.data;
     } catch (error) {
+      console.error('Failed to save answers:', error);
       throw error;
     }
   },
@@ -782,9 +976,24 @@ export const employeeService = {
   // Submit final answers for task group
   submitAnswers: async (groupId: string): Promise<any> => {
     try {
-      const response = await api.post(`/employee/task-groups/${groupId}/submit`);
-      return response.data;
+      // TODO: API - Submit final answers for group
+      // POST /api/employees/{employeeId}/groups/{groupId}/submit
+      
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        success: true,
+        message: 'Answers submitted successfully',
+        groupId,
+        submittedAt: new Date().toISOString()
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.post(`/employee/task-groups/${groupId}/submit`);
+      // return response.data;
     } catch (error) {
+      console.error('Failed to submit answers:', error);
       throw error;
     }
   },
@@ -792,9 +1001,26 @@ export const employeeService = {
   // Get employee profile
   getProfile: async (): Promise<any> => {
     try {
-      const response = await api.get("/employee/profile");
-      return response.data;
+      // TODO: API - Get employee profile details
+      // GET /api/employees/{employeeId}/profile
+      
+      // Mock implementation
+      return {
+        id: 'emp_' + Math.floor(Math.random() * 1000),
+        name: 'John Employee',
+        email: 'employee@company.com',
+        department: 'Technology',
+        level: 'L2',
+        startDate: '2025-08-01',
+        manager: 'Jane Manager',
+        status: 'Active'
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.get("/employee/profile");
+      // return response.data;
     } catch (error) {
+      console.error('Failed to fetch employee profile:', error);
       throw error;
     }
   },
@@ -802,9 +1028,24 @@ export const employeeService = {
   // Update employee profile
   updateProfile: async (profileData: any): Promise<any> => {
     try {
-      const response = await api.put("/employee/profile", profileData);
-      return response.data;
+      // TODO: API - Update employee profile
+      // PUT /api/employees/{employeeId}/profile
+      
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return {
+        success: true,
+        message: 'Profile updated successfully',
+        updatedAt: new Date().toISOString(),
+        ...profileData
+      };
+
+      // Real API call (uncomment when backend is ready):
+      // const response = await api.put("/employee/profile", profileData);
+      // return response.data;
     } catch (error) {
+      console.error('Failed to update employee profile:', error);
       throw error;
     }
   },
