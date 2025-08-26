@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
-import { Employee } from "../../types";
+import { Employee, DropDownDTO } from "../../types";
 import { adminService } from "../../services/api";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -74,6 +74,8 @@ const EmployeesPage: React.FC = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
     null
   );
+   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
@@ -88,18 +90,36 @@ const EmployeesPage: React.FC = () => {
     email: "",
   });
 
-  //Arrays for dropdown
-  const levelOptions = [
-    { id: 1, key: "L1", value: "L1" },
-    { id: 2, key: "L2", value: "L2" },
-    { id: 3, key: "L3", value: "L3" },
-    { id: 4, key: "L4", value: "L4" },
-  ];
+  // //Arrays for dropdown
+  // const levelOptions = [
+  //   { id: 1, key: "L1", value: "L1" },
+  //   { id: 2, key: "L2", value: "L2" },
+  //   { id: 3, key: "L3", value: "L3" },
+  //   { id: 4, key: "L4", value: "L4" },
+  // ];
 
-  const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+  // const labOptions = [
+  //   { id: 101, key: "Lab1", value: "Lab1" },
+  //   { id: 102, key: "Lab2", value: "Lab2" },
+  // ];
+
+   const fetchLookupData = async () => {
+      try {
+        const levels = await adminService.getLookupItems("level");
+        setLevelOptions(levels);
+
+        const labs = await adminService.getLookupItems("lab");
+        setLabOptions(labs);
+      } catch (error) {
+        // console.error("Failed to fetch lookup items:", error);
+        toast.error("Failed to load dropdown options.");
+      }
+    };
+  
+  useEffect(() => {
+    fetchLookupData();
+  }, []);
+
   useEffect(() => {
     fetchEmployees();
   }, [searchFilter, page]);
