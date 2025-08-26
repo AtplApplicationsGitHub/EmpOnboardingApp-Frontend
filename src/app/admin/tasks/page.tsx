@@ -59,6 +59,7 @@ const TasksPage: React.FC = () => {
       const search = searchFilter.trim();
       if (search) params.search = search;
       const response = await taskService.getTask(params);
+      console.log("Full data object:", response.commonListDto.content[0]);
       setTasks(response.commonListDto.content ?? []);
       setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
@@ -152,6 +153,8 @@ const TasksPage: React.FC = () => {
                 <TableHead>Employee</TableHead>
                 <TableHead>Level</TableHead>
                 <TableHead>Role & Department</TableHead>
+                <TableHead>DOJ</TableHead>
+    <TableHead>Lab</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -161,7 +164,7 @@ const TasksPage: React.FC = () => {
             <TableBody>
               {tasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
                       <p className="text-muted-foreground">No tasks found</p>
@@ -187,7 +190,7 @@ const TasksPage: React.FC = () => {
                       key={(task as any).id ?? (task as any).employeeId}
                     >
                       {/* Employee Name */}
-                      <TableCell className="font-semibold">
+                      <TableCell className="font-semibold  min-w-[150px]">
                         {(task as any).name}
                       </TableCell>
 
@@ -206,8 +209,13 @@ const TasksPage: React.FC = () => {
                         </div>
                       </TableCell>
 
+                       {/* DOJ*/}
+  <TableCell className="min-w-[100px]">{(task as any).doj}</TableCell>
+   {/* Lab*/}
+  <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
+
                       {/* Progress */}
-                      <TableCell className="min-w-[220px]">
+                      <TableCell className="min-w-[120px]">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold">
@@ -222,7 +230,7 @@ const TasksPage: React.FC = () => {
                       </TableCell>
 
                       {/* Status */}
-                      <TableCell>
+                      <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
                           const base =
