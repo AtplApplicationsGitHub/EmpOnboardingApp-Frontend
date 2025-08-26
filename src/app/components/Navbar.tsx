@@ -154,18 +154,6 @@ const Navbar: React.FC = () => {
                   <Home className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
-                <Link
-                  href="/employee/questions"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/employee/questions"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  <span>My Questions</span>
-                </Link>
               </>
             )}
           </div>
