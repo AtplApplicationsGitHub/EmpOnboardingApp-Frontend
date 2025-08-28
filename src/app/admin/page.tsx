@@ -22,7 +22,6 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalUsers: 0,
-    totalTasks: 0,
     totalQuestions: 0
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
@@ -32,8 +31,8 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Reassignment modal state
-  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
-  const [selectedTasksForReassign, setSelectedTasksForReassign] = useState<any[]>([]);
+  // const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  // const [selectedTasksForReassign, setSelectedTasksForReassign] = useState<any[]>([]);
 
   const isVisible = useAnimation();
 
@@ -45,26 +44,9 @@ const AdminDashboard: React.FC = () => {
         const totalGroups = await adminService.getGroupsCount();
         const totalQuestions = await adminService.getQuestionsCount();
         const totalUsers = await adminService.getUserCount();
-        
-        // Fetch tasks count and recent tasks
-        const tasks = await adminService.getTasks();
-        const totalTasks = tasks.length;
-        
-        // Sort tasks by created_at and updated_at to get recent actions
-        const sortedTasks = tasks.sort((a, b) => {
-          const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-          const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-          return bTime - aTime;
-        });
-        
-        // Get all recent actions (don't limit to 10 here since we'll paginate)
-        const recentActions = sortedTasks;
-        setRecentTasks(recentActions);
-        
-        setStats({
+         setStats({
           totalGroups,
           totalUsers,
-          totalTasks,
           totalQuestions
         });
       } catch (err: any) {
@@ -100,65 +82,66 @@ const AdminDashboard: React.FC = () => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  const handleManualRefresh = async () => {
-    try {
-      setLoading(true);
+  //unused refreshhhh
+  // const handleManualRefresh = async () => {
+  //   try {
+  //     setLoading(true);
       
-      const totalGroups = await adminService.getGroupsCount();
-      const totalQuestions = await adminService.getQuestionsCount();
-      const totalUsers = await adminService.getUserCount();
+  //     const totalGroups = await adminService.getGroupsCount();
+  //     const totalQuestions = await adminService.getQuestionsCount();
+  //     const totalUsers = await adminService.getUserCount();
       
-      // Fetch tasks count and recent tasks
-      const tasks = await adminService.getTasks();
-      const totalTasks = tasks.length;
+  //     // Fetch tasks count and recent tasks
+  //     const tasks = await adminService.getTasks();
+  //     const totalTasks = tasks.length;
       
-      // Sort tasks by created_at and updated_at to get recent actions
-      const sortedTasks = tasks.sort((a, b) => {
-        const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-        const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-        return bTime - aTime;
-      });
+  //     // Sort tasks by created_at and updated_at to get recent actions
+  //     const sortedTasks = tasks.sort((a, b) => {
+  //       const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
+  //       const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
+  //       return bTime - aTime;
+  //     });
       
-      // Get all recent actions (don't limit to 10 here since we'll paginate)
-      const recentActions = sortedTasks;
-      setRecentTasks(recentActions);
+  //     // Get all recent actions (don't limit to 10 here since we'll paginate)
+  //     const recentActions = sortedTasks;
+  //     setRecentTasks(recentActions);
       
-      setStats({
-        totalGroups,
-        totalUsers,
-        totalTasks,
-        totalQuestions
-      });
+  //     setStats({
+  //       totalGroups,
+  //       totalUsers,
+  //       totalTasks,
+  //       totalQuestions
+  //     });
       
-      console.log('Manual refresh completed successfully');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to refresh dashboard data');
-      console.error('Manual refresh error', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed successfully');
+  //   } catch (err: any) {
+  //     setError(err.response?.data?.message || 'Failed to refresh dashboard data');
+  //     console.error('Manual refresh error', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // Reassignment handlers
-  const handleReassignTask = (task: any) => {
-    // Only allow reassignment of pending tasks
-    if (task.status !== 'pending') {
-      return;
-    }
+  // const handleReassignTask = (task: any) => {
+  //   // Only allow reassignment of pending tasks
+  //   if (task.status !== 'pending') {
+  //     return;
+  //   }
     
-    setSelectedTasksForReassign([task]);
-    setIsReassignModalOpen(true);
-  };
+  //   setSelectedTasksForReassign([task]);
+  //   setIsReassignModalOpen(true);
+  // };
 
-  const handleReassignSuccess = async () => {
-    // Refresh the tasks data after successful reassignment
-    await handleManualRefresh();
-  };
+  // const handleReassignSuccess = async () => {
+  //   // Refresh the tasks data after successful reassignment
+  //   await handleManualRefresh();
+  // };
 
-  const handleCloseReassignModal = () => {
-    setIsReassignModalOpen(false);
-    setSelectedTasksForReassign([]);
-  };
+  // const handleCloseReassignModal = () => {
+  //   setIsReassignModalOpen(false);
+  //   setSelectedTasksForReassign([]);
+  // };
 
   if (loading) {
     return (
@@ -175,56 +158,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className={`p-8 space-y-8 ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
-      {/* Header */}
-      <div className={`flex justify-between items-start ${isVisible ? animationClasses.slideInDown : 'opacity-0'}`}>
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your onboarding system and track overall progress
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleManualRefresh}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <svg
-              className={`w-4 h-4 ${loading ? animationClasses.spin : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Auto-refresh: 30s
-          </span>
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className={`bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg ${animationClasses.slideInUp}`}>
-          {error}
-          <button 
-            onClick={() => setError(null)}
-            className="ml-4 text-destructive/70 hover:text-destructive"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Groups - Clickable */}
@@ -405,7 +338,7 @@ const AdminDashboard: React.FC = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleReassignTask(task)}
+                              // onClick={() => handleReassignTask(task)}
                               className="h-8 px-3 text-xs"
                             >
                               <ArrowRight size={12} className="mr-1" />
@@ -489,14 +422,14 @@ const AdminDashboard: React.FC = () => {
       </Card>
 
       {/* Reassignment Modal */}
-      <TaskReassignModal
+      {/* <TaskReassignModal
         isOpen={isReassignModalOpen}
         onClose={handleCloseReassignModal}
         onReassignSuccess={handleReassignSuccess}
         selectedTasks={selectedTasksForReassign}
         mode={selectedTasksForReassign.length === 1 ? 'single' : 'bulk'}
         userType="admin"
-      />
+      /> */}
     </div>
   );
 };
