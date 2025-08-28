@@ -32,7 +32,6 @@ const LoginPage: React.FC = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<LoginStep>('email');
   const [userEmail, setUserEmail] = useState<string>('');
-  const [userRole, setUserRole] = useState<'admin' | 'group_lead' | 'employee' | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [otpMessage, setOtpMessage] = useState<string>('');
@@ -79,7 +78,6 @@ const LoginPage: React.FC = () => {
       }
 
       setUserEmail(data.email);
-      setUserRole(roleResponse.role);
 
       if (roleResponse.role === 'admin' || roleResponse.role === 'group_lead') {
         setCurrentStep('password');
@@ -131,7 +129,6 @@ const LoginPage: React.FC = () => {
     if (currentStep === 'password' || currentStep === 'otp') {
       setCurrentStep('email');
       setUserEmail('');
-      setUserRole(null);
       setOtpSent(false);
       setOtpMessage('');
       setLoginError(null);
@@ -231,8 +228,6 @@ const LoginPage: React.FC = () => {
             <form className="space-y-6" onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
               <div className="text-sm text-muted-foreground mb-4">
                 <strong>Email:</strong> {userEmail}
-                <br />
-                <strong>Role:</strong> {userRole === 'group_lead' ? 'Group Leader' : 'Administrator'}
               </div>
               
               <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
@@ -270,8 +265,6 @@ const LoginPage: React.FC = () => {
             <div className="space-y-6">
               <div className="text-sm text-muted-foreground mb-4">
                 <strong>Email:</strong> {userEmail}
-                <br />
-                <strong>Role:</strong> Employee
               </div>
               
               <div className={`${isVisible ? animationClasses.slideInLeft : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
