@@ -118,8 +118,8 @@ export const authService = {
       const normalizedOtp = otp.trim();
       
       const requestBody = {
-        email: normalizedEmail,
-        otp: normalizedOtp
+        signInId: normalizedEmail,
+        password: normalizedOtp
       };
       
       const response = await api.post('/auth/employeeSignIn', requestBody);
@@ -619,8 +619,8 @@ const convertTaskProjectionToTask = (taskProjection: TaskProjection): Task => {
     prevCompany: "", // Not available in TaskProjection
     complianceDay: "", // Not available in TaskProjection
     assignedTo: "", // Not available in TaskProjection
-    totalQuestions: taskProjection.totalQuetions, // Note: misspelled in TaskProjection
-    completedQuestions: taskProjection.completedQuetions, // Note: misspelled in TaskProjection
+    totalQuestions: taskProjection.totalQuetions,
+    completedQuestions: taskProjection.completedQuetions,
     status: taskProjection.status,
     doj: taskProjection.doj,
     questionList: [], // Not available in TaskProjection
