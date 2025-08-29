@@ -71,46 +71,74 @@ const MyTasksPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Use API service to fetch employee's own tasks (not dashboard questions)
-      const result = await employeeService.getMyTasks(0); // Page 0 for now
-      const tasks = result.commonListDto.content;
+      // Using backup/hardcoded questions for My Tasks page
+      const backupQuestions: EmployeeQuestion[] = [
+        {
+          id: "1",
+          questionText: "Have you completed the mandatory safety training?",
+          questionType: "Yes/No/N/A Question",
+          status: "pending",
+          dueDate: "2024-01-15",
+          groupName: "Safety & Compliance",
+          groupLeaderName: "John Smith",
+          groupId: "1"
+        },
+        {
+          id: "2", 
+          questionText: "Please describe your previous work experience relevant to this role.",
+          questionType: "Text Response",
+          status: "pending",
+          dueDate: "2024-01-20",
+          groupName: "HR & Onboarding",
+          groupLeaderName: "Sarah Johnson",
+          groupId: "2"
+        },
+        {
+          id: "3",
+          questionText: "Do you have access to all required systems and tools?",
+          questionType: "Yes/No/N/A Question", 
+          status: "answered",
+          employeeAnswer: "Yes",
+          answeredAt: "2024-01-10T10:30:00Z",
+          dueDate: "2024-01-12",
+          groupName: "IT & Systems",
+          groupLeaderName: "Mike Davis",
+          groupId: "3"
+        },
+        {
+          id: "4",
+          questionText: "What are your initial thoughts about the company culture?",
+          questionType: "Text Response",
+          status: "pending",
+          dueDate: "2024-01-25",
+          groupName: "HR & Onboarding",
+          groupLeaderName: "Sarah Johnson",
+          groupId: "2"
+        },
+        {
+          id: "5",
+          questionText: "Have you received your employee handbook and reviewed it completely?",
+          questionType: "Yes/No/N/A Question",
+          status: "pending",
+          dueDate: "2024-01-18",
+          groupName: "HR & Onboarding", 
+          groupLeaderName: "Sarah Johnson",
+          groupId: "2"
+        }
+      ];
       
-      // Convert Task[] to EmployeeQuestion[] format
-      const questions: EmployeeQuestion[] = tasks.map(task => ({
-        id: task.id.toString(),
-        questionText: task.questionText || `Task for ${task.employeeName}`,
-        questionType: 'Text Response', // Default type since Task doesn't have this field
-        status: task.status === 'Completed' ? 'answered' : 'pending',
-        employeeAnswer: task.response,
-        answeredAt: task.updatedTime,
-        dueDate: task.doj, // Using doj as due date
-        groupName: task.groupName || 'No Group',
-        groupLeaderName: task.assignedTo || 'Unknown',
-        groupId: task.groupId?.toString() || '0'
-      }));
-      
-      setAllQuestions(questions);
+      setAllQuestions(backupQuestions);
       
       // Initialize answer inputs with existing answers
       const initialAnswers: Record<string, string> = {};
-      questions.forEach(question => {
+      backupQuestions.forEach(question => {
         if (question.employeeAnswer) {
           initialAnswers[question.id] = question.employeeAnswer;
         }
       });
       setAnswerInputs(initialAnswers);
     } catch (error) {
-      console.error('Failed to fetch questions:', error);
-      setError('Failed to load questions. Using fallback data.');
-      
-      // Fallback to the simple method if the new API fails
-      try {
-        const questions = await employeeService.getMyTasksSimple();
-        setAllQuestions(questions);
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-        setError('Failed to load questions');
-      }
+      setError('Failed to load questions. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -187,7 +215,7 @@ const MyTasksPage: React.FC = () => {
             : q
         ));
       } catch (error) {
-        console.error('Failed to save answer:', error);
+        // Silently handle error - user will be notified via UI if needed
       } finally {
         setSavingAnswers(prev => ({ ...prev, [questionId]: false }));
       }

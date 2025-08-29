@@ -38,7 +38,7 @@ const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [allQuestions, setAllQuestions] = useState<EmployeeQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false since we don't auto-fetch anymore
   const [error, setError] = useState<string | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<EmployeeQuestion | null>(null);
@@ -60,7 +60,8 @@ const EmployeeDashboard: React.FC = () => {
       return;
     }
 
-    fetchAllQuestions();
+    // Don't auto-fetch on mount due to CORS issues - use manual refresh instead
+    // fetchAllQuestions();
   }, [user, router]);
 
   const fetchAllQuestions = async () => {
@@ -68,12 +69,52 @@ const EmployeeDashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Use API service to fetch employee questions
-      const questions = await employeeService.getAllQuestions();
-      setAllQuestions(questions);
-    } catch (error) {
-      console.error('Failed to fetch questions:', error);
-      setError('Failed to load questions');
+      // Use the new filteredTaskForEmployee API to get tasks with questions
+      const response = await employeeService.getMyTasks(0); // Start with page 0
+      
+      const tasks = response.commonListDto?.content || [];
+      
+      if (!tasks || tasks.length === 0) {
+        setAllQuestions([]);
+        return;
+      }
+      
+      // Extract questions from all tasks
+      const allQuestions: EmployeeQuestion[] = [];
+      
+      tasks.forEach((task: any) => {
+        if (task.questionList && task.questionList.length > 0) {
+          task.questionList.forEach((taskQuestion: any, questionIndex: number) => {
+            const employeeQuestion: EmployeeQuestion = {
+              id: `${task.id}-${taskQuestion.id}`,
+              questionText: taskQuestion.question || `Question ${questionIndex + 1}`,
+              questionType: taskQuestion.type || 'Text Response',
+              status: taskQuestion.answer ? 'answered' : 'pending',
+              groupLeaderAnswer: taskQuestion.answer || undefined,
+              answeredAt: taskQuestion.answer ? new Date().toISOString() : undefined,
+              groupName: task.groupName || 'Unknown Group',
+              groupLeaderName: 'Group Leader', // This might need to be fetched separately
+              groupId: task.id?.toString() || 'unknown'
+            };
+            
+            allQuestions.push(employeeQuestion);
+          });
+        }
+      });
+      
+      setAllQuestions(allQuestions);
+    } catch (error: any) {
+      let errorMessage = 'Failed to load questions. Please try again.';
+      
+      if (error?.message?.includes('Network Error') || error?.message?.includes('CORS')) {
+        errorMessage = 'Unable to connect to the server. This appears to be a CORS configuration issue that needs to be resolved on the backend.';
+      } else if (error?.response?.status === 404) {
+        errorMessage = 'The requested endpoint was not found. Please verify the API configuration.';
+      } else if (error?.response?.status >= 500) {
+        errorMessage = 'Server error occurred. Please try again later.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -154,7 +195,6 @@ const EmployeeDashboard: React.FC = () => {
       
       alert('Feedback submitted successfully!');
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
       alert('Failed to submit feedback. Please try again.');
     } finally {
       setSubmittingFeedback(false);
@@ -209,6 +249,24 @@ const EmployeeDashboard: React.FC = () => {
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={() => fetchAllQuestions()} variant="primary">
               Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show empty state when no questions are loaded and not loading/error
+  if (!loading && !error && allQuestions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <CheckCircle className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Questions Loaded</h3>
+            <p className="text-muted-foreground mb-4">Click the button below to load your questions from the server.</p>
+            <Button onClick={() => fetchAllQuestions()} variant="primary" disabled={loading}>
+              {loading ? 'Loading...' : 'Load Questions'}
             </Button>
           </CardContent>
         </Card>
