@@ -59,7 +59,6 @@ const TasksPage: React.FC = () => {
       const search = searchFilter.trim();
       if (search) params.search = search;
       const response = await taskService.getTask(params);
-      console.log("Full data object:", response.commonListDto);
       setTasks(response.commonListDto.content ?? []);
       setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
@@ -108,14 +107,16 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const ProgressBar: React.FC<{ value: number }> = ({ value }) => (
+  const ProgressBar: React.FC<{ value: number; color: string }> = ({ value, color }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
-        className="h-full bg-muted-foreground/60"
+        className={`h-full ${color}`}
         style={{ width: `${clampPercent(value)}%` }}
       />
     </div>
   );
+
+  
 
   return (
     <div className="p-8 space-y-6">
@@ -154,7 +155,7 @@ const TasksPage: React.FC = () => {
                 <TableHead>Level</TableHead>
                 <TableHead>Role & Department</TableHead>
                 <TableHead>DOJ</TableHead>
-    <TableHead>Lab</TableHead>
+                <TableHead>Lab</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -185,6 +186,14 @@ const TasksPage: React.FC = () => {
                     ? Math.round((completed / totalQ) * 100)
                     : 0;
 
+                      let progressColor = "bg-muted-foreground/60";
+                  const status = (task.status || "").toLowerCase();
+                  if (status === "completed") {
+                    progressColor = "bg-green-600";
+                  } else if (status === "in progress") {
+                    progressColor = "bg-amber-500";
+                  }   
+
                   return (
                     <TableRow
                       key={(task as any).id ?? (task as any).employeeId}
@@ -209,10 +218,10 @@ const TasksPage: React.FC = () => {
                         </div>
                       </TableCell>
 
-                       {/* DOJ*/}
-  <TableCell className="min-w-[100px]">{(task as any).doj}</TableCell>
-   {/* Lab*/}
-  <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
+                      {/* DOJ*/}
+                      <TableCell className="min-w-[100px]">{(task as any).doj}</TableCell>
+                      {/* Lab*/}
+                      <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
 
                       {/* Progress */}
                       <TableCell className="min-w-[120px]">
@@ -225,7 +234,7 @@ const TasksPage: React.FC = () => {
                               {percent}%
                             </span>
                           </div>
-                          <ProgressBar value={percent} />
+                          <ProgressBar value={percent}  color={progressColor} />
                         </div>
                       </TableCell>
 
