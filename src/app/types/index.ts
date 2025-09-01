@@ -102,6 +102,8 @@ export interface Task {
   questionList: TaskQuestions[];
   questionText?: string;
   response?: string;
+  efstar?: string;
+  feedback?: string;
   createdTime: string;
   updatedTime: string;
   
