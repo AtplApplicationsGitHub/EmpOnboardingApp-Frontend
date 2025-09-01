@@ -313,6 +313,7 @@ const MyTasksPage: React.FC = () => {
                     <TableHead>Question</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Lab</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
                   </TableRow>
@@ -352,6 +353,9 @@ const MyTasksPage: React.FC = () => {
                                 {getStatusText(q?.status)}
                               </span>
                             </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {t.lab ?? "—"}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {q?.complianceDay ?? (q as any)?.complainceDay ?? "—"}
