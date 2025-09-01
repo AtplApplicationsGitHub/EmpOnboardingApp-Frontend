@@ -219,3 +219,24 @@ export interface EmployeeImportResponse {
 export interface ApiError {
   message: string;
 }
+
+// Filter interfaces for employee task filtering
+export interface EmployeeTaskFilter {
+  status?: string;
+  department?: string;
+  role?: string;
+  lab?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  groupId?: number;
+}
+
+export interface EmployeeTaskResponse {
+  commonListDto: {
+    content: TaskProjection[];
+  };
+  totalElements: number;
+  totalPages?: number;
+  currentPage?: number;
+}
