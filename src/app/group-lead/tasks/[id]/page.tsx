@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   RefreshCw,
   Users,
+  Star,
 } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import toast from "react-hot-toast";
@@ -66,18 +67,29 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   // Reassign modal
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
-  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<number | undefined>(undefined);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<
+    number | undefined
+  >(undefined);
   const [reAssignTask, setReAssignTask] = useState<string>();
+  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
+    null
+  );
 
   // Params
   const taskId = params.id as string;
 
   // Lab allocation UI
-  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
+    undefined
+  );
   const labOptions = [
     { id: 101, key: "Lab1", value: "Lab1" },
     { id: 102, key: "Lab2", value: "Lab2" },
   ];
+
+  const toggleFeedbackTooltip = useCallback((taskId: string) => {
+    setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
+  }, []);
 
   // Per-question editable values and saving flags
   const [respValues, setRespValues] = useState<Record<string, string>>({});
@@ -194,11 +206,21 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       toast.success("Lab updated");
       await fetchTasks();
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? "Failed to update lab allocation");
+      toast.error(
+        e?.response?.data?.message ?? "Failed to update lab allocation"
+      );
       const prevId = labOptions.find((o) => o.value === lab)?.id;
       setSelectedLabId(prevId);
     }
   };
+
+  const handleLabChange = useCallback(
+    (value: number | number[] | undefined): void => {
+      const id = Array.isArray(value) ? value[0] : value;
+      void handleSaveLab(id);
+    },
+    [handleSaveLab]
+  );
 
   // Save a single question response
   const saveQuestionResponse = async (
@@ -240,7 +262,11 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     return (
       <div className="flex items-center gap-2">
         <span className={`${base} ${status === "completed" ? done : pending}`}>
-          {status === "completed" ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+          {status === "completed" ? (
+            <CheckCircle2 size={12} />
+          ) : (
+            <Clock size={12} />
+          )}
           {status === "completed" ? "Completed" : "Pending"}
         </span>
         {overdue === true && (
@@ -266,7 +292,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       <div className="p-8">
         <div className="text-center py-12">
           <div className="text-destructive mb-4">{error}</div>
-          <Button onClick={() => router.push("/group-lead/tasks")}>Back to Tasks</Button>
+          <Button onClick={() => router.push("/group-lead/tasks")}>
+            Back to Tasks
+          </Button>
         </div>
       </div>
     );
@@ -277,7 +305,10 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       <div className="p-8">
         <div className="text-center py-12">
           <div className="text-destructive">Task not found</div>
-          <Button onClick={() => router.push("/group-lead/tasks")} className="mt-4">
+          <Button
+            onClick={() => router.push("/group-lead/tasks")}
+            className="mt-4"
+          >
             Back to Tasks
           </Button>
         </div>
@@ -308,7 +339,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                 options={labOptions}
                 value={selectedLabId}
                 disabled={freezeTask === "Y"}
-                onChange={(id) => handleSaveLab(id)}
+                onChange={handleLabChange}
                 placeholder="Select Lab"
                 displayFullValue={false}
                 isEmployeePage={true}
@@ -339,12 +370,69 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                       </span>
                     </CardTitle>
                   </div>
+                  <div>
+                    <div className="relative" data-fb-trigger>
+                      <button
+                        type="button"
+                        onClick={() => toggleFeedbackTooltip(String(t.id))}
+                        className="flex items-center gap-1 focus:outline-none"
+                        aria-label="Show feedback"
+                        title="Show feedback"
+                      >
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= Number(t?.efstar ?? 0)
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </button>
+
+                      {/* Tooltip */}
+                      {openFeedbackTaskId === String(t.id) && (
+                        <div
+                          data-fb-tooltip
+                          className="absolute z-50 top-full mt-2 left-0 w-72 rounded-lg border border-border bg-card shadow-lg p-3"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold">
+                              Feedback
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground hover:underline"
+                              onClick={() => setOpenFeedbackTaskId(null)}
+                            >
+                              Close
+                            </button>
+                          </div>
+
+                          {/* Feedback text (from t.feedback) */}
+                          <div className="text-sm whitespace-pre-wrap">
+                            {t?.feedback &&
+                            String(t.feedback).trim().length > 0 ? (
+                              String(t.feedback)
+                            ) : (
+                              <span className="text-muted-foreground">
+                                No comments.
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold">{totalTasks}</div>
-                    <div className="text-xs text-muted-foreground">Questions</div>
+                    <div className="text-xs text-muted-foreground">
+                      Questions
+                    </div>
                   </div>
                   <Button
                     variant="outline"
@@ -379,7 +467,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                       <TableCell colSpan={4} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
-                          <p className="text-muted-foreground">No questions found for this task.</p>
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -432,11 +522,17 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                             ) : (
                               <div className="flex items-center gap-2">
                                 {(() => {
-                                  const lower = String(value || "").toLowerCase();
+                                  const lower = String(
+                                    value || ""
+                                  ).toLowerCase();
                                   const isYes =
-                                    lower === "yes" || lower === "y" || lower === "true";
+                                    lower === "yes" ||
+                                    lower === "y" ||
+                                    lower === "true";
                                   const isNo =
-                                    lower === "no" || lower === "n" || lower === "false";
+                                    lower === "no" ||
+                                    lower === "n" ||
+                                    lower === "false";
 
                                   return (
                                     <>
@@ -444,7 +540,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                         type="button"
                                         variant={isYes ? "default" : "outline"}
                                         disabled={saving || freezeTask === "Y"}
-                                        onClick={() => saveQuestionResponse(t.id, q, "YES")}
+                                        onClick={() =>
+                                          saveQuestionResponse(t.id, q, "YES")
+                                        }
                                       >
                                         Yes
                                       </Button>
@@ -452,12 +550,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                         type="button"
                                         variant={isNo ? "default" : "outline"}
                                         disabled={saving || freezeTask === "Y"}
-                                        onClick={() => saveQuestionResponse(t.id, q, "NO")}
+                                        onClick={() =>
+                                          saveQuestionResponse(t.id, q, "NO")
+                                        }
                                       >
                                         No
                                       </Button>
                                       {saving && (
-                                        <span className="text-xs text-muted-foreground">Saving…</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          Saving…
+                                        </span>
                                       )}
                                     </>
                                   );
@@ -482,11 +584,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">Reassign Task</h2>
 
             <div className="pt-4">
-              <label className="block text-sm font-medium mb-2">Primary Group Lead</label>
+              <label className="block text-sm font-medium mb-2">
+                Primary Group Lead
+              </label>
               <SearchableDropdown
                 options={groupLeads}
                 value={primaryGroupLeadId}
-                onChange={(value) => setPrimaryGroupLeadId(value)}
+                onChange={(value) => {
+                  const id = Array.isArray(value) ? value[0] : value;
+                  setPrimaryGroupLeadId(id);
+                }}
                 placeholder="Select a group lead"
                 required
                 maxDisplayItems={4}

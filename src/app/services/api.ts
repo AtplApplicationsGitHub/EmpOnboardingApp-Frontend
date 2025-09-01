@@ -21,8 +21,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -295,6 +295,11 @@ export const adminService = {
 
   getQuestionsCount: async (): Promise<number> => {
     const response = await api.get<number>("/question/countQuestions");
+    return response.data;
+  },
+
+  getTaskCount: async (): Promise<number> => {
+    const response = await api.get<number>("/task/taskCountForAdmin");
     return response.data;
   },
 

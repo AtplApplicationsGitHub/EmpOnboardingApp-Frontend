@@ -313,6 +313,7 @@ const MyTasksPage: React.FC = () => {
                     <TableHead>Question</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Lab</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
                   </TableRow>
@@ -354,6 +355,9 @@ const MyTasksPage: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
+                            {t.lab ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
                             {q?.complianceDay ?? (q as any)?.complainceDay ?? "—"}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
@@ -390,7 +394,6 @@ const MyTasksPage: React.FC = () => {
             </div>
 
             {feedBack?.completed ? (
-              // Read-only view for completed feedback
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-sm font-medium text-green-800 dark:text-green-300">
@@ -417,7 +420,6 @@ const MyTasksPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              // Editable view (pre-filled if feedback exists)
               <div className="space-y-4">
                 {/* Rating */}
                 <div>

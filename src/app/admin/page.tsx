@@ -22,7 +22,8 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalUsers: 0,
-    totalQuestions: 0
+    totalQuestions: 0,
+    tasks: 0
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,10 +45,13 @@ const AdminDashboard: React.FC = () => {
         const totalGroups = await adminService.getGroupsCount();
         const totalQuestions = await adminService.getQuestionsCount();
         const totalUsers = await adminService.getUserCount();
+        const tasks = await adminService.getTaskCount();
+
          setStats({
           totalGroups,
           totalUsers,
-          totalQuestions
+          totalQuestions,
+          tasks
         });
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load dashboard data');
@@ -211,7 +215,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                {/* <p className="text-2xl font-bold">{stats.totalTasks}</p> */}
+                <p className="text-2xl font-bold">{stats.tasks}</p>
               </div>
               <div className="p-3 bg-orange-500/10 rounded-full">
                 <Clock size={20} className="text-orange-500" />
@@ -221,196 +225,7 @@ const AdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Recent Actions */}
-      <Card className={`${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[4]}` : 'opacity-0'}`}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Actions
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Show:</span>
-              <select
-                value={tasksPerPage}
-                onChange={(e) => {
-                  setTasksPerPage(Number(e.target.value));
-                  setCurrentPage(1); // Reset to first page when changing page size
-                }}
-                className="text-sm border border-border rounded px-2 py-1 bg-background text-foreground"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="text-sm text-muted-foreground">tasks</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recentTasks.length > 0 ? (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="py-2">Employee</TableHead>
-                      <TableHead className="py-2">Level</TableHead>
-                      <TableHead className="py-2">Question</TableHead>
-                      <TableHead className="py-2">Assignee</TableHead>
-                      <TableHead className="py-2">Status</TableHead>
-                      <TableHead className="py-2">Date</TableHead>
-                      <TableHead className="py-2">Response</TableHead>
-                      <TableHead className="py-2">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentTasks.map((task, index) => (
-                      <TableRow 
-                        key={task.id}
-                        className={`${animationClasses.fadeIn} hover:bg-muted/50`}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <TableCell className="py-2">
-                          <div className="font-medium text-sm">{task.mock_employee_name}</div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.mock_employee_level === 'L1'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : task.mock_employee_level === 'L2'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : task.mock_employee_level === 'L3'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            }`}
-                          >
-                            {task.mock_employee_level}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="max-w-xs truncate text-sm" title={task.question}>
-                            {task.question}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2 text-sm">{task.assignee_name}</TableCell>
-                        <TableCell className="py-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.status === 'completed'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : task.status === 'reassigned'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                            }`}
-                          >
-                            {task.status === 'completed' ? 'Completed' : 
-                             task.status === 'reassigned' ? 'Reassigned' : 'Pending'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="text-xs text-muted-foreground">
-                            {formatDateTime(task.completed_at || task.updated_at || task.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          {task.response ? (
-                            <div className="max-w-xs truncate text-sm" title={task.response}>
-                              {task.response}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-2">
-                          {task.status === 'pending' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              // onClick={() => handleReassignTask(task)}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <ArrowRight size={12} className="mr-1" />
-                              Reassign
-                            </Button>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1} to {Math.min(endIndex, recentTasks.length)} of {recentTasks.length} actions
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNumber;
-                        if (totalPages <= 5) {
-                          pageNumber = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNumber = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNumber = totalPages - 4 + i;
-                        } else {
-                          pageNumber = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNumber}
-                            variant={currentPage === pageNumber ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => goToPage(pageNumber)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {pageNumber}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent actions found</p>
-              <p className="text-sm">Tasks will appear here as they are assigned or completed</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      
 
       {/* Reassignment Modal */}
       {/* <TaskReassignModal
