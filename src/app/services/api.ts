@@ -99,12 +99,8 @@ export const authService = {
 
       return { role: "employee", exists: false };
     } catch (error: any) {
-<<<<<<< HEAD
       console.error("Failed to check user role:", error);
       throw new Error("Unable to verify user. Please try again.");
-=======
-      throw new Error('Unable to verify user. Please try again.');
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
 
@@ -126,12 +122,8 @@ export const authService = {
         );
       }
     } catch (error: any) {
-<<<<<<< HEAD
       console.error("Failed to send OTP:", error);
       throw new Error("Failed to send OTP. Please try again.");
-=======
-      throw new Error('Failed to send OTP. Please try again.');
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
 
@@ -162,12 +154,8 @@ export const authService = {
         throw new Error(data.message || "Invalid OTP");
       }
     } catch (error: any) {
-<<<<<<< HEAD
       console.error("OTP verification failed:", error);
       throw new Error("Invalid OTP. Please check the code and try again.");
-=======
-      throw new Error('Invalid OTP. Please check the code and try again.');
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
 
@@ -831,17 +819,12 @@ export const employeeService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return mockQuestions;
     } catch (error) {
-<<<<<<< HEAD
       console.error("Failed to fetch employee dashboard questions:", error);
       throw new Error("Failed to fetch employee dashboard questions");
-=======
-      throw new Error('Failed to fetch employee dashboard questions');
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
 
   // Get employee's own tasks/questions to answer (FOR MY TASKS PAGE)
-<<<<<<< HEAD
   // getMyTasks: async (
   //   pageNo: number = 0
   // ): Promise<{
@@ -868,108 +851,15 @@ export const employeeService = {
   //   }
   // },
 
-  getMyTasks: async (
-    page?: number
-  ): Promise<{
+  getMyTasks: async (page?: number): Promise<{
     commonListDto: Task[];
-=======
-  getMyTasks: async (
-    pageNo: number = 0,
-    filters?: EmployeeTaskFilter
-  ): Promise<{
-    commonListDto: {
-      content: Task[];
-    };
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     totalElements: number;
-    totalPages: number;
-    currentPage: number;
   }> => {
-<<<<<<< HEAD
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
     }>(`/task/filteredTaskForEmployee/${page}`);
     return response.data;
-=======
-    try {
-      // Prepare the request body with filter parameters
-      const requestBody = filters ? {
-        status: filters.status || null,
-        department: filters.department || null,
-        role: filters.role || null,
-        lab: filters.lab || null,
-        search: filters.search || null,
-        dateFrom: filters.dateFrom || null,
-        dateTo: filters.dateTo || null,
-        groupId: filters.groupId || null,
-      } : {};
-
-      const response = await api.post<EmployeeTaskResponse>(
-        `/employee/filteredTaskForEmployee/${pageNo}`, 
-        requestBody
-      );
-      
-      if (response.data?.commonListDto?.content) {
-        // Defensive programming: Ensure content is an array
-        const contentArray = Array.isArray(response.data.commonListDto.content) 
-          ? response.data.commonListDto.content 
-          : [];
-        
-        // Safely map the content with error handling for each item
-        const convertedContent = contentArray.map((item) => {
-          try {
-            return convertTaskProjectionToTask(item);
-          } catch (error) {
-            // Return a default task object if conversion fails
-            return {
-              id: 0,
-              employeeName: "Error",
-              employeeId: 0,
-              level: "",
-              department: "",
-              role: "",
-              lab: "",
-              groupName: "",
-              pastExperience: "",
-              prevCompany: "",
-              complianceDay: "",
-              assignedTo: "",
-              totalQuestions: 0,
-              completedQuestions: 0,
-              status: "",
-              doj: "",
-              questionList: [],
-              createdTime: "",
-              updatedTime: "",
-              freezeTask: "",
-            };
-          }
-        });
-        
-        return {
-          commonListDto: {
-            content: convertedContent,
-          },
-          totalElements: response.data.totalElements || 0,
-          totalPages: response.data.totalPages || Math.ceil((response.data.totalElements || 0) / 10),
-          currentPage: pageNo,
-        };
-      }
-      
-      return {
-        commonListDto: {
-          content: [],
-        },
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: pageNo,
-      };
-      
-    } catch (error: any) {
-      throw new Error('Failed to fetch employee tasks. Please try again.');
-    }
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
   },
 
   // Legacy method for backward compatibility
@@ -978,56 +868,9 @@ export const employeeService = {
       const result = await employeeService.getMyTasks(0);
       return result.commonListDto;
     } catch (error) {
-<<<<<<< HEAD
       console.error("Failed to fetch employee tasks (simple format):", error);
-=======
->>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
       return [];
     }
-  },
-
-  // Get tasks by status (e.g., "PENDING", "COMPLETED", "IN_PROGRESS")
-  getMyTasksByStatus: async (status: string, pageNo: number = 0): Promise<{
-    commonListDto: { content: Task[] };
-    totalElements: number;
-    totalPages: number;
-    currentPage: number;
-  }> => {
-    return employeeService.getMyTasks(pageNo, { status });
-  },
-
-  // Search tasks by keyword
-  searchMyTasks: async (searchTerm: string, pageNo: number = 0): Promise<{
-    commonListDto: { content: Task[] };
-    totalElements: number;
-    totalPages: number;
-    currentPage: number;
-  }> => {
-    return employeeService.getMyTasks(pageNo, { search: searchTerm });
-  },
-
-  // Get tasks for a specific department
-  getMyTasksByDepartment: async (department: string, pageNo: number = 0): Promise<{
-    commonListDto: { content: Task[] };
-    totalElements: number;
-    totalPages: number;
-    currentPage: number;
-  }> => {
-    return employeeService.getMyTasks(pageNo, { department });
-  },
-
-  // Get tasks within a date range
-  getMyTasksByDateRange: async (
-    dateFrom: string, 
-    dateTo: string, 
-    pageNo: number = 0
-  ): Promise<{
-    commonListDto: { content: Task[] };
-    totalElements: number;
-    totalPages: number;
-    currentPage: number;
-  }> => {
-    return employeeService.getMyTasks(pageNo, { dateFrom, dateTo });
   },
 
   // Submit answer for a task/question
