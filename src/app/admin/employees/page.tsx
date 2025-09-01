@@ -105,10 +105,10 @@ const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
 
    const fetchLookupData = async () => {
       try {
-        const levels = await adminService.getLookupItems("level");
+        const levels = await adminService.getLookupItems("Level");
         setLevelOptions(levels);
 
-        const labs = await adminService.getLookupItems("lab");
+        const labs = await adminService.getLookupItems("Lab");
         setLabOptions(labs);
       } catch (error) {
         // console.error("Failed to fetch lookup items:", error);
