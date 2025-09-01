@@ -13,6 +13,7 @@ import {
   TaskProjection,
   EmployeeTaskFilter,
   EmployeeTaskResponse,
+  EmployeeFeedback,
 } from "../types";
 
 // Re-export types for easier access
@@ -623,8 +624,11 @@ export const taskService = {
 // Helper function to convert TaskProjection to Task
 const convertTaskProjectionToTask = (taskProjection: TaskProjection): Task => {
   // Defensive programming: Check if taskProjection is valid
-  if (!taskProjection || typeof taskProjection !== 'object') {
-    console.warn('⚠️ convertTaskProjectionToTask: Invalid taskProjection received:', taskProjection);
+  if (!taskProjection || typeof taskProjection !== "object") {
+    console.warn(
+      "⚠️ convertTaskProjectionToTask: Invalid taskProjection received:",
+      taskProjection
+    );
     return {
       id: 0,
       employeeName: "",
@@ -851,7 +855,9 @@ export const employeeService = {
   //   }
   // },
 
-  getMyTasks: async (page?: number): Promise<{
+  getMyTasks: async (
+    page?: number
+  ): Promise<{
     commonListDto: Task[];
     totalElements: number;
   }> => {
@@ -861,7 +867,23 @@ export const employeeService = {
     }>(`/task/filteredTaskForEmployee/${page}`);
     return response.data;
   },
+  saveFeedBack: async (data: {
+    task: string;
+    star: string;
+    feedback: string;
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/employee/saveFeedBack/${data.star}/${data.feedback}/${data.task}`
+    );
+    return response.data;
+  },
 
+  getFeedBackByTask: async (task: string): Promise<EmployeeFeedback> => {
+    const response = await api.get<EmployeeFeedback>(
+      `/employee/getEmployeeFeedBack/${task}`
+    );
+    return response.data;
+  },
   // Legacy method for backward compatibility
   getMyTasksSimple: async (): Promise<any[]> => {
     try {
@@ -874,22 +896,25 @@ export const employeeService = {
   },
 
   // Submit answer for a task/question
-  submitAnswer: async (questionId: string, answerData: {
-    answer: string;
-    questionType?: string;
-  }): Promise<{ success: boolean; message: string }> => {
+  submitAnswer: async (
+    questionId: string,
+    answerData: {
+      answer: string;
+      questionType?: string;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await api.post(`/employee/submitAnswer/${questionId}`, {
         answer: answerData.answer,
-        questionType: answerData.questionType || 'Text Response'
+        questionType: answerData.questionType || "Text Response",
       });
-      
+
       return {
         success: true,
-        message: response.data?.message || 'Answer submitted successfully'
+        message: response.data?.message || "Answer submitted successfully",
       };
     } catch (error: any) {
-      throw new Error('Failed to submit answer. Please try again.');
+      throw new Error("Failed to submit answer. Please try again.");
     }
   },
 
@@ -903,34 +928,40 @@ export const employeeService = {
     // This would ideally be a separate API endpoint
     // For now, we'll return common options
     return {
-      statuses: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'],
-      departments: ['IT', 'HR', 'Finance', 'Operations', 'Marketing'],
-      roles: ['Developer', 'Manager', 'Analyst', 'Coordinator', 'Specialist'],
-      labs: ['Lab A', 'Lab B', 'Lab C', 'Remote']
+      statuses: ["PENDING", "IN_PROGRESS", "COMPLETED", "OVERDUE"],
+      departments: ["IT", "HR", "Finance", "Operations", "Marketing"],
+      roles: ["Developer", "Manager", "Analyst", "Coordinator", "Specialist"],
+      labs: ["Lab A", "Lab B", "Lab C", "Remote"],
     };
   },
 
   // Submit feedback for a group
-  submitGroupFeedback: async (groupId: string, feedback: { rating: number; comment: string }): Promise<{ success: boolean; message: string }> => {
+  submitGroupFeedback: async (
+    groupId: string,
+    feedback: { rating: number; comment: string }
+  ): Promise<{ success: boolean; message: string }> => {
     try {
-      console.log('🔧 API: submitGroupFeedback called with:', { groupId, feedback });
-      
+      console.log("🔧 API: submitGroupFeedback called with:", {
+        groupId,
+        feedback,
+      });
+
       // This would be the actual feedback submission endpoint
       // For now, we'll simulate a successful response
-      const response = await api.post('/employee/group-feedback', {
+      const response = await api.post("/employee/group-feedback", {
         groupId,
         rating: feedback.rating,
-        comment: feedback.comment
+        comment: feedback.comment,
       });
-      
-      console.log('📥 API: Feedback submission response:', response.data);
-      
+
+      console.log("📥 API: Feedback submission response:", response.data);
+
       return {
         success: true,
-        message: 'Feedback submitted successfully'
+        message: "Feedback submitted successfully",
       };
     } catch (error) {
-      throw new Error('Failed to submit feedback. Please try again.');
+      throw new Error("Failed to submit feedback. Please try again.");
     }
   },
 };
