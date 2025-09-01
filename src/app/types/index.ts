@@ -60,6 +60,14 @@ export interface EmployeeImportResult {
 //   updated_at: string;
 // }
 
+export interface EmployeeFeedback {
+  id: string;
+  feedback: string;
+  star: number;
+  taskId: string;
+  completed: boolean;
+  }
+
 export interface Question {
   id: number;
   text: string;
