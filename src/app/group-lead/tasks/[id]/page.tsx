@@ -354,6 +354,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       {tasks.map((t) => {
         const qList = t.questionList ?? [];
         const totalTasks = qList.length;
+        const completed = qList.filter(
+  (q) => (q.status || "").toLowerCase() === "completed"
+).length;
 
         return (
           <Card key={t.id}>
@@ -429,10 +432,12 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold">{totalTasks}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Questions
-                    </div>
+                   <div className="text-3xl font-bold">
+      {completed}/{totalTasks}
+    </div>
+    <div className="text-xs text-muted-foreground">
+      Questions 
+    </div>
                   </div>
                   <Button
                     variant="outline"
