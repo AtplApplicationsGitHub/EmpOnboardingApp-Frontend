@@ -291,7 +291,8 @@ const TasksPage: React.FC = () => {
                         </Button>
 
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && (
+                          task.freeze === "N" && 
+                          ((task.lab ?? '').toString().trim() !== '') && (
                             <Button
                               variant="outline"
                               size="icon"

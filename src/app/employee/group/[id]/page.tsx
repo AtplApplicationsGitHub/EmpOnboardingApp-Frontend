@@ -59,6 +59,8 @@ const GroupDetailPage: React.FC = () => {
 
   const fetchGroupDetails = async () => {
     try {
+
+      
       setLoading(true);
       setError(null);
       

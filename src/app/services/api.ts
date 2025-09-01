@@ -10,13 +10,16 @@ import {
   DropDownDTO,
   PdfDto,
   EmployeeImportResult,
-  QueueEmployee,
   TaskProjection,
+  EmployeeTaskFilter,
+  EmployeeTaskResponse,
 } from "../types";
+
+// Re-export types for easier access
+export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: 'https://dev.goval.app:2083/api',
   // baseURL: "https://employee.onboarding.goval.app:8084/api",
   baseURL: "http://localhost:8084/api",
   headers: {
@@ -34,7 +37,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
 
@@ -53,7 +56,7 @@ api.interceptors.response.use(
         window.location.href = "/auth/login";
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(new Error(error.message || "Response failed"));
   }
 );
 
@@ -66,92 +69,108 @@ export const authService = {
     });
     return response.data;
   },
-  
-  checkUserRole: async (email: string): Promise<{ role: "admin" | "group_lead" | "employee"; exists: boolean }> => {
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { role: 'employee', exists: false };
-    }
-    
-    // TODO: Replace with actual API call to check user role
-    // GET /api/auth/check-user-role?email={email}
-    const userRoleLookup: Record<string, 'admin' | 'group_lead'> = {
-      // Admin users
-      'admin@mailinator.com': 'admin',
-      'a2@mailinator.com': 'admin',
-      'a3@mailinator.com': 'admin',
-      'a4@mailinator.com': 'admin',
-      '1@1.com': 'admin',
-      '2@mailinator.com': 'admin',
-      'admin123@mailinator.com': 'admin',
-      'a4@example.com': 'admin',
-      'g21@mailinator.com': 'admin',
-      
-      // Group leader users
-      'gl1@mailinator.com': 'group_lead',
-      'gl2@mailinator.com': 'group_lead',
-      '3@mailinator.com': 'group_lead',
-      '4gl@mailinator.com': 'group_lead',
-      '5gl@mailinator.com': 'group_lead',
-      'a1@mailinator.com': 'group_lead',
-      'g2@example.com': 'group_lead',
-      'g2@mailinator.com': 'group_lead',
-      'a2@example.com': 'group_lead',
-      'a1@example.com': 'group_lead'
-    };
-    
-    const userRole = userRoleLookup[email.toLowerCase()];
-    
-    if (userRole) {
-      return { role: userRole, exists: true };
-    } else {
-      return { role: 'employee', exists: true };
+
+  checkUserRole: async (
+    email: string
+  ): Promise<{
+    role: "admin" | "group_lead" | "employee";
+    exists: boolean;
+  }> => {
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await api.get(
+        `/auth/checkEmpOrAdmin/${normalizedEmail}`
+      );
+      const userData = response.data;
+
+      let userRole;
+      if (typeof userData === "string") {
+        userRole = userData;
+      } else if (userData?.role) {
+        userRole = userData.role;
+      }
+
+      if (userRole) {
+        return {
+          role: userRole.toLowerCase() as "admin" | "group_lead" | "employee",
+          exists: true,
+        };
+      }
+
+      return { role: "employee", exists: false };
+    } catch (error: any) {
+<<<<<<< HEAD
+      console.error("Failed to check user role:", error);
+      throw new Error("Unable to verify user. Please try again.");
+=======
+      throw new Error('Unable to verify user. Please try again.');
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
-  
-  sendOtp: async (email: string): Promise<{ success: boolean; message: string }> => {
-    // TODO: Implement actual OTP sending API
-    // POST /api/auth/send-otp
-    
-    // Mock implementation for testing
-    const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem(`otp_${email}`, mockOtp);
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ 
-          success: true, 
-          message: `OTP sent successfully to ${email}. Check browser console for testing OTP: ${mockOtp}` 
-        });
-      }, 1000);
-    });
+
+  sendOtp: async (
+    email: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await api.get(`/auth/sendMailOTP/${normalizedEmail}`);
+
+      if (response.data === true) {
+        return {
+          success: true,
+          message: "OTP sent successfully to your email",
+        };
+      } else {
+        throw new Error(
+          "Unable to send OTP to this email. Please check if the email is registered."
+        );
+      }
+    } catch (error: any) {
+<<<<<<< HEAD
+      console.error("Failed to send OTP:", error);
+      throw new Error("Failed to send OTP. Please try again.");
+=======
+      throw new Error('Failed to send OTP. Please try again.');
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
+    }
   },
-  
+
   verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
-    // TODO: Implement actual OTP verification API
-    // POST /api/auth/verify-otp
-    
-    // Mock implementation for testing
-    const storedOtp = sessionStorage.getItem(`otp_${email}`);
-    
-    if (otp === storedOtp) {
-      sessionStorage.removeItem(`otp_${email}`);
-      
-      return {
-        accessToken: 'mock-employee-token-' + Date.now(),
-        userName: email.split('@')[0],
-        userId: Math.floor(Math.random() * 1000) + 100,
-        success: true,
-        message: 'OTP verified successfully',
-        loginAttemptCount: 1,
-        newUser: false
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedOtp = otp.trim();
+
+      const requestBody = {
+        signInId: normalizedEmail,
+        password: normalizedOtp,
       };
-    } else {
+
+      const response = await api.post("/auth/employeeSignIn", requestBody);
+      const data = response.data;
+
+      if (data?.success) {
+        return {
+          accessToken: data.accessToken || data.token,
+          userName: data.userName || normalizedEmail.split("@")[0],
+          userId: data.userId || data.id,
+          success: true,
+          message: data.message || "Login successful",
+          loginAttemptCount: data.loginAttemptCount || 1,
+          newUser: data.newUser || false,
+        };
+      } else {
+        throw new Error(data.message || "Invalid OTP");
+      }
+    } catch (error: any) {
+<<<<<<< HEAD
+      console.error("OTP verification failed:", error);
+      throw new Error("Invalid OTP. Please check the code and try again.");
+=======
       throw new Error('Invalid OTP. Please check the code and try again.');
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
-  
+
   findById: async (id: number): Promise<User> => {
     const response = await api.get<User>(`/user/findById/${id}`);
     return response.data;
@@ -215,7 +234,6 @@ export const adminService = {
     commonListDto: Question[];
     totalElements: number;
   }> => {
-    // const params = level ? { level } : {};
     const response = await api.post<{
       commonListDto: Question[];
       totalElements: number;
@@ -241,7 +259,6 @@ export const adminService = {
     complainceDay?: string;
     questionLevel?: string[];
   }): Promise<Question> => {
-    console.log("Updating question with data:", data);
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
@@ -295,10 +312,11 @@ export const adminService = {
   // LookUp
 
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/lookup/getCategoryItemByName/${type}`); 
+    const response = await api.get<DropDownDTO[]>(
+      `/lookup/getCategoryItemByName/${type}`
+    );
     return response.data;
   },
-
 
   // New admin reassignment methods
   reassignTaskToUser: async (
@@ -600,453 +618,476 @@ export const taskService = {
     id: number,
     labAllocation: string
   ): Promise<boolean> => {
-    const response = await api.post<boolean>(`/employee/labSave/${labAllocation}/${id}`);
+    const response = await api.post<boolean>(
+      `/employee/labSave/${labAllocation}/${id}`
+    );
     return response.data;
   },
 
-  updateResponse: async (
-    id: number,
-    value: string
-  ): Promise<boolean> => {
-    const response = await api.post<boolean>(`/task/taskQuestionAnswer/${id}/${value}`);
+  updateResponse: async (id: number, value: string): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/taskQuestionAnswer/${id}/${value}`
+    );
     return response.data;
   },
 };
 
+// Helper function to convert TaskProjection to Task
+const convertTaskProjectionToTask = (taskProjection: TaskProjection): Task => {
+  // Defensive programming: Check if taskProjection is valid
+  if (!taskProjection || typeof taskProjection !== 'object') {
+    console.warn('⚠️ convertTaskProjectionToTask: Invalid taskProjection received:', taskProjection);
+    return {
+      id: 0,
+      employeeName: "",
+      employeeId: 0,
+      level: "",
+      department: "",
+      role: "",
+      lab: "",
+      groupName: "",
+      pastExperience: "",
+      prevCompany: "",
+      complianceDay: "",
+      assignedTo: "",
+      totalQuestions: 0,
+      completedQuestions: 0,
+      status: "",
+      doj: "",
+      questionList: [],
+      createdTime: "",
+      updatedTime: "",
+      freezeTask: "",
+    };
+  }
+
+  return {
+    id: parseInt(taskProjection.taskIds || "0") || 0, // taskIds maps to id
+    employeeName: taskProjection.name || "", // name maps to employeeName
+    employeeId: parseInt(taskProjection.employeeId || "0") || 0, // Convert string to number
+    level: taskProjection.level || "",
+    department: taskProjection.department || "",
+    role: taskProjection.role || "",
+    lab: taskProjection.lab || "",
+    groupName: "", // Not available in TaskProjection
+    pastExperience: "", // Not available in TaskProjection
+    prevCompany: "", // Not available in TaskProjection
+    complianceDay: "", // Not available in TaskProjection
+    assignedTo: "", // Not available in TaskProjection
+    totalQuestions: taskProjection.totalQuetions || 0,
+    completedQuestions: taskProjection.completedQuetions || 0,
+    status: taskProjection.status || "",
+    doj: taskProjection.doj || "",
+    questionList: [], // Not available in TaskProjection
+    createdTime: "", // Not available in TaskProjection
+    updatedTime: "", // Not available in TaskProjection
+    freezeTask: taskProjection.freeze || "", // freeze maps to freezeTask
+  };
+};
 
 // Group Lead Services
-// export const groupLeadService = {
-//   getTasks: async (): Promise<Task[]> => {
-//     // Use the admin task endpoint (temporary until group lead endpoint is deployed)
-//     const response = await api.post<{
-//       commonListDto: {
-//         content: TaskProjection[];
-//       };
-//       totalElements: number;
-//     }>("/task/filteredTaskForAdmin/null/0");
-    
-//     // Convert TaskProjection[] to Task[] for compatibility
-//     return response.data.commonListDto.content.map(convertTaskProjectionToTask);
-//   },
+export const groupLeadService = {
+  getTasks: async (): Promise<Task[]> => {
+    // Use the admin task endpoint (temporary until group lead endpoint is deployed)
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>("/task/filteredTaskForAdmin/null/0");
 
-//   getTasksPaginated: async (params?: {
-//     search?: string;
-//     page?: number;
-//   }): Promise<{
-//     commonListDto: {
-//       content: Task[];
-//     };
-//     totalElements: number;
-//   }> => {
-//     const search = params?.search ?? "null";
-//     const page = params?.page ?? 0;
-//     const response = await api.post<{
-//       commonListDto: {
-//         content: TaskProjection[];
-//       };
-//       totalElements: number;
-//     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
-    
-//     // Convert TaskProjection[] to Task[] for compatibility
-//     const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
-    
-//     return {
-//       commonListDto: {
-//         content: convertedContent,
-//       },
-//       totalElements: response.data.totalElements,
-//     };
-//   },
+    // Convert TaskProjection[] to Task[] for compatibility
+    return response.data.commonListDto.content.map(convertTaskProjectionToTask);
+  },
 
-//   completeTask: async (taskId: number, response: string): Promise<Task> => {
-//     // TODO: Implement backend endpoint - for now return mock response
-//     console.warn("Complete task endpoint not implemented yet. Using mock response.");
-//     return {
-//       id: taskId,
-//       employeeName: "Mock Employee",
-//       employeeId: 1,
-//       level: "L1",
-//       department: "IT",
-//       role: "Developer",
-//       lab: "Lab 1",
-//       groupName: "Group 1",
-//       pastExperience: "2 years",
-//       prevCompany: "Previous Co",
-//       complianceDay: "30",
-//       assignedTo: "Group Lead",
-//       totalQuestions: 5,
-//       completedQuestions: 5,
-//       status: "Completed",
-//       doj: new Date().toISOString(),
-//       questionList: [],
-//       createdTime: new Date().toISOString(),
-//       updatedTime: new Date().toISOString(),
-//     };
-//   },
+  getTasksPaginated: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: Task[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredTaskForAdmin/${search}/${page}`);
 
-//   // User Management for Group Leads
-//   getUsers: async (): Promise<User[]> => {
-//     const response = await api.get<User[]>("/group-lead/users");
-//     return response.data;
-//   },
+    // Convert TaskProjection[] to Task[] for compatibility
+    const convertedContent = response.data.commonListDto.content.map(
+      convertTaskProjectionToTask
+    );
 
-//   createUser: async (data: {
-//     name: string;
-//     email: string;
-//     password: string;
-//   }): Promise<User> => {
-//     const response = await api.post<User>("/group-lead/users", data);
-//     return response.data;
-//   },
+    return {
+      commonListDto: {
+        content: convertedContent,
+      },
+      totalElements: response.data.totalElements,
+    };
+  },
 
-//   // Task Reassignment
-//   getGroupLeaders: async (): Promise<User[]> => {
-//     const response = await api.get<User[]>("/group-lead/group-leaders");
-//     return response.data;
-//   },
+  // User Management for Group Leads
+  getUsers: async (): Promise<User[]> => {
+    const response = await api.get<User[]>("/group-lead/users");
+    return response.data;
+  },
 
-//   reassignTask: async (
-//     taskId: number,
-//     newAssigneeId: number,
-//     reason?: string
-//   ): Promise<{
-//     message: string;
-//     task: Task;
-//     previous_assignee_id: number;
-//     new_assignee: User;
-//     reason: string;
-//   }> => {
-//     const response = await api.put(`/group-lead/tasks/${taskId}/reassign`, {
-//       new_assignee_id: newAssigneeId,
-//       reason,
-//     });
-//     return response.data;
-//   },
+  createUser: async (data: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<User> => {
+    const response = await api.post<User>("/group-lead/users", data);
+    return response.data;
+  },
 
-//   bulkReassignTasks: async (
-//     taskIds: number[],
-//     newAssigneeId: number,
-//     reason?: string
-//   ): Promise<{
-//     message: string;
-//     reassigned_count: number;
-//     new_assignee: User;
-//     tasks: Task[];
-//     reason: string;
-//   }> => {
-//     const response = await api.put("/group-lead/tasks/bulk-reassign", {
-//       task_ids: taskIds,
-//       new_assignee_id: newAssigneeId,
-//       reason,
-//     });
-//     return response.data;
-//   },
-// };
+  // Task Reassignment
+  getGroupLeaders: async (): Promise<User[]> => {
+    const response = await api.get<User[]>("/group-lead/group-leaders");
+    return response.data;
+  },
+
+  reassignTask: async (
+    taskId: number,
+    newAssigneeId: number,
+    reason?: string
+  ): Promise<{
+    message: string;
+    task: Task;
+    previous_assignee_id: number;
+    new_assignee: User;
+    reason: string;
+  }> => {
+    const response = await api.put(`/group-lead/tasks/${taskId}/reassign`, {
+      new_assignee_id: newAssigneeId,
+      reason,
+    });
+    return response.data;
+  },
+
+  bulkReassignTasks: async (
+    taskIds: number[],
+    newAssigneeId: number,
+    reason?: string
+  ): Promise<{
+    message: string;
+    reassigned_count: number;
+    new_assignee: User;
+    tasks: Task[];
+    reason: string;
+  }> => {
+    const response = await api.put("/group-lead/tasks/bulk-reassign", {
+      task_ids: taskIds,
+      new_assignee_id: newAssigneeId,
+      reason,
+    });
+    return response.data;
+  },
+};
 
 // Employee Services
 export const employeeService = {
-  // Get all questions assigned to the current employee across all groups
+  // Get all questions assigned to the current employee across all groups (FOR DASHBOARD VIEW)
   getAllQuestions: async (): Promise<any[]> => {
     try {
-      // TODO: API - Get all questions for employee across all groups
-      // GET /api/employees/{employeeId}/questions
-      
-      // Mock data - flattened questions from all groups with format matching screenshot
+      // Mock data for employee dashboard questions - to be replaced with API when available
       const mockQuestions = [
         {
-          id: 'q1',
-          questionText: 'G3Q2',
-          questionType: 'Text Response',
-          status: 'pending',
-          groupName: 'G3 - T082500003 - GL1',
-          groupLeaderName: 'Group Leader 1',
-          groupId: '3'
+          id: "dashboard_q1",
+          questionText: "Rate this employee's performance in React development",
+          questionType: "Text Response",
+          status: "pending",
+          groupName: "G3 - T082500003 - GL1",
+          groupLeaderName: "Group Leader 1",
+          groupId: "3",
         },
         {
-          id: 'q2',
-          questionText: 'G3Q1',
-          questionType: 'Yes/No/N/A Question',
-          status: 'pending',
-          groupName: 'G3 - T082500003 - GL1',
-          groupLeaderName: 'Group Leader 1',
-          groupId: '3'
+          id: "dashboard_q2",
+          questionText: "Is this employee ready for advanced React concepts?",
+          questionType: "Yes/No/N/A Question",
+          status: "pending",
+          groupName: "G3 - T082500003 - GL1",
+          groupLeaderName: "Group Leader 1",
+          groupId: "3",
         },
         {
-          id: 'q3',
-          questionText: 'G1Q1',
-          questionType: 'Yes/No/N/A Question',
-          status: 'answered',
-          groupLeaderAnswer: 'Yes',
-          answeredAt: '2025-08-20T10:30:00Z',
-          groupName: 'G1 - Frontend Development',
-          groupLeaderName: 'John Smith',
-          groupId: '1'
+          id: "dashboard_q3",
+          questionText: "How would you rate this employee's TypeScript skills?",
+          questionType: "Yes/No/N/A Question",
+          status: "answered",
+          employeeAnswer: "Yes",
+          answeredAt: "2025-08-20T10:30:00Z",
+          groupName: "G1 - Frontend Development",
+          groupLeaderName: "John Smith",
+          groupId: "1",
         },
-        {
-          id: 'q4',
-          questionText: 'G1Q2',
-          questionType: 'Text Response',
-          status: 'answered',
-          groupLeaderAnswer: 'Good understanding of basic types and interfaces',
-          answeredAt: '2025-08-21T14:15:00Z',
-          groupName: 'G1 - Frontend Development',
-          groupLeaderName: 'John Smith',
-          groupId: '1'
-        },
-        {
-          id: 'q5',
-          questionText: 'G2Q1',
-          questionType: 'Text Response',
-          status: 'pending',
-          groupName: 'G2 - Backend Development',
-          groupLeaderName: 'Sarah Johnson',
-          groupId: '2'
-        },
-        {
-          id: 'q6',
-          questionText: 'G2Q2',
-          questionType: 'Yes/No/N/A Question',
-          status: 'answered',
-          groupLeaderAnswer: 'Yes',
-          answeredAt: '2025-08-22T11:20:00Z',
-          groupName: 'G2 - Backend Development',
-          groupLeaderName: 'Sarah Johnson',
-          groupId: '2'
-        }
       ];
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       return mockQuestions;
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.get("/employee/questions");
-      // return response.data;
     } catch (error) {
-      console.error('Failed to fetch employee questions:', error);
-      throw error;
+<<<<<<< HEAD
+      console.error("Failed to fetch employee dashboard questions:", error);
+      throw new Error("Failed to fetch employee dashboard questions");
+=======
+      throw new Error('Failed to fetch employee dashboard questions');
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
     }
   },
 
-  // Submit feedback for a specific group
-  submitGroupFeedback: async (groupId: string, feedback: { rating: number; comment: string }): Promise<any> => {
+  // Get employee's own tasks/questions to answer (FOR MY TASKS PAGE)
+<<<<<<< HEAD
+  // getMyTasks: async (
+  //   pageNo: number = 0
+  // ): Promise<{
+  //   commonListDto: Task[];
+  //   totalElements: number;
+  // }> => {
+  //   try {
+  //     const response = await api.post(
+  //       `/task/filteredTaskForEmployee/${pageNo}`
+  //     );
+  //     if (response.data?.commonListDto) {
+  //       return {
+  //         commonListDto: response.data.commonListDto,
+  //         totalElements: response.data.totalElements || 0,
+  //       };
+  //     }
+  //     return {
+  //       commonListDto: [],
+  //       totalElements: 0,
+  //     };
+  //   } catch (error: any) {
+  //     console.error("Failed to fetch employee tasks:", error);
+  //     throw new Error("Failed to fetch employee tasks. Please try again.");
+  //   }
+  // },
+
+  getMyTasks: async (
+    page?: number
+  ): Promise<{
+    commonListDto: Task[];
+=======
+  getMyTasks: async (
+    pageNo: number = 0,
+    filters?: EmployeeTaskFilter
+  ): Promise<{
+    commonListDto: {
+      content: Task[];
+    };
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
+<<<<<<< HEAD
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/filteredTaskForEmployee/${page}`);
+    return response.data;
+=======
     try {
-      // TODO: API - Submit employee feedback for specific group
-      // POST /api/employees/{employeeId}/groups/{groupId}/feedback
+      // Prepare the request body with filter parameters
+      const requestBody = filters ? {
+        status: filters.status || null,
+        department: filters.department || null,
+        role: filters.role || null,
+        lab: filters.lab || null,
+        search: filters.search || null,
+        dateFrom: filters.dateFrom || null,
+        dateTo: filters.dateTo || null,
+        groupId: filters.groupId || null,
+      } : {};
+
+      const response = await api.post<EmployeeTaskResponse>(
+        `/employee/filteredTaskForEmployee/${pageNo}`, 
+        requestBody
+      );
       
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (response.data?.commonListDto?.content) {
+        // Defensive programming: Ensure content is an array
+        const contentArray = Array.isArray(response.data.commonListDto.content) 
+          ? response.data.commonListDto.content 
+          : [];
+        
+        // Safely map the content with error handling for each item
+        const convertedContent = contentArray.map((item) => {
+          try {
+            return convertTaskProjectionToTask(item);
+          } catch (error) {
+            // Return a default task object if conversion fails
+            return {
+              id: 0,
+              employeeName: "Error",
+              employeeId: 0,
+              level: "",
+              department: "",
+              role: "",
+              lab: "",
+              groupName: "",
+              pastExperience: "",
+              prevCompany: "",
+              complianceDay: "",
+              assignedTo: "",
+              totalQuestions: 0,
+              completedQuestions: 0,
+              status: "",
+              doj: "",
+              questionList: [],
+              createdTime: "",
+              updatedTime: "",
+              freezeTask: "",
+            };
+          }
+        });
+        
+        return {
+          commonListDto: {
+            content: convertedContent,
+          },
+          totalElements: response.data.totalElements || 0,
+          totalPages: response.data.totalPages || Math.ceil((response.data.totalElements || 0) / 10),
+          currentPage: pageNo,
+        };
+      }
+      
+      return {
+        commonListDto: {
+          content: [],
+        },
+        totalElements: 0,
+        totalPages: 0,
+        currentPage: pageNo,
+      };
+      
+    } catch (error: any) {
+      throw new Error('Failed to fetch employee tasks. Please try again.');
+    }
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
+  },
+
+  // Legacy method for backward compatibility
+  getMyTasksSimple: async (): Promise<any[]> => {
+    try {
+      const result = await employeeService.getMyTasks(0);
+      return result.commonListDto;
+    } catch (error) {
+<<<<<<< HEAD
+      console.error("Failed to fetch employee tasks (simple format):", error);
+=======
+>>>>>>> f92a02c1c1cb07bacc8549fd348a8c923edf5f13
+      return [];
+    }
+  },
+
+  // Get tasks by status (e.g., "PENDING", "COMPLETED", "IN_PROGRESS")
+  getMyTasksByStatus: async (status: string, pageNo: number = 0): Promise<{
+    commonListDto: { content: Task[] };
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
+    return employeeService.getMyTasks(pageNo, { status });
+  },
+
+  // Search tasks by keyword
+  searchMyTasks: async (searchTerm: string, pageNo: number = 0): Promise<{
+    commonListDto: { content: Task[] };
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
+    return employeeService.getMyTasks(pageNo, { search: searchTerm });
+  },
+
+  // Get tasks for a specific department
+  getMyTasksByDepartment: async (department: string, pageNo: number = 0): Promise<{
+    commonListDto: { content: Task[] };
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
+    return employeeService.getMyTasks(pageNo, { department });
+  },
+
+  // Get tasks within a date range
+  getMyTasksByDateRange: async (
+    dateFrom: string, 
+    dateTo: string, 
+    pageNo: number = 0
+  ): Promise<{
+    commonListDto: { content: Task[] };
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
+    return employeeService.getMyTasks(pageNo, { dateFrom, dateTo });
+  },
+
+  // Submit answer for a task/question
+  submitAnswer: async (questionId: string, answerData: {
+    answer: string;
+    questionType?: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await api.post(`/employee/submitAnswer/${questionId}`, {
+        answer: answerData.answer,
+        questionType: answerData.questionType || 'Text Response'
+      });
       
       return {
         success: true,
-        message: 'Feedback submitted successfully',
-        feedbackId: 'feedback_' + Date.now(),
+        message: response.data?.message || 'Answer submitted successfully'
+      };
+    } catch (error: any) {
+      throw new Error('Failed to submit answer. Please try again.');
+    }
+  },
+
+  // Get all available filter options for employee tasks
+  getTaskFilterOptions: async (): Promise<{
+    statuses: string[];
+    departments: string[];
+    roles: string[];
+    labs: string[];
+  }> => {
+    // This would ideally be a separate API endpoint
+    // For now, we'll return common options
+    return {
+      statuses: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'],
+      departments: ['IT', 'HR', 'Finance', 'Operations', 'Marketing'],
+      roles: ['Developer', 'Manager', 'Analyst', 'Coordinator', 'Specialist'],
+      labs: ['Lab A', 'Lab B', 'Lab C', 'Remote']
+    };
+  },
+
+  // Submit feedback for a group
+  submitGroupFeedback: async (groupId: string, feedback: { rating: number; comment: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      console.log('🔧 API: submitGroupFeedback called with:', { groupId, feedback });
+      
+      // This would be the actual feedback submission endpoint
+      // For now, we'll simulate a successful response
+      const response = await api.post('/employee/group-feedback', {
         groupId,
         rating: feedback.rating,
-        comment: feedback.comment,
-        submittedAt: new Date().toISOString()
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.post(`/employee/groups/${groupId}/feedback`, {
-      //   rating: feedback.rating,
-      //   comment: feedback.comment
-      // });
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to submit group feedback:', error);
-      throw error;
-    }
-  },
-
-  // Get employee dashboard statistics
-  getDashboardStats: async (): Promise<any> => {
-    try {
-      // TODO: API - Get employee dashboard statistics
-      // GET /api/employees/{employeeId}/dashboard-stats
+        comment: feedback.comment
+      });
       
-      // Mock implementation - calculate from getAllQuestions
-      const questions = await employeeService.getAllQuestions();
-      
-      return {
-        totalQuestions: questions.length,
-        answeredQuestions: questions.filter(q => q.status === 'answered').length,
-        pendingQuestions: questions.filter(q => q.status === 'pending').length,
-        completionPercentage: Math.round((questions.filter(q => q.status === 'answered').length / questions.length) * 100)
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.get("/employee/dashboard-stats");
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
-      throw error;
-    }
-  },
-
-  // Get task groups assigned to the current employee
-  getTaskGroups: async (): Promise<any[]> => {
-    try {
-      // TODO: API - Get employee's assigned task groups and questions
-      // GET /api/employees/{employeeId}/task-groups
-      
-      // Mock implementation - use getAllQuestions and group them
-      const questions = await employeeService.getAllQuestions();
-      const groupedQuestions = questions.reduce((groups, question) => {
-        const groupKey = question.groupId;
-        if (!groups[groupKey]) {
-          groups[groupKey] = {
-            groupId: question.groupId,
-            groupName: question.groupName,
-            groupLeaderName: question.groupLeaderName,
-            questions: []
-          };
-        }
-        groups[groupKey].questions.push(question);
-        return groups;
-      }, {} as Record<string, any>);
-
-      return Object.values(groupedQuestions);
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.get("/employee/task-groups");
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to fetch task groups:', error);
-      throw error;
-    }
-  },
-
-  // Get specific task group details
-  getTaskGroupDetails: async (groupId: string): Promise<any> => {
-    try {
-      // TODO: API - Get specific group details with questions for employee
-      // GET /api/employees/{employeeId}/groups/{groupId}
-      
-      // Mock implementation
-      const allQuestions = await employeeService.getAllQuestions();
-      const groupQuestions = allQuestions.filter(q => q.groupId === groupId);
-      
-      if (groupQuestions.length === 0) {
-        throw new Error(`Group ${groupId} not found`);
-      }
-
-      return {
-        groupId,
-        groupName: groupQuestions[0].groupName,
-        groupLeaderName: groupQuestions[0].groupLeaderName,
-        questions: groupQuestions,
-        feedback: null // No feedback submitted yet
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.get(`/employee/task-groups/${groupId}`);
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to fetch task group details:', error);
-      throw error;
-    }
-  },
-
-  // Save answers for task group questions
-  saveAnswers: async (groupId: string, answers: any[]): Promise<any> => {
-    try {
-      // TODO: API - Save employee answers for group questions
-      // POST /api/employees/{employeeId}/groups/{groupId}/answers
-      
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('📥 API: Feedback submission response:', response.data);
       
       return {
         success: true,
-        message: 'Answers saved successfully',
-        groupId,
-        savedAt: new Date().toISOString()
+        message: 'Feedback submitted successfully'
       };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.post(`/employee/task-groups/${groupId}/answers`, { answers });
-      // return response.data;
     } catch (error) {
-      console.error('Failed to save answers:', error);
-      throw error;
-    }
-  },
-
-  // Submit final answers for task group
-  submitAnswers: async (groupId: string): Promise<any> => {
-    try {
-      // TODO: API - Submit final answers for group
-      // POST /api/employees/{employeeId}/groups/{groupId}/submit
-      
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return {
-        success: true,
-        message: 'Answers submitted successfully',
-        groupId,
-        submittedAt: new Date().toISOString()
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.post(`/employee/task-groups/${groupId}/submit`);
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to submit answers:', error);
-      throw error;
-    }
-  },
-
-  // Get employee profile
-  getProfile: async (): Promise<any> => {
-    try {
-      // TODO: API - Get employee profile details
-      // GET /api/employees/{employeeId}/profile
-      
-      // Mock implementation
-      return {
-        id: 'emp_' + Math.floor(Math.random() * 1000),
-        name: 'John Employee',
-        email: 'employee@company.com',
-        department: 'Technology',
-        level: 'L2',
-        startDate: '2025-08-01',
-        manager: 'Jane Manager',
-        status: 'Active'
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.get("/employee/profile");
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to fetch employee profile:', error);
-      throw error;
-    }
-  },
-
-  // Update employee profile
-  updateProfile: async (profileData: any): Promise<any> => {
-    try {
-      // TODO: API - Update employee profile
-      // PUT /api/employees/{employeeId}/profile
-      
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return {
-        success: true,
-        message: 'Profile updated successfully',
-        updatedAt: new Date().toISOString(),
-        ...profileData
-      };
-
-      // Real API call (uncomment when backend is ready):
-      // const response = await api.put("/employee/profile", profileData);
-      // return response.data;
-    } catch (error) {
-      console.error('Failed to update employee profile:', error);
-      throw error;
+      throw new Error('Failed to submit feedback. Please try again.');
     }
   },
 };
