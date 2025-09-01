@@ -4,7 +4,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: "admin" | "group_lead";
+  role: "admin" | "group_lead"| "employee";
   createdTime: string;
   updatedTime: string;
 }
@@ -91,7 +91,6 @@ export interface Task {
   status: string;
   doj: string;
   freezeTask: string;
-  freezeButton: boolean;
   questionList: TaskQuestions[];
   questionText?: string;
   response?: string;
@@ -127,6 +126,8 @@ export interface TaskProjection {
   pendingQuetions: number;
   status: string;
   freeze:string
+  doj: string;
+  lab: string;
 }
 
 export interface AuthResponse {
@@ -217,4 +218,25 @@ export interface EmployeeImportResponse {
 
 export interface ApiError {
   message: string;
+}
+
+// Filter interfaces for employee task filtering
+export interface EmployeeTaskFilter {
+  status?: string;
+  department?: string;
+  role?: string;
+  lab?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  groupId?: number;
+}
+
+export interface EmployeeTaskResponse {
+  commonListDto: {
+    content: TaskProjection[];
+  };
+  totalElements: number;
+  totalPages?: number;
+  currentPage?: number;
 }

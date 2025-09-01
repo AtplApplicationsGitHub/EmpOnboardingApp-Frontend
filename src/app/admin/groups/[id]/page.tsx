@@ -255,6 +255,8 @@ const GroupDetailsPage: React.FC = () => {
                         : "Text Response"}
                     </span>
                     <span>Due: Day {question.complainceDay}</span>
+                    <span>Period: {question.period}</span>
+
                     <div className="flex items-center gap-1">
                       <span>Levels:</span>
                       {question.questionLevel.map((questionLevel) => (
@@ -352,7 +354,7 @@ const GroupDetailsPage: React.FC = () => {
       {/* Create/Edit Question Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-2xl mx-4  max-h-[95vh]">
             <CardHeader>
               <CardTitle>
                 {showCreateModal ? "Create New Question" : "Edit Question"}
@@ -424,61 +426,60 @@ const GroupDetailsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Period */}
+                {/* New container for Period and Compliance Day fields */}
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Period */}
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-2">
+                      Period *
+                    </label>
+                    <div className="flex gap-4">
+                      <SearchableDropdown
+                        className="w-full"
+                        options={periodOptions}
+                        value={
+                          periodOptions.find(
+                            (opt) => opt.value === formData.period
+                          )?.id
+                        }
+                        onChange={(id) => {
+                          const selectedValue =
+                            periodOptions.find((opt) => opt.id === id)?.value ??
+                            "";
+                          setFormData((prev) => ({
+                            ...prev,
+                            period: selectedValue as typeof prev.period,
+                          }));
+                        }}
+                        placeholder="Select period"
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Period *
-                  </label>
-                  <div className="flex gap-4">
-                    <SearchableDropdown
-                    className="w-full"
-                      options={periodOptions}
-                      value={
-                        periodOptions.find(
-                          (opt) => opt.value === formData.period
-                        )?.id
-                      }
-                      onChange={(id) => {
-                        const selectedValue =
-                          periodOptions.find((opt) => opt.id === id)?.value ??
-                          "";
+                  {/* Compliance Day */}
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-2">
+                      Compliance Day * (Number of days)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={parseInt(formData.complainceDay)}
+                      onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          period: selectedValue as typeof prev.period,
-                        }));
-                      }}
-                      placeholder="Select period"
-                      displayFullValue={false}
-                      isEmployeePage={true}
+                          complainceDay: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter number of days"
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
-                  </div>
-                </div>
 
-                {/* Compliance Day */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Compliance Day * (Number of days)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={parseInt(formData.complainceDay)}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        complainceDay: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter number of days"
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Number of days from the employee's start date when this task
-                    should be completed
-                  </p>
+                  </div>
                 </div>
 
                 {/* Employee Levels */}
@@ -490,11 +491,10 @@ const GroupDetailsPage: React.FC = () => {
                     {levels.map((level) => (
                       <label
                         key={level}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
-                          formData.questionLevel.includes(level)
+                        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(level)
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-input hover:border-primary/50"
-                        }`}
+                          }`}
                       >
                         <input
                           type="checkbox"

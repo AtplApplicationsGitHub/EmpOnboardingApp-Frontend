@@ -146,7 +146,6 @@ const TaskDetailsPage: React.FC = () => {
   }, [lab]);
 
   const handleSaveLab = async (id?: number) => {
-    console.log("handleSaveLab called with id:", id);
     setSelectedLabId(id);
     const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
     if (!selectedLabValue) {
@@ -173,6 +172,14 @@ const TaskDetailsPage: React.FC = () => {
       setSelectedLabId(prevId);
     }
   };
+
+  const handleLabChange = useCallback(
+    (value: number | number[] | undefined): void => {
+      const id = Array.isArray(value) ? value[0] : value;
+      void handleSaveLab(id);
+    },
+    [handleSaveLab]
+  );
 
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
@@ -268,8 +275,8 @@ const TaskDetailsPage: React.FC = () => {
               <SearchableDropdown
                 options={labOptions}
                 value={selectedLabId}
-                disabled={freezeTask === "Y"} 
-                onChange={(id) => handleSaveLab(id)}
+                disabled={freezeTask === "Y"}
+                onChange={handleLabChange}
                 placeholder="Select Lab"
                 displayFullValue={false}
                 isEmployeePage={true}
@@ -321,7 +328,7 @@ const TaskDetailsPage: React.FC = () => {
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={freezeTask === "Y"} 
+                    disabled={freezeTask === "Y"}
                     onClick={() => {
                       setShowReassignModal(true);
                       setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
@@ -402,7 +409,10 @@ const TaskDetailsPage: React.FC = () => {
               <SearchableDropdown
                 options={groupLeads}
                 value={primaryGroupLeadId}
-                onChange={(value) => setPrimaryGroupLeadId(value)}
+                onChange={(value) => {
+                  const id = Array.isArray(value) ? value[0] : value;
+                  setPrimaryGroupLeadId(id);
+                }}
                 placeholder="Select a group lead"
                 required
                 maxDisplayItems={4}

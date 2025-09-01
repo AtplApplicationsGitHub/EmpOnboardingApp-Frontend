@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search, X } from 'lucide-react';
+'use client';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, Search, X, Check } from 'lucide-react';
 
 interface SearchableDropdownProps {
   options: Array<{ id: number; key: string; value: string }>;
-  value?: number;
-  onChange: (value: number | undefined) => void;
+  value?: number | number[];
+  onChange: (value: number | number[] | undefined) => void;
   placeholder?: string;
   required?: boolean;
   className?: string;
@@ -12,6 +13,7 @@ interface SearchableDropdownProps {
   maxDisplayItems?: number;
   displayFullValue?: boolean;
   isEmployeePage?: boolean;
+  isMultiSelect?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -25,6 +27,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   maxDisplayItems = 4,
   displayFullValue = true,
   isEmployeePage = false,
+  isMultiSelect = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,14 +35,26 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Convert the value to an array of selected IDs
+  const selectedValues = useMemo(() => {
+    if (isMultiSelect) {
+      return Array.isArray(value) ? value : [];
+    }
+    return value !== undefined ? [value as number] : [];
+  }, [value, isMultiSelect]);
+
   // Find selected option
-  const selectedOption = options.find(option => option.id === value);
+  const selectedOptions = useMemo(() => {
+    return options.filter(option => selectedValues.includes(option.id));
+  }, [options, selectedValues]);
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.value.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, maxDisplayItems);
+  const filteredOptions = useMemo(() => {
+    return options.filter(option =>
+      option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      option.value.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, maxDisplayItems);
+  }, [options, searchTerm, maxDisplayItems]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -63,13 +78,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
-          setHighlightedIndex(prev => 
+          setHighlightedIndex(prev =>
             prev < filteredOptions.length - 1 ? prev + 1 : 0
           );
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setHighlightedIndex(prev => 
+          setHighlightedIndex(prev =>
             prev > 0 ? prev - 1 : filteredOptions.length - 1
           );
           break;
@@ -91,13 +106,25 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, highlightedIndex, filteredOptions]);
 
+  // Selects/deselects an option (multi = toggle, single = choose + close)
   const handleSelectOption = (option: { id: number; key: string; value: string }) => {
-    onChange(option.id);
-    setIsOpen(false);
+    if (isMultiSelect) {
+      const newValues = Array.isArray(value) ? [...value] : [];
+      if (newValues.includes(option.id)) {
+        const filtered = newValues.filter(id => id !== option.id);
+        onChange(filtered.length > 0 ? filtered : undefined);
+      } else {
+        onChange([...newValues, option.id]);
+      }
+    } else {
+      onChange(option.id);
+      setIsOpen(false);
+    }
     setSearchTerm('');
     setHighlightedIndex(-1);
   };
 
+  // Clears all selected options
   const handleClear = () => {
     onChange(undefined);
     setSearchTerm('');
@@ -105,6 +132,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setHighlightedIndex(-1);
   };
 
+  // Removes a single selected item in multi-select mode
+  const handleRemoveItem = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    const newValues = selectedValues.filter(val => val !== id);
+    onChange(newValues.length > 0 ? newValues : undefined);
+  };
+
+  // Opens dropdown when input is clicked
   const handleInputClick = () => {
     if (!disabled) {
       setIsOpen(true);
@@ -118,13 +153,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Input Field */}
-      <div 
+      <div
         role="combobox"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         tabIndex={disabled ? -1 : 0}
         className={`
-          flex items-center w-full px-3 py-2 border border-input bg-background rounded-md 
+          flex items-center w-full px-3 py-2 border border-input bg-background rounded-md
           focus-within:outline-none focus-within:ring-2 focus-within:ring-primary
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isOpen ? 'ring-2 ring-primary' : ''}
@@ -149,34 +184,60 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             autoFocus
           />
         ) : (
-          <div className="flex-1 text-sm">
-           {selectedOption ? (
-  // Conditionally render based on the new prop
-  <span>
-    {displayFullValue ? `${selectedOption.key} (${selectedOption.value})` : selectedOption.value}
-  </span>
-) : (
-  <span className="text-muted-foreground">{placeholder}</span>
-)}
+          <div className="flex-1 flex flex-wrap items-center gap-1">
+            {selectedOptions.length > 0 ? (
+              isMultiSelect ? (
+                <>
+                  {/* Display the first selected option */}
+                  {selectedOptions[0] && (
+                    <div key={selectedOptions[0].id} className="inline-flex items-center gap-1 bg-secondary rounded-full px-2 py-0.5 text-xs text-secondary-foreground font-medium">
+                      {selectedOptions[0].value}
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveItem(e, selectedOptions[0].id)}
+                        className="ml-1 p-0.5 rounded-full hover:bg-muted"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Display the count of additional selected options */}
+                  {selectedOptions.length > 1 && (
+                    <span className="text-sm text-muted-foreground">
+                      +{selectedOptions.length - 1}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-sm">
+                  {displayFullValue ? `${selectedOptions[0].key} (${selectedOptions[0].value})` : selectedOptions[0].value}
+                </span>
+              )
+            ) : (
+              <span className="text-sm text-muted-foreground">{placeholder}</span>
+            )}
           </div>
         )}
-        
-        <div className="flex items-center gap-1 ml-2">
-          {selectedOption && !required && !disabled && (
+
+        <div className="flex items-center gap-1 ml-1">
+          {selectedOptions.length > 0 && !required && !disabled && !isOpen && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClear();
               }}
-              className="p-1 hover:bg-muted rounded-sm"
+              className=" hover:bg-muted rounded-sm"
             >
               <X size={14} className="text-muted-foreground" />
             </button>
           )}
-          <ChevronDown 
-            size={16} 
-            className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          <ChevronDown
+            size={16}
+            className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}
+             ${selectedOptions.length > 0 && !isOpen ? '' : 'opacity-0'}`}
+            
           />
         </div>
       </div>
@@ -191,7 +252,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               Searching for "{searchTerm}"...
             </div>
           )}
-          
+
           {/* Clear option (if not required) */}
           {!required && (
             <div
@@ -212,50 +273,42 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
           {/* Options */}
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => (
-              <div
-                key={option.id}
-                role="option"
-                tabIndex={0}
-                aria-selected={selectedOption?.id === option.id}
-                className={`
-                  px-3 py-2 text-sm cursor-pointer transition-colors
-                  ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
-                  ${selectedOption?.id === option.id ? 'bg-primary/5 font-medium' : ''}
-                `}
-                onClick={() => handleSelectOption(option)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleSelectOption(option);
-                  }
-                }}
-              >
-                {isEmployeePage ? (
-  <div className="font-medium">
-    {option.key}
-  </div>
-) : (
-  <>
-    <div className="font-medium">
-      {option.key}
-    </div>
-    <div className="text-xs text-muted-foreground">
-      {option.value}
-    </div>
-  </>
-)}
-
-              </div>
-            ))
+            filteredOptions.map((option, index) => {
+              const isSelected = selectedValues.includes(option.id);
+              return (
+                <div
+                  key={option.id}
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={isSelected}
+                  className={`
+                    px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between
+                    ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
+                    ${isSelected ? 'bg-primary/5 font-medium' : ''}
+                  `}
+                  onClick={() => handleSelectOption(option)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  <div>
+                    {isEmployeePage ? (
+                      <div className="font-medium">{option.key}</div>
+                    ) : (
+                      <>
+                        <div className="font-medium">{option.key}</div>
+                        <div className="text-xs text-muted-foreground">{option.value}</div>
+                      </>
+                    )}
+                  </div>
+                  {isSelected && <Check size={16} className="text-primary" />}
+                </div>
+              );
+            })
           ) : (
             <div className="px-3 py-2 text-sm text-muted-foreground">
               {searchTerm ? 'No group leaders found' : 'No group leaders available'}
             </div>
           )}
 
-          {/* Show count if there are more items */}
           {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
               Showing {maxDisplayItems} of {options.length} group leaders. Type to filter more.

@@ -107,14 +107,16 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const ProgressBar: React.FC<{ value: number }> = ({ value }) => (
+  const ProgressBar: React.FC<{ value: number; color: string }> = ({ value, color }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
-        className="h-full bg-muted-foreground/60"
+        className={`h-full ${color}`}
         style={{ width: `${clampPercent(value)}%` }}
       />
     </div>
   );
+
+  
 
   return (
     <div className="p-8 space-y-6">
@@ -152,6 +154,8 @@ const TasksPage: React.FC = () => {
                 <TableHead>Employee</TableHead>
                 <TableHead>Level</TableHead>
                 <TableHead>Role & Department</TableHead>
+                <TableHead>DOJ</TableHead>
+                <TableHead>Lab</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -161,7 +165,7 @@ const TasksPage: React.FC = () => {
             <TableBody>
               {tasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
                       <p className="text-muted-foreground">No tasks found</p>
@@ -182,12 +186,20 @@ const TasksPage: React.FC = () => {
                     ? Math.round((completed / totalQ) * 100)
                     : 0;
 
+                      let progressColor = "bg-muted-foreground/60";
+                  const status = (task.status || "").toLowerCase();
+                  if (status === "completed") {
+                    progressColor = "bg-green-600";
+                  } else if (status === "in progress") {
+                    progressColor = "bg-amber-500";
+                  }   
+
                   return (
                     <TableRow
                       key={(task as any).id ?? (task as any).employeeId}
                     >
                       {/* Employee Name */}
-                      <TableCell className="font-semibold">
+                      <TableCell className="font-semibold  min-w-[150px]">
                         {(task as any).name}
                       </TableCell>
 
@@ -206,8 +218,13 @@ const TasksPage: React.FC = () => {
                         </div>
                       </TableCell>
 
+                      {/* DOJ*/}
+                      <TableCell className="min-w-[100px]">{(task as any).doj}</TableCell>
+                      {/* Lab*/}
+                      <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
+
                       {/* Progress */}
-                      <TableCell className="min-w-[220px]">
+                      <TableCell className="min-w-[120px]">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold">
@@ -217,12 +234,12 @@ const TasksPage: React.FC = () => {
                               {percent}%
                             </span>
                           </div>
-                          <ProgressBar value={percent} />
+                          <ProgressBar value={percent}  color={progressColor} />
                         </div>
                       </TableCell>
 
                       {/* Status */}
-                      <TableCell>
+                      <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
                           const base =
@@ -274,7 +291,8 @@ const TasksPage: React.FC = () => {
                         </Button>
 
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && (
+                          task.freeze === "N" && 
+                          ((task.lab ?? '').toString().trim() !== '') && (
                             <Button
                               variant="outline"
                               size="icon"

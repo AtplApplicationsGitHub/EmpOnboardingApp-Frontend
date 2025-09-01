@@ -44,7 +44,6 @@ const UsersPage: React.FC = () => {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Modal state for create/update
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -187,7 +186,7 @@ const UsersPage: React.FC = () => {
         name: user.name || "",
         email: user.email || "",
         password: "",
-        role: user.role as "admin" | "group_lead",
+        role: user.role as "admin" | "group_lead" ,
       });
       setEditMode(true);
       setSelectedUserId(userId);
