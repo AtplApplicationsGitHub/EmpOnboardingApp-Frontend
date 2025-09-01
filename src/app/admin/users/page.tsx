@@ -48,7 +48,7 @@ const UsersPage: React.FC = () => {
     name: "",
     email: "",
     password: "",
-    role: "group_lead" as "admin" | "group_lead" | "employee",
+    role: "group_lead" as "admin" | "group_lead",
   });
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -186,7 +186,7 @@ const UsersPage: React.FC = () => {
         name: user.name || "",
         email: user.email || "",
         password: "",
-        role: user.role as "admin" | "group_lead" | "employee",
+        role: user.role as "admin" | "group_lead" ,
       });
       setEditMode(true);
       setSelectedUserId(userId);
@@ -473,7 +473,7 @@ const UsersPage: React.FC = () => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as "admin" | "group_lead" | "employee",
+                      role: e.target.value as "admin" | "group_lead",
                     })
                   }
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -481,7 +481,6 @@ const UsersPage: React.FC = () => {
                 >
                   <option value="group_lead">Group Lead</option>
                   <option value="admin">Administrator</option>
-                  <option value="employee">Employee</option>
                 </select>
               </div>
 

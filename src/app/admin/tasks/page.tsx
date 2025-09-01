@@ -59,7 +59,7 @@ const TasksPage: React.FC = () => {
       const search = searchFilter.trim();
       if (search) params.search = search;
       const response = await taskService.getTask(params);
-      console.log("Full data object:", response.commonListDto.content[0]);
+      console.log("Full data object:", response.commonListDto);
       setTasks(response.commonListDto.content ?? []);
       setTotalElements(response.totalElements ?? 0);
     } catch (err: any) {
@@ -282,7 +282,8 @@ const TasksPage: React.FC = () => {
                         </Button>
 
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && (
+                          task.freeze === "N" && 
+                          ((task.lab ?? '').toString().trim() !== '') && (
                             <Button
                               variant="outline"
                               size="icon"

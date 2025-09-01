@@ -15,7 +15,8 @@ import {
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,7 +32,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    return Promise.reject(new Error(error.message || 'Request failed'));
+    return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
 
@@ -50,7 +51,7 @@ api.interceptors.response.use(
         window.location.href = "/auth/login";
       }
     }
-    return Promise.reject(new Error(error.message || 'Response failed'));
+    return Promise.reject(new Error(error.message || "Response failed"));
   }
 );
 
@@ -63,88 +64,96 @@ export const authService = {
     });
     return response.data;
   },
-  
-  checkUserRole: async (email: string): Promise<{ role: "admin" | "group_lead" | "employee"; exists: boolean }> => {
+
+  checkUserRole: async (
+    email: string
+  ): Promise<{
+    role: "admin" | "group_lead" | "employee";
+    exists: boolean;
+  }> => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const response = await api.get(`/auth/checkEmpOrAdmin/${normalizedEmail}`);
+      const response = await api.get(
+        `/auth/checkEmpOrAdmin/${normalizedEmail}`
+      );
       const userData = response.data;
-      
+
       let userRole;
-      if (typeof userData === 'string') {
+      if (typeof userData === "string") {
         userRole = userData;
       } else if (userData?.role) {
         userRole = userData.role;
       }
-      
+
       if (userRole) {
         return {
           role: userRole.toLowerCase() as "admin" | "group_lead" | "employee",
-          exists: true
+          exists: true,
         };
       }
-      
-      return { role: 'employee', exists: false };
-      
+
+      return { role: "employee", exists: false };
     } catch (error: any) {
-      console.error('Failed to check user role:', error);
-      throw new Error('Unable to verify user. Please try again.');
+      console.error("Failed to check user role:", error);
+      throw new Error("Unable to verify user. Please try again.");
     }
   },
-  
-  sendOtp: async (email: string): Promise<{ success: boolean; message: string }> => {
+
+  sendOtp: async (
+    email: string
+  ): Promise<{ success: boolean; message: string }> => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const response = await api.get(`/auth/sendMailOTP/${normalizedEmail}`);
-      
+
       if (response.data === true) {
         return {
           success: true,
-          message: 'OTP sent successfully to your email'
+          message: "OTP sent successfully to your email",
         };
       } else {
-        throw new Error('Unable to send OTP to this email. Please check if the email is registered.');
+        throw new Error(
+          "Unable to send OTP to this email. Please check if the email is registered."
+        );
       }
-      
     } catch (error: any) {
-      console.error('Failed to send OTP:', error);
-      throw new Error('Failed to send OTP. Please try again.');
+      console.error("Failed to send OTP:", error);
+      throw new Error("Failed to send OTP. Please try again.");
     }
   },
-  
+
   verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedOtp = otp.trim();
-      
+
       const requestBody = {
         signInId: normalizedEmail,
-        password: normalizedOtp
+        password: normalizedOtp,
       };
-      
-      const response = await api.post('/auth/employeeSignIn', requestBody);
+
+      const response = await api.post("/auth/employeeSignIn", requestBody);
       const data = response.data;
-      
+
       if (data?.success) {
         return {
           accessToken: data.accessToken || data.token,
-          userName: data.userName || normalizedEmail.split('@')[0],
+          userName: data.userName || normalizedEmail.split("@")[0],
           userId: data.userId || data.id,
           success: true,
-          message: data.message || 'Login successful',
+          message: data.message || "Login successful",
           loginAttemptCount: data.loginAttemptCount || 1,
-          newUser: data.newUser || false
+          newUser: data.newUser || false,
         };
       } else {
-        throw new Error(data.message || 'Invalid OTP');
+        throw new Error(data.message || "Invalid OTP");
       }
-      
     } catch (error: any) {
-      console.error('OTP verification failed:', error);
-      throw new Error('Invalid OTP. Please check the code and try again.');
+      console.error("OTP verification failed:", error);
+      throw new Error("Invalid OTP. Please check the code and try again.");
     }
   },
-  
+
   findById: async (id: number): Promise<User> => {
     const response = await api.get<User>(`/user/findById/${id}`);
     return response.data;
@@ -286,10 +295,11 @@ export const adminService = {
   // LookUp
 
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/lookup/getCategoryItemByName/${type}`); 
+    const response = await api.get<DropDownDTO[]>(
+      `/lookup/getCategoryItemByName/${type}`
+    );
     return response.data;
   },
-
 
   // New admin reassignment methods
   reassignTaskToUser: async (
@@ -591,15 +601,16 @@ export const taskService = {
     id: number,
     labAllocation: string
   ): Promise<boolean> => {
-    const response = await api.post<boolean>(`/employee/labSave/${labAllocation}/${id}`);
+    const response = await api.post<boolean>(
+      `/employee/labSave/${labAllocation}/${id}`
+    );
     return response.data;
   },
 
-  updateResponse: async (
-    id: number,
-    value: string
-  ): Promise<boolean> => {
-    const response = await api.post<boolean>(`/task/taskQuestionAnswer/${id}/${value}`);
+  updateResponse: async (id: number, value: string): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/taskQuestionAnswer/${id}/${value}`
+    );
     return response.data;
   },
 };
@@ -640,7 +651,7 @@ export const groupLeadService = {
       };
       totalElements: number;
     }>("/task/filteredTaskForAdmin/null/0");
-    
+
     // Convert TaskProjection[] to Task[] for compatibility
     return response.data.commonListDto.content.map(convertTaskProjectionToTask);
   },
@@ -662,10 +673,12 @@ export const groupLeadService = {
       };
       totalElements: number;
     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
-    
+
     // Convert TaskProjection[] to Task[] for compatibility
-    const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
-    
+    const convertedContent = response.data.commonListDto.content.map(
+      convertTaskProjectionToTask
+    );
+
     return {
       commonListDto: {
         content: convertedContent,
@@ -741,85 +754,91 @@ export const employeeService = {
       // Mock data for employee dashboard questions - to be replaced with API when available
       const mockQuestions = [
         {
-          id: 'dashboard_q1',
-          questionText: 'Rate this employee\'s performance in React development',
-          questionType: 'Text Response',
-          status: 'pending',
-          groupName: 'G3 - T082500003 - GL1',
-          groupLeaderName: 'Group Leader 1',
-          groupId: '3'
+          id: "dashboard_q1",
+          questionText: "Rate this employee's performance in React development",
+          questionType: "Text Response",
+          status: "pending",
+          groupName: "G3 - T082500003 - GL1",
+          groupLeaderName: "Group Leader 1",
+          groupId: "3",
         },
         {
-          id: 'dashboard_q2',
-          questionText: 'Is this employee ready for advanced React concepts?',
-          questionType: 'Yes/No/N/A Question',
-          status: 'pending',
-          groupName: 'G3 - T082500003 - GL1',
-          groupLeaderName: 'Group Leader 1',
-          groupId: '3'
+          id: "dashboard_q2",
+          questionText: "Is this employee ready for advanced React concepts?",
+          questionType: "Yes/No/N/A Question",
+          status: "pending",
+          groupName: "G3 - T082500003 - GL1",
+          groupLeaderName: "Group Leader 1",
+          groupId: "3",
         },
         {
-          id: 'dashboard_q3',
-          questionText: 'How would you rate this employee\'s TypeScript skills?',
-          questionType: 'Yes/No/N/A Question',
-          status: 'answered',
-          employeeAnswer: 'Yes',
-          answeredAt: '2025-08-20T10:30:00Z',
-          groupName: 'G1 - Frontend Development',
-          groupLeaderName: 'John Smith',
-          groupId: '1'
-        }
+          id: "dashboard_q3",
+          questionText: "How would you rate this employee's TypeScript skills?",
+          questionType: "Yes/No/N/A Question",
+          status: "answered",
+          employeeAnswer: "Yes",
+          answeredAt: "2025-08-20T10:30:00Z",
+          groupName: "G1 - Frontend Development",
+          groupLeaderName: "John Smith",
+          groupId: "1",
+        },
       ];
 
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       return mockQuestions;
     } catch (error) {
-      console.error('Failed to fetch employee dashboard questions:', error);
-      throw new Error('Failed to fetch employee dashboard questions');
+      console.error("Failed to fetch employee dashboard questions:", error);
+      throw new Error("Failed to fetch employee dashboard questions");
     }
   },
 
   // Get employee's own tasks/questions to answer (FOR MY TASKS PAGE)
-  getMyTasks: async (pageNo: number = 0): Promise<{
-    commonListDto: {
-      content: Task[];
-    };
+  // getMyTasks: async (
+  //   pageNo: number = 0
+  // ): Promise<{
+  //   commonListDto: Task[];
+  //   totalElements: number;
+  // }> => {
+  //   try {
+  //     const response = await api.post(
+  //       `/task/filteredTaskForEmployee/${pageNo}`
+  //     );
+  //     if (response.data?.commonListDto) {
+  //       return {
+  //         commonListDto: response.data.commonListDto,
+  //         totalElements: response.data.totalElements || 0,
+  //       };
+  //     }
+  //     return {
+  //       commonListDto: [],
+  //       totalElements: 0,
+  //     };
+  //   } catch (error: any) {
+  //     console.error("Failed to fetch employee tasks:", error);
+  //     throw new Error("Failed to fetch employee tasks. Please try again.");
+  //   }
+  // },
+
+  getMyTasks: async (
+    page?: number
+  ): Promise<{
+    commonListDto: Task[];
     totalElements: number;
   }> => {
-    try {
-      const response = await api.post(`/filteredTaskForEmployee/${pageNo}`);
-      
-      if (response.data?.commonListDto?.content) {
-        const convertedContent = response.data.commonListDto.content.map(convertTaskProjectionToTask);
-        
-        return {
-          commonListDto: {
-            content: convertedContent,
-          },
-          totalElements: response.data.totalElements || 0,
-        };
-      }
-      
-      return {
-        commonListDto: {
-          content: [],
-        },
-        totalElements: 0,
-      };
-      
-    } catch (error: any) {
-      console.error('Failed to fetch employee tasks:', error);
-      throw new Error('Failed to fetch employee tasks. Please try again.');
-    }
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/filteredTaskForEmployee/${page}`);
+    return response.data;
   },
 
   // Legacy method for backward compatibility
   getMyTasksSimple: async (): Promise<any[]> => {
     try {
       const result = await employeeService.getMyTasks(0);
-      return result.commonListDto.content;
+      return result.commonListDto;
     } catch (error) {
-      console.error('Failed to fetch employee tasks (simple format):', error);
+      console.error("Failed to fetch employee tasks (simple format):", error);
       return [];
     }
   },

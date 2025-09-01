@@ -1,304 +1,120 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../auth/AuthContext';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
-import { TableHead, TableRow, TableHeader, TableCell, TableBody, Table } from '../../components/ui/table';
-import Button from '../../components/Button';
-import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { useAnimation, animationClasses } from '../../lib/animations';
-import { employeeService } from '../../services/api';
+import React, { useCallback, useEffect, useState } from "react";
 
-interface EmployeeQuestion {
-  id: string;
-  questionText: string;
-  questionType: 'Yes/No/N/A Question' | 'Text Response';
-  status: 'pending' | 'answered' | 'completed';
-  employeeAnswer?: string;
-  answeredAt?: string;
-  dueDate?: string;
-  groupName: string;
-  groupLeaderName: string;
-  groupId: string;
-}
-
-interface GroupData {
-  groupId: string;
-  groupName: string;
-  groupLeaderName: string;
-  questions: EmployeeQuestion[];
-}
-
-interface AnswerData {
-  questionId: string;
-  answer: string;
-}
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import Button from "../../components/Button";
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Send,
+  Star,
+  User2,
+  Users,
+} from "lucide-react";
+import { Task } from "@/app/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import { employeeService } from "@/app/services/api";
+import { useAnimation, animationClasses } from "@/app/lib/animations";
 
 const MyTasksPage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const [allQuestions, setAllQuestions] = useState<EmployeeQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [answerInputs, setAnswerInputs] = useState<Record<string, string>>({});
-  const [savingAnswers, setSavingAnswers] = useState<Record<string, boolean>>({});
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const isOverdue = (question: EmployeeQuestion) => {
-    if (!question.dueDate || question.status === 'answered') return false;
-    return new Date(question.dueDate) < new Date();
-  };
-
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const isVisible = useAnimation();
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
 
-    if (user.role !== 'employee') {
-      router.push('/');
-      return;
-    }
-
-    fetchAllQuestions();
-  }, [user, router]);
-
-  const fetchAllQuestions = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Use API service to fetch employee's own tasks (not dashboard questions)
-      const result = await employeeService.getMyTasks(0); // Page 0 for now
-      const tasks = result.commonListDto.content;
-      
-      // Convert Task[] to EmployeeQuestion[] format
-      const questions: EmployeeQuestion[] = tasks.map(task => ({
-        id: task.id.toString(),
-        questionText: task.questionText || `Task for ${task.employeeName}`,
-        questionType: 'Text Response', // Default type since Task doesn't have this field
-        status: task.status === 'Completed' ? 'answered' : 'pending',
-        employeeAnswer: task.response,
-        answeredAt: task.updatedTime,
-        dueDate: task.doj, // Using doj as due date
-        groupName: task.groupName || 'No Group',
-        groupLeaderName: task.assignedTo || 'Unknown',
-        groupId: task.groupId?.toString() || '0'
-      }));
-      
-      setAllQuestions(questions);
-      
-      // Initialize answer inputs with existing answers
-      const initialAnswers: Record<string, string> = {};
-      questions.forEach(question => {
-        if (question.employeeAnswer) {
-          initialAnswers[question.id] = question.employeeAnswer;
-        }
-      });
-      setAnswerInputs(initialAnswers);
-    } catch (error) {
-      console.error('Failed to fetch questions:', error);
-      setError('Failed to load questions. Using fallback data.');
-      
-      // Fallback to the simple method if the new API fails
-      try {
-        const questions = await employeeService.getMyTasksSimple();
-        setAllQuestions(questions);
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-        setError('Failed to load questions');
+      const response = await employeeService.getMyTasks(currentPage);
+      const list = response?.commonListDto ?? [];
+      setTasks(Array.isArray(list) ? list : []);
+      setTotal(Number(response?.totalElements ?? 0));
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.log("Fetched tasks:", list);
       }
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
+      setTasks([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'answered':
+  const norm = (s?: string | null) => (s ?? "").toLowerCase();
+
+  const getStatusIcon = (status?: string | null) => {
+    switch (norm(status)) {
+      case "answered":
+      case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'pending':
+      case "pending":
         return <Clock className="w-4 h-4 text-yellow-500" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+        return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'answered':
-        return 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/30';
-      case 'pending':
-        return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30';
+  const getStatusText = (status?: string | null) => {
+    switch (norm(status)) {
+      case "answered":
+      case "completed":
+        return "Answered";
+      case "pending":
+        return "Pending";
       default:
-        return 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-800';
+        return "Unknown";
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'answered':
-        return 'Answered';
-      case 'pending':
-        return 'Pending';
+  const getStatusColor = (status?: string | null) => {
+    switch (norm(status)) {
+      case "answered":
+      case "completed":
+        return "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/30";
+      case "pending":
+        return "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30";
       default:
-        return 'Unknown';
+        return "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-800";
     }
   };
 
-  // Auto-save function with debounce
-  const handleAnswerChangeWithSave = async (questionId: string, value: string) => {
-    setAnswerInputs(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
-
-    // Don't auto-save empty values
-    if (!value.trim()) return;
-
-    // Auto-save after typing stops (debounced)
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        setSavingAnswers(prev => ({ ...prev, [questionId]: true }));
-        
-        const question = allQuestions.find(q => q.id === questionId);
-        if (!question) return;
-        
-        await employeeService.submitAnswer(questionId, {
-          answer: value.trim(),
-          questionType: question.questionType
-        });
-        
-        // Update local state
-        setAllQuestions(prev => prev.map(q => 
-          q.id === questionId 
-            ? { 
-                ...q, 
-                employeeAnswer: value.trim(), 
-                status: 'answered',
-                answeredAt: new Date().toISOString()
-              }
-            : q
-        ));
-      } catch (error) {
-        console.error('Failed to save answer:', error);
-      } finally {
-        setSavingAnswers(prev => ({ ...prev, [questionId]: false }));
-      }
-    }, 1000);
-  };
-
-  const renderAnswerInput = (question: EmployeeQuestion) => {
-    const currentAnswer = answerInputs[question.id] || question.employeeAnswer || '';
-    const isSaving = savingAnswers[question.id];
-
-    if (question.questionType === 'Yes/No/N/A Question') {
-      const lower = String(currentAnswer || "").toLowerCase();
-      const isYes = lower === "yes" || lower === "y" || lower === "true";
-      const isNo = lower === "no" || lower === "n" || lower === "false";
-      const isNA = lower === "n/a" || lower === "na" || lower === "not applicable";
-
-      return (
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={isYes ? "default" : "outline"}
-            disabled={isSaving}
-            onClick={() => handleAnswerChangeWithSave(question.id, "YES")}
-            className="text-sm"
-          >
-            Yes
-          </Button>
-          <Button
-            type="button"
-            variant={isNo ? "default" : "outline"}
-            disabled={isSaving}
-            onClick={() => handleAnswerChangeWithSave(question.id, "NO")}
-            className="text-sm"
-          >
-            No
-          </Button>
-          <Button
-            type="button"
-            variant={isNA ? "default" : "outline"}
-            disabled={isSaving}
-            onClick={() => handleAnswerChangeWithSave(question.id, "N/A")}
-            className="text-sm"
-          >
-            N/A
-          </Button>
-          {isSaving && (
-            <span className="text-xs text-muted-foreground">Saving…</span>
-          )}
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            className="w-full max-w-sm rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
-            placeholder="Type response and leave the field"
-            value={currentAnswer}
-            onChange={(e) => {
-              setAnswerInputs(prev => ({
-                ...prev,
-                [question.id]: e.target.value
-              }));
-            }}
-            onBlur={(e) => {
-              const newVal = e.target.value.trim();
-              if (newVal === (question.employeeAnswer ?? "")) return; // no change
-              if (isSaving) return;
-              if (newVal) {
-                handleAnswerChangeWithSave(question.id, newVal);
-              }
-            }}
-            disabled={isSaving}
-          />
-          {isSaving && (
-            <span className="text-xs text-muted-foreground">Saving…</span>
-          )}
-        </div>
-      );
-    }
-  };
-
-  // Group questions by group
-  const groupedQuestions = allQuestions.reduce((groups, question) => {
-    const groupKey = question.groupId;
-    if (!groups[groupKey]) {
-      groups[groupKey] = {
-        groupId: question.groupId,
-        groupName: question.groupName,
-        groupLeaderName: question.groupLeaderName,
-        questions: []
-      };
-    }
-    groups[groupKey].questions.push(question);
-    return groups;
-  }, {} as Record<string, {
-    groupId: string;
-    groupName: string;
-    groupLeaderName: string;
-    questions: EmployeeQuestion[];
-  }>);
-
-  const groupsArray = Object.values(groupedQuestions);
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
       </div>
     );
   }
+
+  const handleStarClick = (rating: number) => {
+    setFeedbackRating(rating);
+  };
 
   if (error) {
     return (
@@ -308,9 +124,28 @@ const MyTasksPage: React.FC = () => {
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Error</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => fetchAllQuestions()} variant="primary">
-              Try Again
-            </Button>
+            <Button onClick={fetchTasks}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!tasks?.length) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle>Your Tasks</CardTitle>
+          </CardHeader>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Users size={48} className="text-muted-foreground" />
+              <p className="text-muted-foreground">No tasks found.</p>
+              <Button onClick={fetchTasks} className="mt-2">
+                Refresh
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -318,162 +153,258 @@ const MyTasksPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Main Content */}
-      <div className="px-6 py-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
-          <div className={`mb-6 ${isVisible ? animationClasses.slideInDown : 'opacity-0'}`}>
-            <h1 className="text-2xl font-bold text-foreground mb-2">My Tasks</h1>
-            <p className="text-muted-foreground">
-              Answer your assigned questions and submit your responses
-            </p>
-          </div>
+    <>
+      {tasks.map((t, tIdx) => {
+        const qList = Array.isArray(t?.questionList) ? t.questionList : [];
+        const totalQuestions = qList.length;
+        const completed =
+          qList.filter((q) => norm(q?.status) === "completed").length ?? 0;
+        const pct = totalQuestions
+          ? Math.round((completed / totalQuestions) * 100)
+          : 0;
 
-          {/* Statistics Cards */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 ${isVisible ? animationClasses.slideInUp : 'opacity-0'}`}>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {allQuestions.length}
-                    </p>
+        return (
+          <Card key={t?.id ?? `task-${tIdx}`} className="mb-6">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <User2 className="text-muted-foreground" size={18} />
                   </div>
-                  <CheckCircle className="w-8 h-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {allQuestions.filter(q => q.status === 'answered').length}
-                    </p>
+                    <CardTitle className="text-xl">
+                      <span className="font-semibold">
+                        {t?.groupName ?? "Group"} — {t?.id ?? "—"} —{" "}
+                        {t?.assignedTo ?? "Unassigned"}
+                      </span>
+                    </CardTitle>
                   </div>
-                  <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {allQuestions.filter(q => q.status === 'pending').length}
-                    </p>
-                  </div>
-                  <Clock className="w-8 h-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Grouped Questions */}
-          <div className="space-y-6">
-            {groupsArray.map((group, groupIndex) => (
-              <Card key={group.groupId} className={`${isVisible ? animationClasses.slideInUp : 'opacity-0'}`} style={{ animationDelay: `${200 + (groupIndex * 100)}ms` }}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-primary/10 rounded-full p-2">
-                        <CheckCircle className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{group.groupName}</CardTitle>
-                        <p className="text-sm text-muted-foreground">Group Leader: {group.groupLeaderName}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-foreground">{group.questions.length}</p>
-                        <p className="text-sm text-muted-foreground">Tasks</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">
-                          {group.questions.filter(q => q.status === 'answered').length}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Completed</p>
-                      </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{totalQuestions}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Questions
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Question</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Due Date</TableHead>
-                          <TableHead>My Response</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {group.questions.map((question) => (
-                          <TableRow key={question.id}>
-                            <TableCell className="max-w-xs">
-                              <div className="break-words font-medium">
-                                {question.questionText}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {question.questionType === 'Yes/No/N/A Question' ? 'Yes/No/N/A' : 'Text Response'}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                question.questionType === 'Yes/No/N/A Question' 
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                  : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                              }`}>
-                                {question.questionType === 'Yes/No/N/A Question' ? 'Yes/No/N/A' : 'Text'}
+                  <div className="min-w-[72px] text-center">
+                    <div className="text-3xl font-bold">{pct}%</div>
+                    <div className="text-xs text-muted-foreground">
+                      Completed
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Question</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Compliance Day</TableHead>
+                    <TableHead>Response</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qList.length === 0 ? (
+                    <TableRow>
+                      {/* match 5 headers */}
+                      <TableCell colSpan={5} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={48} className="text-muted-foreground" />
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    qList.map((q, idx) => {
+                      const typeLabel =
+                        norm(q?.responseType) === "text" ? "Text" : "Yes/No";
+                      return (
+                        <TableRow
+                          key={
+                            q?.id ??
+                            (q?.questionId
+                              ? `${t?.id}-${q.questionId}`
+                              : `${t?.id}-row-${idx}`)
+                          }
+                        >
+                          {/* Question */}
+                          <TableCell className="font-medium">
+                            {q?.questionId ?? (q?.id ? `Q${q.id}` : "—")}
+                          </TableCell>
+
+                          {/* Type */}
+                          <TableCell className="text-muted-foreground">
+                            {typeLabel}
+                          </TableCell>
+
+                          {/* Status */}
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(q?.status)}
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                  q?.status
+                                )}`}
+                              >
+                                {getStatusText(q?.status)}
                               </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                {getStatusIcon(question.status)}
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
-                                  {getStatusText(question.status)}
-                                </span>
-                                {isOverdue(question) && (
-                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                    Overdue
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {question.dueDate 
-                                ? new Date(question.dueDate).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: '2-digit'
-                                  })
-                                : '—'
-                              }
-                            </TableCell>
-                            <TableCell className="max-w-md">
-                              {renderAnswerInput(question)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Compliance Day */}
+                          <TableCell className="text-muted-foreground">
+                            {q?.complianceDay ??
+                              // fallback for old field name
+                              (q as any)?.complainceDay ??
+                              "—"}
+                          </TableCell>
+
+                          {/* Response */}
+                          <TableCell className="text-muted-foreground">
+                            {(() => {
+                              const r = q?.response;
+                              const s = r == null ? "" : String(r).trim();
+                              return s.length > 0 ? s : "No response yet";
+                            })()}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Feedback Section */}
+      <Card
+        className={`${isVisible ? animationClasses.slideInUp : "opacity-0"}`}
+        style={{ animationDelay: "400ms" }}
+      >
+        <CardHeader>
+          <CardTitle>Feedback for {group.groupName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {group.feedback?.submitted ? (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                  Your Feedback:
+                </span>
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-4 h-4 ${
+                        star <= group.feedback!.rating
+                          ? "text-yellow-400 fill-current"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                {group.feedback.comment}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                Feedback submitted successfully
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Rating */}
+              <div>
+                <label
+                  htmlFor="rating"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Rating (1-5 stars)
+                </label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => handleStarClick(star)}
+                      className="focus:outline-none"
+                      aria-label={`Rate ${star} stars`}
+                    >
+                      <Star
+                        className={`w-6 h-6 transition-colors ${
+                          star <= feedbackRating
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300 hover:text-yellow-200"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label
+                  htmlFor="comment"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Comments (optional)
+                </label>
+                <textarea
+                  id="comment"
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  placeholder="Share your thoughts about this group's questions and answers..."
+                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleFeedbackSubmit}
+                disabled={submittingFeedback || feedbackRating === 0}
+                className="flex items-center space-x-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>
+                  {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                </span>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Minimal pagination controls */}
+      <div className="flex items-center justify-between mt-4">
+        <Button
+          disabled={currentPage <= 0}
+          onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+        >
+          Previous
+        </Button>
+        <div className="text-sm text-muted-foreground">
+          Page <span className="font-semibold">{currentPage + 1}</span>
+          {total ? (
+            <span className="ml-2">
+              • Total <span className="font-semibold">{total}</span>
+            </span>
+          ) : null}
         </div>
+        <Button onClick={() => setCurrentPage((p) => p + 1)}>Next</Button>
       </div>
-    </div>
+    </>
   );
 };
 
