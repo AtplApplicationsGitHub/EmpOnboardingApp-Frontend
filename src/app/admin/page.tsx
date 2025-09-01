@@ -57,20 +57,11 @@ const AdminDashboard: React.FC = () => {
       }
     };
 
-    // Initial fetch
-    fetchStats();
+   // Initial fetch
+   fetchStats();
+   }, []);
 
-    // Set up auto-refresh every 30 seconds
-    const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing admin dashboard data...');
-      fetchStats();
-    }, 30000);
-
-    // Cleanup interval on component unmount
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, []);
+    
 
   // Pagination logic
   const totalPages = Math.ceil(recentTasks.length / tasksPerPage);
@@ -220,7 +211,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                <p className="text-2xl font-bold">{stats.totalTasks}</p>
+                {/* <p className="text-2xl font-bold">{stats.totalTasks}</p> */}
               </div>
               <div className="p-3 bg-orange-500/10 rounded-full">
                 <Clock size={20} className="text-orange-500" />
