@@ -336,11 +336,10 @@ const TaskDetailsPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${
-                              star <= Number(t?.efstar ?? 0)
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
                                 ? "text-yellow-400 fill-current"
                                 : "text-gray-300"
-                            }`}
+                              }`}
                           />
                         ))}
                       </button>
@@ -367,7 +366,7 @@ const TaskDetailsPage: React.FC = () => {
                           {/* Feedback text (from t.feedback) */}
                           <div className="text-sm whitespace-pre-wrap">
                             {t?.feedback &&
-                            String(t.feedback).trim().length > 0 ? (
+                              String(t.feedback).trim().length > 0 ? (
                               String(t.feedback)
                             ) : (
                               <span className="text-muted-foreground">
@@ -383,11 +382,14 @@ const TaskDetailsPage: React.FC = () => {
 
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold">{totalTasks}</div>
+                    <div className="text-3xl font-bold">
+                      {completed}/{totalTasks}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Questions
                     </div>
                   </div>
+
                   <Button
                     variant="outline"
                     className="gap-2"
