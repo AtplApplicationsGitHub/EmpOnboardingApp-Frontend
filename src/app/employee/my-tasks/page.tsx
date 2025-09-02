@@ -98,13 +98,12 @@ const MyTasksPage: React.FC = () => {
 
   const getStatusIcon = (status?: string | null) => {
     switch (norm(status)) {
-      case "answered":
       case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "pending":
         return <Clock className="w-4 h-4 text-yellow-500" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-yellow-500" />;
     }
   };
 
@@ -129,7 +128,12 @@ const MyTasksPage: React.FC = () => {
       // Reflect success locally
       setFeedBack((prev) =>
         prev && prev.taskId === selectedTaskId
-          ? { ...prev, star: feedbackRating, feedback: feedbackComment, completed: true }
+          ? {
+              ...prev,
+              star: feedbackRating,
+              feedback: feedbackComment,
+              completed: true,
+            }
           : ({
               taskId: selectedTaskId,
               star: feedbackRating,
@@ -163,7 +167,11 @@ const MyTasksPage: React.FC = () => {
       for (let i = 0; i < totalPages; i++) pages.push(i);
     } else {
       if (currentPage > 3) pages.push(0, "...");
-      for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages - 2, currentPage + 2); i++) {
+      for (
+        let i = Math.max(1, currentPage - 2);
+        i <= Math.min(totalPages - 2, currentPage + 2);
+        i++
+      ) {
         pages.push(i);
       }
       if (currentPage < totalPages - 4) pages.push("...", totalPages - 1);
@@ -176,11 +184,11 @@ const MyTasksPage: React.FC = () => {
     switch (norm(status)) {
       case "answered":
       case "completed":
-        return "Answered";
+        return "Completed";
       case "pending":
         return "Pending";
       default:
-        return "Unknown";
+        return "Pending";
     }
   };
 
@@ -192,7 +200,7 @@ const MyTasksPage: React.FC = () => {
       case "pending":
         return "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30";
       default:
-        return "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-800";
+        return "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30";
     }
   };
 
@@ -260,8 +268,11 @@ const MyTasksPage: React.FC = () => {
       {tasks.map((t, tIdx) => {
         const qList = Array.isArray(t?.questionList) ? t.questionList : [];
         const totalQuestions = qList.length;
-        const completed = qList.filter((q) => norm(q?.status) === "completed").length ?? 0;
-        const pct = totalQuestions ? Math.round((completed / totalQuestions) * 100) : 0;
+        const completed =
+          qList.filter((q) => norm(q?.status) === "completed").length ?? 0;
+        const pct = totalQuestions
+          ? Math.round((completed / totalQuestions) * 100)
+          : 0;
 
         return (
           <Card key={t?.id ?? `task-${tIdx}`} className="mb-6">
@@ -274,7 +285,8 @@ const MyTasksPage: React.FC = () => {
                   <div>
                     <CardTitle className="text-xl">
                       <span className="font-semibold">
-                        {t?.groupName ?? "Group"} — {t?.id ?? "—"} — {t?.assignedTo ?? "Unassigned"}
+                        {t?.groupName ?? "Group"} — {t?.id ?? "—"} —{" "}
+                        {t?.assignedTo ?? "Unassigned"}  — {" "} {t?.lab ?? "—"}
                       </span>
                     </CardTitle>
                   </div>
@@ -297,11 +309,15 @@ const MyTasksPage: React.FC = () => {
 
                   <div className="text-center">
                     <div className="text-3xl font-bold">{totalQuestions}</div>
-                    <div className="text-xs text-muted-foreground">Questions</div>
+                    <div className="text-xs text-muted-foreground">
+                      Questions
+                    </div>
                   </div>
                   <div className="min-w-[72px] text-center">
                     <div className="text-3xl font-bold">{pct}%</div>
-                    <div className="text-xs text-muted-foreground">Completed</div>
+                    <div className="text-xs text-muted-foreground">
+                      Completed
+                    </div>
                   </div>
                 </div>
               </div>
@@ -312,37 +328,44 @@ const MyTasksPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Question</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Lab</TableHead>
-                    <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Compliance Day</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12">
+                      <TableCell colSpan={4} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
-                          <p className="text-muted-foreground">No questions found for this task.</p>
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     qList.map((q, idx) => {
-                      const typeLabel = norm(q?.responseType) === "text" ? "Text" : "Yes/No";
                       return (
                         <TableRow
                           key={
                             q?.id ??
-                            (q?.questionId ? `${t?.id}-${q.questionId}` : `${t?.id}-row-${idx}`)
+                            (q?.questionId
+                              ? `${t?.id}-${q.questionId}`
+                              : `${t?.id}-row-${idx}`)
                           }
                         >
                           <TableCell className="font-medium">
                             {q?.questionId ?? (q?.id ? `Q${q.id}` : "—")}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{typeLabel}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {(() => {
+                              const r = q?.response;
+                              const s = r == null ? "" : String(r).trim();
+                              return s.length > 0 ? s : "No response yet";
+                            })()}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {getStatusIcon(q?.status)}
@@ -356,17 +379,9 @@ const MyTasksPage: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {t.lab ?? "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {q?.complianceDay ?? (q as any)?.complainceDay ?? "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {(() => {
-                              const r = q?.response;
-                              const s = r == null ? "" : String(r).trim();
-                              return s.length > 0 ? s : "No response yet";
-                            })()}
+                            {q?.complianceDay ??
+                              (q as any)?.complainceDay ??
+                              "—"}
                           </TableCell>
                         </TableRow>
                       );
@@ -405,7 +420,7 @@ const MyTasksPage: React.FC = () => {
                       <Star
                         key={star}
                         className={`w-4 h-4 ${
-                          star <= (Number(feedBack?.star ?? 0))
+                          star <= Number(feedBack?.star ?? 0)
                             ? "text-yellow-400 fill-current"
                             : "text-gray-300"
                         }`}
@@ -465,11 +480,17 @@ const MyTasksPage: React.FC = () => {
                 {/* Submit */}
                 <Button
                   onClick={handleFeedbackSubmit}
-                  disabled={submittingFeedback || feedbackRating === 0 || !selectedTaskId}
+                  disabled={
+                    submittingFeedback ||
+                    feedbackRating === 0 ||
+                    !selectedTaskId
+                  }
                   className="flex items-center space-x-2"
                 >
                   <Send className="w-4 h-4" />
-                  <span>{submittingFeedback ? "Submitting..." : "Submit Feedback"}</span>
+                  <span>
+                    {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                  </span>
                 </Button>
               </div>
             )}
@@ -507,7 +528,9 @@ const MyTasksPage: React.FC = () => {
                 {generatePageNumbers().map((page, index) => (
                   <React.Fragment key={index}>
                     {page === "..." ? (
-                      <span className="px-3 py-2 text-muted-foreground">...</span>
+                      <span className="px-3 py-2 text-muted-foreground">
+                        ...
+                      </span>
                     ) : (
                       <Button
                         variant={page === currentPage ? "default" : "outline"}
