@@ -98,13 +98,12 @@ const MyTasksPage: React.FC = () => {
 
   const getStatusIcon = (status?: string | null) => {
     switch (norm(status)) {
-      case "answered":
       case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "pending":
         return <Clock className="w-4 h-4 text-yellow-500" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-yellow-500" />;
     }
   };
 
@@ -185,11 +184,11 @@ const MyTasksPage: React.FC = () => {
     switch (norm(status)) {
       case "answered":
       case "completed":
-        return "Answered";
+        return "Completed";
       case "pending":
         return "Pending";
       default:
-        return "Unknown";
+        return "Pending";
     }
   };
 
@@ -201,7 +200,7 @@ const MyTasksPage: React.FC = () => {
       case "pending":
         return "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30";
       default:
-        return "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-800";
+        return "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30";
     }
   };
 
