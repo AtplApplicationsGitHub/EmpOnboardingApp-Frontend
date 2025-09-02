@@ -284,6 +284,7 @@ const MyTasksPage: React.FC = () => {
                   {/* Feedback button */}
                   <Button
                     variant="outline"
+                    disabled={t.status !== "Completed"}
                     className="gap-2"
                     onClick={() => {
                       setSelectedTaskId(String(t?.id ?? ""));
