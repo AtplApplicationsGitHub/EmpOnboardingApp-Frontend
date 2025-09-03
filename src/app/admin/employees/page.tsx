@@ -65,7 +65,6 @@ const EmployeesPage: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
-  const [emailExists, setEmailExists] = useState(false);
 
 
   const [editMode, setEditMode] = useState(false);

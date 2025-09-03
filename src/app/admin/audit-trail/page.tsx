@@ -78,7 +78,7 @@ const AuditTrailPage = () => {
             try {
                 setIsLoadingModules(true);
                 const moduleResponse = await auditService.getModuleByName();
-                console.log('Module response:', moduleResponse); // Debug log
+                console.log('Module response:', moduleResponse);
                 
                 // Transform MultiSelectDropDownDTO to component format
                 const transformedModules = moduleResponse.map((item: any) => ({

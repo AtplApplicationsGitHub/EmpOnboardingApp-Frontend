@@ -14,7 +14,8 @@ import {
   EmployeeTaskFilter,
   EmployeeTaskResponse,
   EmployeeFeedback,
-  MultiSelectDropDownDTO
+  MultiSelectDropDownDTO,
+  EmployeeQuestions,
 } from "../types";
 
 // Re-export types for easier access
@@ -22,8 +23,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api",
+  baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -560,18 +561,41 @@ export const adminService = {
   },
 };
 
-export const auditService = {
-
-  getEventByName: async (): Promise<MultiSelectDropDownDTO[]> => {
-    const response = await api.get<
-      MultiSelectDropDownDTO[]>(`/audit/getEventByName`);
+export const EQuestions = {
+  getEmployeeQuestions: async (
+    pageNo: number
+  ): Promise<{
+    commonListDto: EmployeeQuestions[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const response = await api.post<{
+      commonListDto: EmployeeQuestions[];
+      totalElements: number;
+    }>(`/eQuestions/filteredEmployeesQues/${page}`);
     return response.data;
   },
 
-  getModuleByName: async (): Promise<MultiSelectDropDownDTO[]
-  > => {
-    const response = await api.get<MultiSelectDropDownDTO[]
-    >(`/audit/getModuleByName`);
+  saveResponse: async (id: number, value: string): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/eQuestions/saveEmployeeResponse/${id}/${value}`
+    );
+    return response.data;
+  },
+};
+
+export const auditService = {
+  getEventByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(
+      `/audit/getEventByName`
+    );
+    return response.data;
+  },
+
+  getModuleByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(
+      `/audit/getModuleByName`
+    );
     return response.data;
   },
 
@@ -579,7 +603,7 @@ export const auditService = {
     const response = await api.get<MultiSelectDropDownDTO[]>(`/getUserByName`);
     return response.data;
   },
-}
+};
 
 // Task Management
 export const taskService = {
