@@ -299,6 +299,11 @@ export const adminService = {
     return response.data;
   },
 
+  getTaskCount: async (): Promise<number> => {
+    const response = await api.get<number>("/task/taskCountForAdmin");
+    return response.data;
+  },
+
   // LookUp
 
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {

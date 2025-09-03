@@ -249,7 +249,6 @@ useEffect(() => {
       await taskService.updateResponse(q.id, value);
       setRespValues((v) => ({ ...v, [key]: value }));
       toast.success("Response saved");
-      fetchTasks();
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? "Failed to save response");
     } finally {

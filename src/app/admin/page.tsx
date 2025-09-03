@@ -22,7 +22,8 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalUsers: 0,
-    totalQuestions: 0
+    totalQuestions: 0,
+    tasks: 0
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,10 +45,13 @@ const AdminDashboard: React.FC = () => {
         const totalGroups = await adminService.getGroupsCount();
         const totalQuestions = await adminService.getQuestionsCount();
         const totalUsers = await adminService.getUserCount();
+        const tasks = await adminService.getTaskCount();
+
          setStats({
           totalGroups,
           totalUsers,
-          totalQuestions
+          totalQuestions,
+          tasks
         });
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load dashboard data');
@@ -211,7 +215,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                {/* <p className="text-2xl font-bold">{stats.totalTasks}</p> */}
+                <p className="text-2xl font-bold">{stats.tasks}</p>
               </div>
               <div className="p-3 bg-orange-500/10 rounded-full">
                 <Clock size={20} className="text-orange-500" />
