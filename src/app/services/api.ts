@@ -14,7 +14,9 @@ import {
   EmployeeTaskFilter,
   EmployeeTaskResponse,
   EmployeeFeedback,
-  MultiSelectDropDownDTO
+  MultiSelectDropDownDTO, 
+  AuditSearchRequest, 
+  AuditRecord
 } from "../types";
 
 // Re-export types for easier access
@@ -576,10 +578,22 @@ export const auditService = {
   },
 
   getUserByName: async (): Promise<MultiSelectDropDownDTO[]> => {
-    const response = await api.get<MultiSelectDropDownDTO[]>(`/getUserByName`);
+    const response = await api.get<MultiSelectDropDownDTO[]>(`/audit/getUserByName`);
     return response.data;
   },
-}
+
+  
+ findFilteredData: async (
+  pageNo: number,
+  searchParams: AuditSearchRequest
+): Promise<AuditRecord[]> => {
+  const response = await api.post<AuditRecord[]>(
+    `/audit/findFilteredData/${pageNo}`,
+    searchParams
+  );
+  return response.data;
+},
+};
 
 // Task Management
 export const taskService = {
