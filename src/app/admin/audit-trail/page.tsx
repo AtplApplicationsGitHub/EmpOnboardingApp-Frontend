@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
 import {
-    Search, Shield, ChevronDown, // <-- Imported new icons
+    Search, Shield, ChevronDown, 
     ChevronRight,
 } from "lucide-react";
 import SearchableDropdown from "../../components/SearchableDropdown";
@@ -16,6 +16,8 @@ import {
     TableRow,
     TableCell,
 } from "../../components/ui/table";
+import { auditService } from "../../services/api";
+
 
 const AuditTrailPage = () => {
     // State to hold the selected dates
@@ -25,6 +27,10 @@ const AuditTrailPage = () => {
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
+        const [moduleOptions, setModuleOptions] = useState<{id: number; key: string; value: string;}[]>([]);
+    const [isLoadingModules, setIsLoadingModules] = useState(true);
+    const [moduleError, setModuleError] = useState<string | null>(null);
+
 
     const auditTrailData = [
         {
@@ -59,12 +65,40 @@ const AuditTrailPage = () => {
             details: "Asset ID 'A456' status updated from 'in-use' to 'maintenance'."
         }
     ];
-    const moduleOptions = [
-        { id: 1, key: "Employees", value: "Employees" },
-        { id: 2, key: "Assets", value: "Assets" },
-        { id: 3, key: "Users", value: "Users" },
-        { id: 4, key: "Reports", value: "Reports" },
-    ];
+    // const moduleOptions = [
+    //     { id: 1, key: "Employees", value: "Employees" },
+    //     { id: 2, key: "Assets", value: "Assets" },
+    //     { id: 3, key: "Users", value: "Users" },
+    //     { id: 4, key: "Reports", value: "Reports" },
+    // ];
+
+
+        useEffect(() => {
+        const fetchModules = async () => {
+            try {
+                setIsLoadingModules(true);
+                const moduleResponse = await auditService.getModuleByName();
+                console.log('Module response:', moduleResponse); // Debug log
+                
+                // Transform MultiSelectDropDownDTO to component format
+                const transformedModules = moduleResponse.map((item: any) => ({
+                    id: item.id,
+                    key: item.itemName,
+                    value: item.itemName
+                }));
+                console.log('Transformed modules:', transformedModules); // Debug log
+                setModuleOptions(transformedModules);
+                setModuleError(null);
+            } catch (error) {
+                setModuleError('Failed to load modules');
+                console.error('Error fetching modules:', error);
+            } finally {
+                setIsLoadingModules(false);
+            }
+        };
+
+        fetchModules(); // Actually call the function
+    }, []);
 
     const eventOptions = [
         { id: 1, key: "LOGIN", value: "User Login" },

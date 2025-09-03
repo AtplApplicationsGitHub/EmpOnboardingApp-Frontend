@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminService } from "../../../services/api";
-import { Group, Question } from "../../../types";
+import { Group, Question,DropDownDTO } from "../../../types";
 import {
   Card,
   CardHeader,
@@ -13,6 +13,7 @@ import {
 import Button from "../../../components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
+import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 10;
 
@@ -32,17 +33,16 @@ const GroupDetailsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
+ const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
 
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
 
-  const periodOptions = [
-    { id: 101, key: "after", value: "after" },
-    { id: 102, key: "before", value: "before" },
-  ];
+ 
 
-  // Form states
+    // Form states
   const [formData, setFormData] = useState({
     id: 0,
     text: "",
@@ -53,7 +53,23 @@ const GroupDetailsPage: React.FC = () => {
     groupId: groupId.toString(),
   });
 
-  const levels = ["L1", "L2", "L3", "L4"];
+
+  const fetchLookupData = async () => {
+  try {
+    const periods = await adminService.getLookupItems("Period");
+    setPeriodOptions(periods);
+
+    const levels = await adminService.getLookupItems("Level");
+    setLevelOptions(levels);
+  } catch (error) {
+    toast.error("Failed to load dropdown options.");
+  }
+};
+useEffect(() => {
+  fetchLookupData();
+}, []);
+
+
 
   useEffect(() => {
     if (groupId) {
@@ -161,14 +177,14 @@ const GroupDetailsPage: React.FC = () => {
     });
   };
 
-  const handleLevelToggle = (level: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      questionLevel: prev.questionLevel.includes(level)
-        ? prev.questionLevel.filter((l) => l !== level)
-        : [...prev.questionLevel, level],
-    }));
-  };
+ const handleLevelToggle = (level: string) => {
+  setFormData((prev) => ({
+    ...prev,
+    questionLevel: prev.questionLevel.includes(level)
+      ? prev.questionLevel.filter((l) => l !== level)
+      : [...prev.questionLevel, level],
+  }));
+};
 
   const totalQuestionPages = Math.ceil(questionTotal / PAGE_SIZE);
 
@@ -487,25 +503,26 @@ const GroupDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">
                     Employee Levels * (Select at least one)
                   </label>
-                  <div className="flex gap-3">
-                    {levels.map((level) => (
-                      <label
-                        key={level}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(level)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-input hover:border-primary/50"
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.questionLevel.includes(level)}
-                          onChange={() => handleLevelToggle(level)}
-                          className="sr-only"
-                        />
-                        {level}
-                      </label>
-                    ))}
-                  </div>
+                <div className="flex gap-3">
+    {levelOptions.map((levelOption) => (
+      <label
+        key={levelOption.value}
+        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
+          formData.questionLevel.includes(levelOption.value)
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-input hover:border-primary/50"
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={formData.questionLevel.includes(levelOption.value)}
+          onChange={() => handleLevelToggle(levelOption.value)}
+          className="sr-only"
+        />
+        {levelOption.value}
+      </label>
+    ))}
+  </div>
                 </div>
 
                 {/* Form Actions */}
