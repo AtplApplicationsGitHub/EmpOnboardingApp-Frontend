@@ -564,25 +564,19 @@ export const auditService = {
 
   getEventByName: async (): Promise<MultiSelectDropDownDTO[]> => {
     const response = await api.get<
-      MultiSelectDropDownDTO[]>(`/getEventByName`);
+      MultiSelectDropDownDTO[]>(`/audit/getEventByName`);
     return response.data;
   },
 
   getModuleByName: async (): Promise<MultiSelectDropDownDTO[]
   > => {
     const response = await api.get<MultiSelectDropDownDTO[]
-    >(`/getModuleByName`);
+    >(`/audit/getModuleByName`);
     return response.data;
   },
 
-  getUserByName: async (): Promise<{
-    commonListDto: MultiSelectDropDownDTO[];
-    totalElements: number;
-  }> => {
-    const response = await api.get<{
-      commonListDto: MultiSelectDropDownDTO[];
-      totalElements: number;
-    }>(`/getUserByName`);
+  getUserByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(`/getUserByName`);
     return response.data;
   },
 }
