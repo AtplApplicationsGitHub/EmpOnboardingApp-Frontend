@@ -82,10 +82,25 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
     undefined
   );
-  const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  // const labOptions = [
+  //   { id: 101, key: "Lab1", value: "Lab1" },
+  //   { id: 102, key: "Lab2", value: "Lab2" },
+  // ];
+
+  const fetchLabLookupData = async () => {
+  try { 
+    const labs = await adminService.getLookupItems("Lab");
+    setLabOptions(labs);  
+  } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  
+};
+
+useEffect(() => {
+  fetchLabLookupData();
+}, []);
 
   const toggleFeedbackTooltip = useCallback((taskId: string) => {
     setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
@@ -335,16 +350,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
         <div className="ml-auto flex items-end gap-3">
           <div className="min-w-[240px]">
             <div className="flex items-center gap-2">
-              <SearchableDropdown
-                options={labOptions}
-                value={selectedLabId}
-                disabled={freezeTask === "Y"}
-                onChange={handleLabChange}
-                placeholder="Select Lab"
-                displayFullValue={false}
-                isEmployeePage={true}
-                className="w-full"
-              />
+          <SearchableDropdown
+  options={labOptions}
+  value={selectedLabId}
+  disabled={freezeTask === "Y"}
+  onChange={handleLabChange}
+  placeholder="Select Lab"
+  displayFullValue={false}
+  isEmployeePage={true}
+  className="w-full"
+/>
             </div>
           </div>
         </div>

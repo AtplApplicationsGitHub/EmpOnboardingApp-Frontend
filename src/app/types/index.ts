@@ -250,3 +250,8 @@ export interface EmployeeTaskResponse {
   totalPages?: number;
   currentPage?: number;
 }
+
+export interface MultiSelectDropDownDTO {
+  id: number;
+  itemName: string;
+}

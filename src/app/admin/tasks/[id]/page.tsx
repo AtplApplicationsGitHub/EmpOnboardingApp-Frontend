@@ -69,10 +69,9 @@ const TaskDetailsPage: React.FC = () => {
   const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
     null
   );
-  const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  
+ 
 
   useEffect(() => {
     fetchTasks();
@@ -84,7 +83,6 @@ const TaskDetailsPage: React.FC = () => {
       setError(null);
       const t = await taskService.getTaskById(taskId);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
-      console.log("Fetched tasks:", list);
       setTasks(list);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load task(s)");
@@ -100,6 +98,15 @@ const TaskDetailsPage: React.FC = () => {
       setGroupLeads(groupLeadsData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
+   
+  const fetchLabs = useCallback(async () => {
+    try {
+      const labs = await adminService.getLookupItems("Lab");
+      setLabOptions(labs);
+    } catch (error) {
+      toast.error("Failed to load lab options.");
     }
   }, []);
 
@@ -132,8 +139,9 @@ const TaskDetailsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchLabs();
     fetchGroupLeads();
-  }, [fetchGroupLeads]);
+  }, [fetchLabs, fetchGroupLeads]);
 
   const employeeId = tasks[0]?.employeeId;
   const employeeName = tasks[0]?.employeeName;
@@ -144,10 +152,13 @@ const TaskDetailsPage: React.FC = () => {
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
 
+
   useEffect(() => {
-    const id = labOptions.find((opt) => opt.value === lab)?.id;
-    setSelectedLabId(id);
-  }, [lab]);
+    if (labOptions.length > 0 && lab) {
+      const id = labOptions.find((opt) => opt.value === lab)?.id;
+      setSelectedLabId(id);
+    }
+  }, [lab, labOptions]);
 
   const handleSaveLab = async (id?: number) => {
     setSelectedLabId(id);
@@ -280,7 +291,7 @@ const TaskDetailsPage: React.FC = () => {
         <div className="ml-auto flex items-end gap-3">
           <div className="min-w-[240px]">
             <div className="flex items-center gap-2">
-              <SearchableDropdown
+             <SearchableDropdown
                 options={labOptions}
                 value={selectedLabId}
                 disabled={freezeTask === "Y"}

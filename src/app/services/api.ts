@@ -14,6 +14,7 @@ import {
   EmployeeTaskFilter,
   EmployeeTaskResponse,
   EmployeeFeedback,
+  MultiSelectDropDownDTO
 } from "../types";
 
 // Re-export types for easier access
@@ -21,8 +22,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "https://employee.onboarding.goval.app:8084/api",
-  baseURL: "http://localhost:8084/api",
+  baseURL: "https://employee.onboarding.goval.app:8084/api",
+  // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -395,6 +396,11 @@ export const adminService = {
     return response.data;
   },
 
+  isEmployeeEmailExists: async (email: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/employee/emailExists/${email}`);
+    return response.data;
+  },
+
   getEmployee: async (params?: {
     search?: string;
     page?: number;
@@ -548,6 +554,33 @@ export const adminService = {
     return response.data;
   },
 };
+
+export const auditService = {
+
+  getEventByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<
+      MultiSelectDropDownDTO[]>(`/getEventByName`);
+    return response.data;
+  },
+
+  getModuleByName: async (): Promise<MultiSelectDropDownDTO[]
+  > => {
+    const response = await api.get<MultiSelectDropDownDTO[]
+    >(`/getModuleByName`);
+    return response.data;
+  },
+
+  getUserByName: async (): Promise<{
+    commonListDto: MultiSelectDropDownDTO[];
+    totalElements: number;
+  }> => {
+    const response = await api.get<{
+      commonListDto: MultiSelectDropDownDTO[];
+      totalElements: number;
+    }>(`/getUserByName`);
+    return response.data;
+  },
+}
 
 // Task Management
 export const taskService = {
