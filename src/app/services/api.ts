@@ -665,6 +665,17 @@ export const taskService = {
     );
     return response.data;
   },
+
+  getDateFormat: async (): Promise<string> => {
+  try {
+    const response = await api.get('/employee/getConstant/DateFormat');
+    return response.data as string;
+  } catch (error) {
+    console.error("Failed to fetch date format:", error);
+    // fallback
+    return "dd-MM-yyyy";
+  }
+}
 };
 
 // Helper function to convert TaskProjection to Task
