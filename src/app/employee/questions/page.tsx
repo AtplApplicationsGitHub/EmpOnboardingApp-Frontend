@@ -58,16 +58,18 @@ const EmployeeQuestionsPage: React.FC = () => {
     []
   );
 
-
   const loadQuestions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        throw new Error("No user in localStorage");
+      }
+      const user = JSON.parse(storedUser); 
+      const userId = user.id; 
+      const resp = await EQuestions.getEmployeeQuestions(userId, 0);
 
-      // TODO: If your API expects employeeId/taskId, pass routeId accordingly.
-      const resp = await EQuestions.getEmployeeQuestions(0);
-
-      // Normalize to an array (supports pageable {content: []} or raw array)
       const list: EmployeeQuestions[] = Array.isArray(resp?.commonListDto)
         ? resp.commonListDto
         : Array.isArray(resp?.commonListDto)
@@ -197,9 +199,7 @@ const EmployeeQuestionsPage: React.FC = () => {
                   const saving = savingByKey[key] === true;
 
                   const questionText =
-                    (q as any).questions ??
-                    (q as any).question ??
-                    `Q${q.id}`;
+                    (q as any).questions ?? (q as any).question ?? `Q${q.id}`;
 
                   return (
                     <TableRow key={key}>
@@ -229,11 +229,17 @@ const EmployeeQuestionsPage: React.FC = () => {
                         ) : (
                           <div className="flex items-center gap-2">
                             {(() => {
-                              const norm = (saved || "").toString().toLowerCase();
+                              const norm = (saved || "")
+                                .toString()
+                                .toLowerCase();
                               const isYes =
-                                norm === "yes" || norm === "y" || norm === "true";
+                                norm === "yes" ||
+                                norm === "y" ||
+                                norm === "true";
                               const isNo =
-                                norm === "no" || norm === "n" || norm === "false";
+                                norm === "no" ||
+                                norm === "n" ||
+                                norm === "false";
 
                               return (
                                 <>

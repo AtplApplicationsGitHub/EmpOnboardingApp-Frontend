@@ -563,6 +563,7 @@ export const adminService = {
 
 export const EQuestions = {
   getEmployeeQuestions: async (
+    userId: string,
     pageNo: number
   ): Promise<{
     commonListDto: EmployeeQuestions[];
@@ -572,7 +573,7 @@ export const EQuestions = {
     const response = await api.post<{
       commonListDto: EmployeeQuestions[];
       totalElements: number;
-    }>(`/eQuestions/filteredEmployeesQues/${page}`);
+    }>(`/eQuestions/filteredEmployeesQues/${userId}/${page}`);
     return response.data;
   },
 
