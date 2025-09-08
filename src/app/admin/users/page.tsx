@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
-import { User } from "../../types";
+import { User,DropDownDTO } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -43,6 +43,8 @@ const UsersPage: React.FC = () => {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [roles, setRoles] = useState<DropDownDTO[]>([]);
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -53,8 +55,19 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
+  const fetchRoles = async () => {
+    try {
+      const rolesData = await adminService.getLookupItems("Role");
+      console.log("Roles fetched:", rolesData);
+      setRoles(rolesData);
+    } catch (error) {
+      toast.error("Failed to load user roles.");
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+     fetchRoles();
     if (showCreateModal && nameInputRef.current) {
       nameInputRef.current.focus();
     }
@@ -69,7 +82,6 @@ const UsersPage: React.FC = () => {
       }
       const response = await adminService.getUsers(params);
       setUsers(response.commonListDto || []);
-      console.log("Users fetched:", response.commonListDto);
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
@@ -77,6 +89,8 @@ const UsersPage: React.FC = () => {
       // setLoading(false);
     }
   };
+
+  
 
   // 1. CREATE
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -469,18 +483,22 @@ const UsersPage: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
                 <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      role: e.target.value as "admin" | "group_lead",
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  <option value="group_lead">Group Lead</option>
-                  <option value="admin">Administrator</option>
+    value={formData.role}
+    onChange={(e) => {
+        const selectedRoleKey = e.target.value;
+        const selectedRole = roles.find(r => r.key === selectedRoleKey);
+        setFormData({
+            ...formData,
+ role: e.target.value as "admin" | "group_lead",        });
+    }}
+    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+    required
+  >
+                  {roles.map((role) => (
+      <option key={role.id} value={role.key}>
+        {role.key}
+      </option>
+    ))}
                 </select>
               </div>
 

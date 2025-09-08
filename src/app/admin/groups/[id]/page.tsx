@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminService } from "../../../services/api";
-import { Group, Question } from "../../../types";
+import { Group, Question,DropDownDTO } from "../../../types";
 import {
   Card,
   CardHeader,
@@ -13,6 +13,7 @@ import {
 import Button from "../../../components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
+import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 10;
 
@@ -32,15 +33,13 @@ const GroupDetailsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
 
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
-
-  const periodOptions = [
-    { id: 101, key: "after", value: "after" },
-    { id: 102, key: "before", value: "before" },
-  ];
 
   // Form states
   const [formData, setFormData] = useState({
@@ -49,11 +48,42 @@ const GroupDetailsPage: React.FC = () => {
     response: "yes_no" as "yes_no" | "text",
     period: "after",
     complainceDay: "1",
+    departments: [] as number[], 
     questionLevel: [] as string[],
     groupId: groupId.toString(),
   });
 
-  const levels = ["L1", "L2", "L3", "L4"];
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showCreateModal || showEditModal || showDeleteModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCreateModal, showEditModal, showDeleteModal]);
+
+  useEffect(() => {
+    const fetchLookupData = async () => {
+      try {
+        const periods = await adminService.getLookupItems("Period");
+        setPeriodOptions(periods);
+
+        const levels = await adminService.getLookupItems("Level");
+        setLevelOptions(levels);
+        const departments = await adminService.getLookupItems("Department");
+        setDepartmentOptions(departments);
+
+      } catch (error) {
+        toast.error("Failed to load dropdown options.");
+      }
+    };
+    fetchLookupData();
+  }, []);
 
   useEffect(() => {
     if (groupId) {
@@ -143,6 +173,7 @@ const GroupDetailsPage: React.FC = () => {
       response: question.response,
       period: question.period,
       complainceDay: question.complainceDay || "1",
+      departments: (question as any).departments || [],
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
     });
@@ -156,6 +187,7 @@ const GroupDetailsPage: React.FC = () => {
       response: "yes_no",
       period: "after",
       complainceDay: "1",
+      departments: [],
       questionLevel: [],
       groupId: groupId.toString(),
     });
@@ -353,164 +385,205 @@ const GroupDetailsPage: React.FC = () => {
 
       {/* Create/Edit Question Modal */}
       {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl mx-4  max-h-[95vh]">
-            <CardHeader>
-              <CardTitle>
-                {showCreateModal ? "Create New Question" : "Edit Question"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={
-                  showCreateModal ? handleCreateQuestion : handleEditQuestion
-                }
-                className="space-y-6"
-              >
-                {/* Question Text */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Question Text *
-                  </label>
-                  <textarea
-                    value={formData.text}
-                    autoFocus
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        text: e.target.value,
-                      }))
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
+            <Card className="flex flex-col h-full bg-background">
+              {/* Fixed Header */}
+              <CardHeader className="flex-shrink-0 border-b">
+                <CardTitle className="text-xl">
+                  {showCreateModal ? "Create New Question" : "Edit Question"}
+                </CardTitle>
+              </CardHeader>
+              
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto">
+                <CardContent className="p-6">
+                  <form
+                    onSubmit={
+                      showCreateModal ? handleCreateQuestion : handleEditQuestion
                     }
-                    placeholder="Enter the onboarding question..."
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
-                    required
-                  />
-                </div>
-
-                {/* Response Type */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Response Type *
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="yes_no"
-                        checked={formData.response === "yes_no"}
+                    className="space-y-6"
+                    id="question-form"
+                  >
+                    {/* Question Text */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Question Text *
+                      </label>
+                      <textarea
+                        value={formData.text}
+                        autoFocus
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            response: e.target.value as "yes_no",
+                            text: e.target.value,
                           }))
                         }
-                        className="text-primary"
-                      />
-                      Yes/No/N/A Question
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="text"
-                        checked={formData.response === "text"}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            response: e.target.value as "text",
-                          }))
-                        }
-                        className="text-primary"
-                      />
-                      Text Response
-                    </label>
-                  </div>
-                </div>
-
-                {/* New container for Period and Compliance Day fields */}
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Period */}
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Period *
-                    </label>
-                    <div className="flex gap-4">
-                      <SearchableDropdown
-                        className="w-full"
-                        options={periodOptions}
-                        value={
-                          periodOptions.find(
-                            (opt) => opt.value === formData.period
-                          )?.id
-                        }
-                        onChange={(id) => {
-                          const selectedValue =
-                            periodOptions.find((opt) => opt.id === id)?.value ??
-                            "";
-                          setFormData((prev) => ({
-                            ...prev,
-                            period: selectedValue as typeof prev.period,
-                          }));
-                        }}
-                        placeholder="Select period"
-                        displayFullValue={false}
-                        isEmployeePage={true}
+                        placeholder="Enter the onboarding question..."
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
+                        required
                       />
                     </div>
-                  </div>
 
-                  {/* Compliance Day */}
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Compliance Day * (Number of days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={parseInt(formData.complainceDay)}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          complainceDay: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter number of days"
-                      className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      required
-                    />
-
-                  </div>
-                </div>
-
-                {/* Employee Levels */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Employee Levels * (Select at least one)
-                  </label>
-                  <div className="flex gap-3">
-                    {levels.map((level) => (
-                      <label
-                        key={level}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(level)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-input hover:border-primary/50"
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.questionLevel.includes(level)}
-                          onChange={() => handleLevelToggle(level)}
-                          className="sr-only"
-                        />
-                        {level}
+                    {/* Response Type */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Response Type *
                       </label>
-                    ))}
-                  </div>
-                </div>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            value="yes_no"
+                            checked={formData.response === "yes_no"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                response: e.target.value as "yes_no",
+                              }))
+                            }
+                            className="text-primary"
+                          />
+                          Yes/No/N/A Question
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            value="text"
+                            checked={formData.response === "text"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                response: e.target.value as "text",
+                              }))
+                            }
+                            className="text-primary"
+                          />
+                          Text Response
+                        </label>
+                      </div>
+                    </div>
 
-                {/* Form Actions */}
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Period */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Period *
+                        </label>
+                        <div className="relative z-[10000]">
+                          <SearchableDropdown
+                            className="w-full"
+                            options={periodOptions}
+                            value={
+                              periodOptions.find(
+                                (opt) => opt.value === formData.period
+                              )?.id
+                            }
+                            onChange={(id) => {
+                              const selectedValue =
+                                periodOptions.find((opt) => opt.id === id)?.value ??
+                                "";
+                              setFormData((prev) => ({
+                                ...prev,
+                                period: selectedValue as typeof prev.period,
+                              }));
+                            }}
+                            placeholder="Select period"
+                            displayFullValue={false}
+                            isEmployeePage={true}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Compliance Day */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Compliance Day * (Number of days)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={parseInt(formData.complainceDay)}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              complainceDay: e.target.value,
+                            }))
+                          }
+                          placeholder="Enter number of days"
+                          className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Departments */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Departments * 
+                        </label>
+                        <div className="relative z-[9999]">
+                          <SearchableDropdown
+                            options={departmentOptions}
+                            value={formData.departments}
+                            isMultiSelect={true}
+                            onChange={(selectedIds) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                departments: Array.isArray(selectedIds) ? selectedIds : [],
+                              }));
+                            }}
+                            placeholder="Select departments"  
+                            disabled={showEditModal}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Employee Levels */}
+                      <div className="flex-1"> 
+                        <label className="block text-sm font-medium mb-2">
+                          Employee Levels * (Select at least one)
+                        </label>
+                        <div className="flex gap-3 flex-wrap">
+                          {levelOptions.map((levelOption) => (
+                            <label
+                              key={levelOption.value}
+                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
+                                formData.questionLevel.includes(levelOption.value)
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-input hover:border-primary/50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.questionLevel.includes(levelOption.value)}
+                                onChange={() => handleLevelToggle(levelOption.value)}
+                                className="sr-only"
+                                disabled={showEditModal}
+                              />
+                              {levelOption.value}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add some bottom padding to ensure content isn't hidden behind sticky footer */}
+                    <div className="pb-4"></div>
+                  </form>
+                </CardContent>
+              </div>
+              
+              {/* Sticky Footer with Buttons */}
+              <div className="flex-shrink-0 border-t bg-background p-6">
+                <div className="flex gap-3">
+                  <Button 
+                    type="submit" 
+                    form="question-form"
+                    className="flex-1"
+                  >
                     {showCreateModal ? "Create Question" : "Update Question"}
                   </Button>
                   <Button
@@ -527,26 +600,26 @@ const GroupDetailsPage: React.FC = () => {
                     Cancel
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && questionToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
           <Card className="w-full max-w-sm mx-4">
             <CardHeader>
-              <CardTitle>Delete Group</CardTitle>
+              <CardTitle>Delete Question</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Are you sure you want to delete the Question{" "}
-                <span className="font-semibold">{questionToDelete.text}</span>?
+                Are you sure you want to delete the question{" "}
+                <span className="font-semibold">"{questionToDelete.text}"</span>?
                 This action cannot be undone.
               </p>
-              <div className="flex gap-3">
+                                      <div className="flex gap-3 flex-wrap">
                 <Button
                   variant="destructive"
                   onClick={handleDeleteQuestion}
@@ -558,6 +631,7 @@ const GroupDetailsPage: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     setShowDeleteModal(false);
+                    setQuestionToDelete(null);
                   }}
                   className="flex-1"
                 >

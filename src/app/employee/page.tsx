@@ -72,7 +72,7 @@ const EmployeeDashboard: React.FC = () => {
       // Use the new filteredTaskForEmployee API to get tasks with questions
       const response = await employeeService.getMyTasks(0); // Start with page 0
       
-      const tasks = response.commonListDto?.content || [];
+      const tasks = response.commonListDto || [];
       
       if (!tasks || tasks.length === 0) {
         setAllQuestions([]);

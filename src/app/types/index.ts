@@ -114,6 +114,14 @@ export interface Task {
   completed_at?: string;
 }
 
+export interface EmployeeQuestions {
+  id:number;
+  question:string;
+  responseType:string;
+  response:string;
+  completedFlag:boolean;
+}
+
 export interface TaskQuestions {
   id: number;
   questionId: string;
@@ -249,4 +257,33 @@ export interface EmployeeTaskResponse {
   totalElements: number;
   totalPages?: number;
   currentPage?: number;
+}
+
+export interface MultiSelectDropDownDTO {
+  id: number;
+  itemName: string;
+}
+
+export interface AuditSearchRequest {
+  fromDate: string;
+  toDate: string;
+  selectedEvent: string[];
+  selectedModule: string[];
+  selectedUser: string[];
+  userId: number;
+}
+
+
+export interface AuditRecord {
+  loginUserId: number;
+  loginUserName: string;
+  event: string;
+  ipAddress: string;
+  createdTime: string;  
+  fromDate: string;
+  toDate: string;
+  systemRemarks: string;
+  userRemarks: string;
+  module: string;
+  moduleId: string;
 }

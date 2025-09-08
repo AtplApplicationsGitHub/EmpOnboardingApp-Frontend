@@ -14,6 +14,10 @@ import {
   EmployeeTaskFilter,
   EmployeeTaskResponse,
   EmployeeFeedback,
+  EmployeeQuestions,
+  MultiSelectDropDownDTO, 
+  AuditSearchRequest, 
+  AuditRecord
 } from "../types";
 
 // Re-export types for easier access
@@ -21,8 +25,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION
+  // baseURL: "http://localhost:8081/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
   headers: {
     "Content-Type": "application/json",
   },
@@ -400,6 +404,11 @@ export const adminService = {
     return response.data;
   },
 
+  isEmployeeEmailExists: async (email: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/employee/emailExists/${email}`);
+    return response.data;
+  },
+
   getEmployee: async (params?: {
     search?: string;
     page?: number;
@@ -554,6 +563,76 @@ export const adminService = {
   },
 };
 
+export const EQuestions = {
+  getEmployeeQuestions: async (
+    userId: string,
+    pageNo: number
+  ): Promise<{
+    commonListDto: EmployeeQuestions[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const response = await api.post<{
+      commonListDto: EmployeeQuestions[];
+      totalElements: number;
+    }>(`/eQuestions/filteredEmployeesQues/${userId}/${page}`);
+    return response.data;
+  },
+
+  saveResponse: async (id: number, value: string): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/eQuestions/saveEmployeeResponse/${id}/${value}`
+    );
+    return response.data;
+  },
+
+  getQuestionsByTask: async (taskId: string): Promise<EmployeeQuestions[]> => {
+    const response = await api.get<EmployeeQuestions[]>(
+      `/eQuestions/getByTaskId/${taskId}`
+    );
+    return response.data;
+  },
+
+  getEmployeesWithQuestions: async (): Promise<number[]> => {
+    const response = await api.get<number[]>(
+      `/eQuestions/employeesWithQuestions`
+    );
+    return response.data;
+  },
+};
+
+export const auditService = {
+  getEventByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(
+      `/audit/getEventByName`
+    );
+    return response.data;
+  },
+
+  getModuleByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(
+      `/audit/getModuleByName`
+    );
+    return response.data;
+  },
+
+  getUserByName: async (): Promise<MultiSelectDropDownDTO[]> => {
+    const response = await api.get<MultiSelectDropDownDTO[]>(`/audit/getUserByName`);
+    return response.data;
+  },
+
+ findFilteredData: async (
+  pageNo: number,
+  searchParams: AuditSearchRequest
+): Promise<AuditRecord[]> => {
+  const response = await api.post<AuditRecord[]>(
+    `/audit/findFilteredData/${pageNo}`,
+    searchParams
+  );
+  return response.data;
+},
+};
+
 // Task Management
 export const taskService = {
   getTask: async (params?: {
@@ -624,6 +703,17 @@ export const taskService = {
     );
     return response.data;
   },
+
+  getDateFormat: async (): Promise<string> => {
+  try {
+    const response = await api.get('/employee/getConstant/DateFormat');
+    return response.data as string;
+  } catch (error) {
+    console.error("Failed to fetch date format:", error);
+    // fallback
+    return "dd-MM-yyyy";
+  }
+}
 };
 
 // Helper function to convert TaskProjection to Task
