@@ -30,6 +30,7 @@ import {
   Users,
   Verified,
 } from "lucide-react";
+import { format } from "date-fns";
 
 const PAGE_SIZE = 10;
 
@@ -43,6 +44,7 @@ const TasksPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [dateFormat, setDateFormat] = useState<string | null>(null);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -58,9 +60,14 @@ const TasksPage: React.FC = () => {
       };
       const search = searchFilter.trim();
       if (search) params.search = search;
-      const response = await taskService.getTask(params);
-      setTasks(response.commonListDto.content ?? []);
-      setTotalElements(response.totalElements ?? 0);
+
+      const [tasksResponse, formatResponse] = await Promise.all([
+        taskService.getTask(params),
+        taskService.getDateFormat(),
+      ]);
+      setTasks(tasksResponse.commonListDto.content ?? []);
+      setTotalElements(tasksResponse.totalElements ?? 0);
+      setDateFormat(formatResponse); // Store the fetched format string
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setTasks([]);
@@ -116,7 +123,7 @@ const TasksPage: React.FC = () => {
     </div>
   );
 
-  
+
 
   return (
     <div className="p-8 space-y-6">
@@ -186,26 +193,22 @@ const TasksPage: React.FC = () => {
                     ? Math.round((completed / totalQ) * 100)
                     : 0;
 
-                      let progressColor = "bg-muted-foreground/60";
+                  let progressColor = "bg-muted-foreground/60";
                   const status = (task.status || "").toLowerCase();
                   if (status === "completed") {
                     progressColor = "bg-green-600";
                   } else if (status === "in progress") {
                     progressColor = "bg-amber-500";
-                  }   
+                  }
 
                   return (
-                    <TableRow
-                      key={(task as any).id ?? (task as any).employeeId}
-                    >
+                    <TableRow key={(task as any).id ?? (task as any).employeeId}>
                       {/* Employee Name */}
-                      <TableCell className="font-semibold  min-w-[150px]">
+                      <TableCell className="font-semibold min-w-[150px]">
                         {(task as any).name}
                       </TableCell>
-
                       {/* Level */}
                       <TableCell>{(task as any).level}</TableCell>
-
                       {/* Role & Department */}
                       <TableCell>
                         <div className="flex flex-col">
@@ -217,12 +220,26 @@ const TasksPage: React.FC = () => {
                           </span>
                         </div>
                       </TableCell>
-
-                      {/* DOJ*/}
-                      <TableCell className="min-w-[100px]">{(task as any).doj}</TableCell>
-                      {/* Lab*/}
+                      {/* DOJ */}
+                      <TableCell className="min-w-[100px]">
+                        {(() => {
+                          const dojArray = (task as any).doj;
+                          if (Array.isArray(dojArray) && dateFormat && dojArray.length >= 3) {
+                            try {
+                              const dateObject = new Date(dojArray[0], dojArray[1] - 1, dojArray[2]);
+                              if (isNaN(dateObject.getTime())) {
+                                return "Invalid Date";
+                              }
+                              return format(dateObject, dateFormat);
+                            } catch (error) {
+                              return "Invalid Date";
+                            }
+                          }
+                          return "Invalid Date";
+                        })()}
+                      </TableCell>
+                      {/* Lab */}
                       <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
-
                       {/* Progress */}
                       <TableCell className="min-w-[120px]">
                         <div className="flex flex-col gap-2">
@@ -234,22 +251,18 @@ const TasksPage: React.FC = () => {
                               {percent}%
                             </span>
                           </div>
-                          <ProgressBar value={percent}  color={progressColor} />
+                          <ProgressBar value={percent} color={progressColor} />
                         </div>
                       </TableCell>
-
                       {/* Status */}
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
-                          const base =
-                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                          const base = "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
 
                           if (status === "overdue") {
                             return (
-                              <span
-                                className={`${base} bg-red-600/20 text-red-600`}
-                              >
+                              <span className={`${base} bg-red-600/20 text-red-600`}>
                                 Overdue
                               </span>
                             );
@@ -257,41 +270,32 @@ const TasksPage: React.FC = () => {
 
                           if (status === "completed") {
                             return (
-                              <span
-                                className={`${base} bg-green-600/20 text-green-600`}
-                              >
+                              <span className={`${base} bg-green-600/20 text-green-600`}>
                                 Completed
                               </span>
                             );
                           }
 
                           return (
-                            <span
-                              className={`${base} bg-amber-500/20 text-amber-600`}
-                            >
+                            <span className={`${base} bg-amber-500/20 text-amber-600`}>
                               In Progress
                             </span>
                           );
                         })()}
                       </TableCell>
-
                       {/* Actions */}
                       <TableCell>
-                        {/* Always show Eye button */}
                         <Button
                           variant="outline"
                           size="icon"
                           className="rounded-lg"
-                          onClick={() =>
-                            (window.location.href = `/admin/tasks/${task.taskIds}`)
-                          }
+                          onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
                           aria-label="View details"
                         >
                           <Eye size={16} />
                         </Button>
-
                         {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && 
+                          task.freeze === "N" &&
                           ((task.lab ?? '').toString().trim() !== '') && (
                             <Button
                               variant="outline"
