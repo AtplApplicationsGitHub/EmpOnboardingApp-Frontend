@@ -14,8 +14,10 @@ import {
   EmployeeTaskFilter,
   EmployeeTaskResponse,
   EmployeeFeedback,
-  MultiSelectDropDownDTO,
   EmployeeQuestions,
+  MultiSelectDropDownDTO, 
+  AuditSearchRequest, 
+  AuditRecord
 } from "../types";
 
 // Re-export types for easier access
@@ -615,9 +617,20 @@ export const auditService = {
   },
 
   getUserByName: async (): Promise<MultiSelectDropDownDTO[]> => {
-    const response = await api.get<MultiSelectDropDownDTO[]>(`/getUserByName`);
+    const response = await api.get<MultiSelectDropDownDTO[]>(`/audit/getUserByName`);
     return response.data;
   },
+
+ findFilteredData: async (
+  pageNo: number,
+  searchParams: AuditSearchRequest
+): Promise<AuditRecord[]> => {
+  const response = await api.post<AuditRecord[]>(
+    `/audit/findFilteredData/${pageNo}`,
+    searchParams
+  );
+  return response.data;
+},
 };
 
 // Task Management
@@ -690,6 +703,17 @@ export const taskService = {
     );
     return response.data;
   },
+
+  getDateFormat: async (): Promise<string> => {
+  try {
+    const response = await api.get('/employee/getConstant/DateFormat');
+    return response.data as string;
+  } catch (error) {
+    console.error("Failed to fetch date format:", error);
+    // fallback
+    return "dd-MM-yyyy";
+  }
+}
 };
 
 // Helper function to convert TaskProjection to Task
