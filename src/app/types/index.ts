@@ -114,6 +114,14 @@ export interface Task {
   completed_at?: string;
 }
 
+export interface EmployeeQuestions {
+  id:number;
+  question:string;
+  responseType:string;
+  response:string;
+  completedFlag:boolean;
+}
+
 export interface TaskQuestions {
   id: number;
   questionId: string;

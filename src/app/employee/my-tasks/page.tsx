@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { employeeService } from "@/app/services/api";
+import toast from "react-hot-toast";
 
 const MyTasksPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -144,7 +145,7 @@ const MyTasksPage: React.FC = () => {
 
       setFeedbackRating(0);
       setFeedbackComment("");
-      alert("Feedback submitted successfully!");
+      toast.success("Feedback submitted successfully!");
       setShowFeedbackModal(false);
     } catch (error) {
       // eslint-disable-next-line no-console
