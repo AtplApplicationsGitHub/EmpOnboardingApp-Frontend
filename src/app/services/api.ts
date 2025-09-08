@@ -23,8 +23,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "https://employee.onboarding.goval.app:8084/api",
-  baseURL: "http://localhost:8084/api",
+  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION
+  // baseURL: "http://localhost:8081/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
   headers: {
     "Content-Type": "application/json",
   },
@@ -580,6 +580,20 @@ export const EQuestions = {
   saveResponse: async (id: number, value: string): Promise<boolean> => {
     const response = await api.post<boolean>(
       `/eQuestions/saveEmployeeResponse/${id}/${value}`
+    );
+    return response.data;
+  },
+
+  getQuestionsByTask: async (taskId: string): Promise<EmployeeQuestions[]> => {
+    const response = await api.get<EmployeeQuestions[]>(
+      `/eQuestions/getByTaskId/${taskId}`
+    );
+    return response.data;
+  },
+
+  getEmployeesWithQuestions: async (): Promise<number[]> => {
+    const response = await api.get<number[]>(
+      `/eQuestions/employeesWithQuestions`
     );
     return response.data;
   },
