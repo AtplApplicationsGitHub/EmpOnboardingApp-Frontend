@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { taskService } from "../../services/api";
+import { taskService, EQuestions } from "../../services/api";
 import {
   Card,
   CardContent,
@@ -44,6 +44,7 @@ const TasksPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
   const [dateFormat, setDateFormat] = useState<string | null>(null);
 
   const totalPages = useMemo(
@@ -60,6 +61,19 @@ const TasksPage: React.FC = () => {
       };
       const search = searchFilter.trim();
       if (search) params.search = search;
+      const response = await taskService.getTask(params);
+      const taskList = response.commonListDto.content ?? [];
+      setTasks(taskList);
+      setTotalElements(response.totalElements ?? 0);
+      
+      // Get list of employees who have questions assigned (from employee_question table)
+      try {
+        const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
+        setEmployeesWithQuestions(new Set(employeesWithQuestionsArray));
+      } catch (error) {
+        console.error("Error fetching employees with questions:", error);
+        setEmployeesWithQuestions(new Set());
+      }
 
       const [tasksResponse, formatResponse] = await Promise.all([
         taskService.getTask(params),
@@ -294,8 +308,28 @@ const TasksPage: React.FC = () => {
                         >
                           <Eye size={16} />
                         </Button>
-                        {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" &&
+
+                        {/* View Answers button - only show for employees who have questions assigned */}
+                        {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-lg ml-2"
+                            onClick={() => {
+                              // Use the first task ID from the comma-separated list
+                              const firstTaskId = task.taskIds.split(',')[0];
+                              window.location.href = `/admin/tasks/answers/${firstTaskId}`;
+                            }}
+                            aria-label="View answers"
+                            title="View Employee Answers"
+                          >
+                            <TicketCheck size={16} />
+                          </Button>
+                        )}
+
+                        {employeesWithQuestions.has(parseInt(task.employeeId, 10)) &&
+                          task.status?.toLowerCase() === "completed" &&
+                          task.freeze === "N" && 
                           ((task.lab ?? '').toString().trim() !== '') && (
                             <Button
                               variant="outline"
