@@ -19,6 +19,7 @@ import {
   UserCheck,
   AlertTriangle,
   HelpCircle,
+  Copy,
 } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -179,6 +180,16 @@ const GroupsPage: React.FC = () => {
     setShowEditModal(true);
   };
 
+  const clone = async(group: Group) => {
+    if(!group) return;
+    try {
+    await adminService.cloneGroup(group);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to clone group");
+    }
+
+  }
+
   // Pagination numbers (with ellipsis if you wish; here's a simple version)
   const generatePageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -257,6 +268,12 @@ const GroupsPage: React.FC = () => {
                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
                   >
                     <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => clone(group)}
+                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                  >
+                    <Copy size={16} />
                   </button>
                   {group.deleteFlag && (
                     <button
