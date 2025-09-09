@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminService } from "../../../services/api";
-import { Group, Question,DropDownDTO } from "../../../types";
+import { Group, Question, DropDownDTO } from "../../../types";
 import {
   Card,
   CardHeader,
@@ -48,22 +48,22 @@ const GroupDetailsPage: React.FC = () => {
     response: "yes_no" as "yes_no" | "text",
     period: "after",
     complainceDay: "1",
-    departments: [] as number[], 
     questionLevel: [] as string[],
+    questionDepartment: [] as string[],
     groupId: groupId.toString(),
   });
 
   // Lock body scroll when modal is open
   useEffect(() => {
     if (showCreateModal || showEditModal || showDeleteModal) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
-    
+
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [showCreateModal, showEditModal, showDeleteModal]);
 
@@ -77,7 +77,6 @@ const GroupDetailsPage: React.FC = () => {
         setLevelOptions(levels);
         const departments = await adminService.getLookupItems("Department");
         setDepartmentOptions(departments);
-
       } catch (error) {
         toast.error("Failed to load dropdown options.");
       }
@@ -91,6 +90,18 @@ const GroupDetailsPage: React.FC = () => {
     }
     // eslint-disable-next-line
   }, [groupId, questionPage]);
+
+  const valuesToIds = (values: string[], options: DropDownDTO[]) =>
+    options.filter((o) => values.includes(o.value)).map((o) => o.id);
+
+  const idsToValues = (
+    ids: number | number[] | undefined,
+    options: DropDownDTO[]
+  ) => {
+    if (ids == null) return [];
+    const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
+    return options.filter((o) => idSet.has(o.id)).map((o) => o.value);
+  };
 
   const fetchGroupData = async () => {
     try {
@@ -115,12 +126,10 @@ const GroupDetailsPage: React.FC = () => {
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
-
     try {
       await adminService.createQuestion(formData);
       setShowCreateModal(false);
       resetForm();
-      // Refetch to get the latest questions (could land on new last page, but keeping at current page for now)
       fetchGroupData();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create question");
@@ -173,7 +182,7 @@ const GroupDetailsPage: React.FC = () => {
       response: question.response,
       period: question.period,
       complainceDay: question.complainceDay || "1",
-      departments: (question as any).departments || [],
+      questionDepartment: question.questionDepartment,
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
     });
@@ -187,7 +196,7 @@ const GroupDetailsPage: React.FC = () => {
       response: "yes_no",
       period: "after",
       complainceDay: "1",
-      departments: [],
+      questionDepartment: [],
       questionLevel: [],
       groupId: groupId.toString(),
     });
@@ -394,13 +403,15 @@ const GroupDetailsPage: React.FC = () => {
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
-              
+
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
                 <CardContent className="p-6">
                   <form
                     onSubmit={
-                      showCreateModal ? handleCreateQuestion : handleEditQuestion
+                      showCreateModal
+                        ? handleCreateQuestion
+                        : handleEditQuestion
                     }
                     className="space-y-6"
                     id="question-form"
@@ -481,8 +492,8 @@ const GroupDetailsPage: React.FC = () => {
                             }
                             onChange={(id) => {
                               const selectedValue =
-                                periodOptions.find((opt) => opt.id === id)?.value ??
-                                "";
+                                periodOptions.find((opt) => opt.id === id)
+                                  ?.value ?? "";
                               setFormData((prev) => ({
                                 ...prev,
                                 period: selectedValue as typeof prev.period,
@@ -517,32 +528,38 @@ const GroupDetailsPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Departments */}
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
-                          Departments * 
+                          Departments *
                         </label>
                         <div className="relative z-[9999]">
                           <SearchableDropdown
                             options={departmentOptions}
-                            value={formData.departments}
+                            value={valuesToIds(
+                              formData.questionDepartment,
+                              departmentOptions
+                            )}
                             isMultiSelect={true}
                             onChange={(selectedIds) => {
                               setFormData((prev) => ({
                                 ...prev,
-                                departments: Array.isArray(selectedIds) ? selectedIds : [],
+                                questionDepartment: idsToValues(
+                                  selectedIds,
+                                  departmentOptions
+                                ),
                               }));
                             }}
-                            placeholder="Select departments"  
+                            placeholder="Select departments"
                             disabled={showEditModal}
                           />
                         </div>
                       </div>
 
                       {/* Employee Levels */}
-                      <div className="flex-1"> 
+                      <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Employee Levels * (Select at least one)
                         </label>
@@ -551,15 +568,21 @@ const GroupDetailsPage: React.FC = () => {
                             <label
                               key={levelOption.value}
                               className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
-                                formData.questionLevel.includes(levelOption.value)
+                                formData.questionLevel.includes(
+                                  levelOption.value
+                                )
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-input hover:border-primary/50"
                               }`}
                             >
                               <input
                                 type="checkbox"
-                                checked={formData.questionLevel.includes(levelOption.value)}
-                                onChange={() => handleLevelToggle(levelOption.value)}
+                                checked={formData.questionLevel.includes(
+                                  levelOption.value
+                                )}
+                                onChange={() =>
+                                  handleLevelToggle(levelOption.value)
+                                }
                                 className="sr-only"
                                 disabled={showEditModal}
                               />
@@ -575,15 +598,11 @@ const GroupDetailsPage: React.FC = () => {
                   </form>
                 </CardContent>
               </div>
-              
+
               {/* Sticky Footer with Buttons */}
               <div className="flex-shrink-0 border-t bg-background p-6">
                 <div className="flex gap-3">
-                  <Button 
-                    type="submit" 
-                    form="question-form"
-                    className="flex-1"
-                  >
+                  <Button type="submit" form="question-form" className="flex-1">
                     {showCreateModal ? "Create Question" : "Update Question"}
                   </Button>
                   <Button
@@ -616,10 +635,10 @@ const GroupDetailsPage: React.FC = () => {
             <CardContent>
               <p className="mb-4">
                 Are you sure you want to delete the question{" "}
-                <span className="font-semibold">"{questionToDelete.text}"</span>?
-                This action cannot be undone.
+                <span className="font-semibold">"{questionToDelete.text}"</span>
+                ? This action cannot be undone.
               </p>
-                                      <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap">
                 <Button
                   variant="destructive"
                   onClick={handleDeleteQuestion}
