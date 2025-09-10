@@ -26,7 +26,7 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION
+  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION/DEV SERVER
   // baseURL: "http://localhost:8084/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
   headers: {
     "Content-Type": "application/json",
