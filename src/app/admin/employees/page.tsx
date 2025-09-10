@@ -683,8 +683,8 @@ setCheckingEmail(false);
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Department
-                  </label>
+ Department *
+                   </label>
                   <SearchableDropdown
   options={departmentOptions}
   value={
@@ -704,6 +704,7 @@ setCheckingEmail(false);
   placeholder="Select Department"
   displayFullValue={false}
   isEmployeePage={true}
+  disabled={editMode}
 />
 
                 </div>
@@ -848,8 +849,9 @@ setCheckingEmail(false);
   onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
   className="flex-1"
   disabled={
-    !newEmployee.name || 
-    !newEmployee.level || 
+ !newEmployee.name || !newEmployee.name.trim() ||
+     !newEmployee.level || 
+    !newEmployee.department ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
     emailExists ||
     checkingEmail
