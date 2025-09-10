@@ -83,10 +83,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     undefined
   );
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
-  // const labOptions = [
-  //   { id: 101, key: "Lab1", value: "Lab1" },
-  //   { id: 102, key: "Lab2", value: "Lab2" },
-  // ];
+  const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
   const fetchLabLookupData = async () => {
   try { 
@@ -126,9 +123,43 @@ useEffect(() => {
     }
   }, [taskId]);
 
+  // Check if this task is the first one for the employee
+  const checkIfFirstTaskForEmployee = useCallback(async () => {
+    if (!taskId) return;
+    
+    try {
+      // Get all tasks for the group leader to check ordering
+      const response = await taskService.getTaskForGL({ 
+        page: 0
+        // Get all tasks by not specifying size limit, or using a large page
+      });
+      const allTasks = response.commonListDto ?? [];
+      
+      // Get current task details
+      const currentTask = allTasks.find((task: any) => String(task.id) === String(taskId));
+      if (!currentTask) return;
+      
+      const currentEmployeeId = (currentTask as any).employeeId;
+      
+      // Find all tasks for this employee, sorted by task ID (assuming lower ID = earlier task)
+      const employeeTasks = allTasks.filter((task: any) => 
+        (task as any).employeeId === currentEmployeeId
+      ).sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)));
+      
+      // Check if current task is the first one for this employee
+      const isFirst = employeeTasks.length > 0 && String(employeeTasks[0].id) === String(taskId);
+      setIsFirstTaskForEmployee(isFirst);
+      
+    } catch (error) {
+      console.error("Error checking task order:", error);
+      setIsFirstTaskForEmployee(false);
+    }
+  }, [taskId]);
+
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    checkIfFirstTaskForEmployee();
+  }, [fetchTasks, checkIfFirstTaskForEmployee]);
 
   // Load group leads
   const fetchGroupLeads = useCallback(async () => {
@@ -347,20 +378,22 @@ useEffect(() => {
           {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
         </h3>
         <div className="ml-auto flex items-end gap-3">
-          <div className="min-w-[240px]">
-            <div className="flex items-center gap-2">
-          <SearchableDropdown
-  options={labOptions}
-  value={selectedLabId}
-  disabled={freezeTask === "Y"}
-  onChange={handleLabChange}
-  placeholder="Select Lab"
-  displayFullValue={false}
-  isEmployeePage={true}
-  className="w-full"
-/>
+          {isFirstTaskForEmployee && (
+            <div className="min-w-[240px]">
+              <div className="flex items-center gap-2">
+                <SearchableDropdown
+                  options={labOptions}
+                  value={selectedLabId}
+                  disabled={freezeTask === "Y"}
+                  onChange={handleLabChange}
+                  placeholder="Select Lab"
+                  displayFullValue={false}
+                  isEmployeePage={true}
+                  className="w-full"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
