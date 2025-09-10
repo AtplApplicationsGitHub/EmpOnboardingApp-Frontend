@@ -36,6 +36,7 @@ const GroupDetailsPage: React.FC = () => {
   const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [isFormValid, setIsFormValid] = useState(false);
 
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
@@ -51,7 +52,23 @@ const GroupDetailsPage: React.FC = () => {
     questionLevel: [] as string[],
     questionDepartment: [] as string[],
     groupId: groupId.toString(),
+     defaultflag: "no" as "yes" | "no",
   });
+
+  // Validate form data
+const validateForm = () => {
+  if (!formData.text.trim()) return false;
+  if (!formData.response) return false;
+  if (formData.response === "yes_no" && !formData.defaultflag) return false;
+  if (!formData.period) return false;
+  if (!formData.complainceDay || parseInt(formData.complainceDay) < 1) return false;
+  if (formData.questionDepartment.length === 0) return false;
+  if (formData.questionLevel.length === 0) return false;
+  return true;
+};  
+useEffect(() => {
+  setIsFormValid(validateForm());
+}, [formData]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -67,6 +84,7 @@ const GroupDetailsPage: React.FC = () => {
     };
   }, [showCreateModal, showEditModal, showDeleteModal]);
 
+  //fetch dropdown options
   useEffect(() => {
     const fetchLookupData = async () => {
       try {
@@ -107,11 +125,12 @@ const GroupDetailsPage: React.FC = () => {
     try {
       setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
-      // Get paginated questions
       const questionRes = await adminService.getQuestions(
         groupId,
         questionPage
       );
+         console.log("Fetched questions:", questionRes);
+     
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
 
@@ -127,7 +146,17 @@ const GroupDetailsPage: React.FC = () => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
     try {
-      await adminService.createQuestion(formData);
+          // Destructure to exclude defaultflag temporarily
+        const { defaultflag, ...rest } = formData;
+     // Include defaultflag only if response is yes_no
+    const dataToSend = {
+      ...rest,
+      ...(formData.response === "yes_no" && { defaultFlag:defaultflag })
+    };
+
+console.log("Payload being sent:", dataToSend);// debug log
+
+      await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
       fetchGroupData();
@@ -146,8 +175,16 @@ const GroupDetailsPage: React.FC = () => {
       return;
 
     try {
-      formData.id = editingQuestion.id;
-      await adminService.updateQuestion(formData);
+       const { defaultflag, ...rest } = formData;
+       // Include defaultFlag only if response is yes_no
+    const dataToSend = {
+      ...rest,
+      // id: editingQuestion.id,
+      ...(formData.response === "yes_no" && { defaultFlag: defaultflag }) 
+    };
+         console.log("Sending to backend (Edit):", dataToSend); // debug log
+
+      await adminService.updateQuestion(dataToSend);
       setShowEditModal(false);
       setEditingQuestion(null);
       resetForm();
@@ -185,6 +222,7 @@ const GroupDetailsPage: React.FC = () => {
       questionDepartment: question.questionDepartment,
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
+        defaultflag: question.defaultFlag || "no",
     });
     setShowEditModal(true);
   };
@@ -199,6 +237,7 @@ const GroupDetailsPage: React.FC = () => {
       questionDepartment: [],
       questionLevel: [],
       groupId: groupId.toString(),
+       defaultflag: "no",
     });
   };
 
@@ -436,44 +475,89 @@ const GroupDetailsPage: React.FC = () => {
                       />
                     </div>
 
-                    {/* Response Type */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Response Type *
-                      </label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="yes_no"
-                            checked={formData.response === "yes_no"}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                response: e.target.value as "yes_no",
-                              }))
-                            }
-                            className="text-primary"
-                          />
-                          Yes/No/N/A Question
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="text"
-                            checked={formData.response === "text"}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                response: e.target.value as "text",
-                              }))
-                            }
-                            className="text-primary"
-                          />
-                          Text Response
-                        </label>
-                      </div>
-                    </div>
+{/* Response Type & Default Value */}
+<div className="flex flex-col md:flex-row gap-6">
+  {/* Response Type */}
+  <div className="flex-1">
+    <label className="block text-sm font-medium mb-2">
+      Response Type *
+    </label>
+    <div className="flex gap-4 items-center"> 
+      <label className="flex items-center gap-2 whitespace-nowrap">
+        <input
+          type="radio"
+          value="yes_no"
+          checked={formData.response === "yes_no"}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              response: e.target.value as "yes_no",
+              
+            }))
+          }
+          className="text-primary"
+        />
+        Yes/No/N/A Question
+      </label>
+      <label className="flex items-center gap-2 whitespace-nowrap">
+        <input
+          type="radio"
+          value="text"
+          checked={formData.response === "text"}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              response: e.target.value as "text",
+            }))
+          }
+          className="text-primary"
+        />
+        Text Response
+      </label>
+    </div>
+  </div>
+
+  {/* Default Value - Conditionally rendered */}
+  {formData.response === "yes_no" && (
+    <div className="flex-1">
+      <label className="block text-sm font-medium mb-2">
+        Default Value *
+      </label>
+      <div className="flex gap-4 items-center"> 
+        <label className="flex items-center gap-2 whitespace-nowrap">
+          <input
+            type="radio"
+            value="yes"
+            checked={formData.defaultflag === "yes"}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                defaultflag: e.target.value as "yes" | "no",
+              }))
+            }
+            className="text-primary"
+          />
+          Yes
+        </label>
+        <label className="flex items-center gap-2 whitespace-nowrap">
+          <input
+            type="radio"
+            value="no"
+            checked={formData.defaultflag === "no"}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                defaultflag: e.target.value as "yes" | "no",
+              }))
+            }
+            className="text-primary"
+          />
+          No
+        </label>
+      </div>
+    </div>
+  )}
+</div>
 
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Period */}
@@ -511,21 +595,23 @@ const GroupDetailsPage: React.FC = () => {
                         <label className="block text-sm font-medium mb-2">
                           Compliance Day * (Number of days)
                         </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={parseInt(formData.complainceDay)}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              complainceDay: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter number of days"
-                          className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                        />
+                       <input
+  type="number"
+  min="1"
+  max="365"
+  value={formData.complainceDay === "" ? "" : formData.complainceDay}
+  onChange={(e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      complainceDay: value, 
+    }));
+  }}
+  placeholder="Enter number of days"
+  className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+  required
+/>
+
                       </div>
                     </div>
 
@@ -593,7 +679,6 @@ const GroupDetailsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Add some bottom padding to ensure content isn't hidden behind sticky footer */}
                     <div className="pb-4"></div>
                   </form>
                 </CardContent>
@@ -602,7 +687,7 @@ const GroupDetailsPage: React.FC = () => {
               {/* Sticky Footer with Buttons */}
               <div className="flex-shrink-0 border-t bg-background p-6">
                 <div className="flex gap-3">
-                  <Button type="submit" form="question-form" className="flex-1">
+                  <Button type="submit" form="question-form" disabled={!isFormValid}  className="flex-1">
                     {showCreateModal ? "Create Question" : "Update Question"}
                   </Button>
                   <Button

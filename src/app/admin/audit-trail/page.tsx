@@ -18,16 +18,25 @@ import {
 } from "../../components/ui/table";
 import { auditService } from "../../services/api";
 import { DropDownDTO, AuditSearchRequest, AuditRecord } from "@/app/types";
+const PAGE_SIZE = 10;
 
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0'); 
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const AuditTrailPage = () => {
-    const [fromDate, setFromDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+   const [fromDate, setFromDate] = useState(getTodayDate());
+  const [endDate, setEndDate] = useState(getTodayDate());
     const [selectedModuleIds, setSelectedModuleIds] = useState<number[]>([]);
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);   
- const [moduleOptions, setModuleOptions] = useState<DropDownDTO[]>([]);
+    const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
+    const [moduleOptions, setModuleOptions] = useState<DropDownDTO[]>([]);
     const [isLoadingModules, setIsLoadingModules] = useState(true);
     const [moduleError, setModuleError] = useState<string | null>(null);
     const [eventOptions, setEventOptions] = useState<DropDownDTO[]>([]);
@@ -39,22 +48,21 @@ const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
     const [auditTrailData, setAuditTrailData] = useState<AuditRecord[]>([]);
     const [isLoadingAuditData, setIsLoadingAuditData] = useState(false);
     const [auditDataError, setAuditDataError] = useState<string | null>(null);
-    const [currentPage] = useState(1);
-
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
 
     useEffect(() => {
         const fetchModules = async () => {
             try {
                 setIsLoadingModules(true);
                 const moduleResponse = await auditService.getModuleByName();
-                // console.log('Module response:', moduleResponse); // Debug log                
+                
                 // Transform MultiSelectDropDownDTO to component format
                 const transformedModules = moduleResponse.map((item: any) => ({
                     id: item.id,
                     key: item.itemName,
                     value: item.itemName
                 }));
-                // console.log('Transformed modules:', transformedModules); // Debug log
                 setModuleOptions(transformedModules);
                 setModuleError(null);
             } catch (error) {
@@ -74,7 +82,6 @@ const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
             try {
                 setIsLoadingEvents(true);
                 const eventResponse = await auditService.getEventByName();
-                // console.log('event response:', eventResponse); // Debug log
 
                 // Transform the received data to the component's required format
                 const transformedEvents = eventResponse.map((item: any) => ({
@@ -82,7 +89,6 @@ const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
                     key: item.itemName,
                     value: item.itemName
                 }));
-                //  console.log('Transformed event:', transformedEvents); // Debug log
 
                 setEventOptions(transformedEvents);
                 setEventError(null);
@@ -102,7 +108,7 @@ const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
             try {
                 setIsLoadingUsers(true);
                 const userResponse = await auditService.getUserByName();
-               
+
                 const transformedUsers = userResponse.map((item) => ({
                     id: item.id,
                     key: item.itemName,
@@ -119,76 +125,77 @@ const [expandedRowIndices, setExpandedRowIndices] = useState<number[]>([]);
         fetchUsers();
     }, []);
 
+    // Handle Search button click
+    const handleSearch = async (page: number = 0) => {
 
-    // Helper function to get names from IDs
-    const getNamesByIds = (ids: number[], options: DropDownDTO[]): string[] => {
-        return ids.map(id => {
-            const option = options.find(opt => opt.id === id);
-            return option ? option.value : '';
-        }).filter(name => name !== '');
-    };
-
-    // Handle search click
-    const handleSearch = async () => {
         try {
             setIsLoadingAuditData(true);
             setAuditDataError(null);
 
-            // Convert IDs to names for the API request
-            const selectedModuleNames = getNamesByIds(selectedModuleIds, moduleOptions);
-            const selectedEventNames = getNamesByIds(selectedEventIds, eventOptions);
-            const selectedUserNames = getNamesByIds(selectedUserIds, userOptions);
+            // Added 1 day to end date 
+            const adjustedEndDate = new Date(endDate);
+            adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+            const formattedEndDate = adjustedEndDate.toISOString().split('T')[0];
 
-           const formatDate = (date: Date) => date.toLocaleDateString("en-CA"); // YYYY-MM-DD
-           
+            // Get selected values as strings (convert IDs to corresponding names)
+            const selectedModuleNames = selectedModuleIds.map(id => {
+                const module = moduleOptions.find(option => option.id === id);
+                return module ? module.value : '';
+            }).filter(name => name !== '');
 
-let toDate = endDate;
-if (endDate) {
-  const endDateTime = new Date(endDate);
-  endDateTime.setDate(endDateTime.getDate() + 1);
-  toDate = formatDate(endDateTime);   // ✅ local format
-}
+            const selectedEventNames = selectedEventIds.map(id => {
+                const event = eventOptions.find(option => option.id === id);
+                return event ? event.value : '';
+            }).filter(name => name !== '');
 
+            const selectedUserNames = selectedUserIds.map(id => {
+                const user = userOptions.find(option => option.id === id);
+                return user ? user.value : '';
+            }).filter(name => name !== '');
 
-            const searchParams: AuditSearchRequest = {
-                fromDate,
-                toDate: toDate,
+            // Build search request
+            const searchRequest: AuditSearchRequest = {
+                fromDate: fromDate,
+                toDate: formattedEndDate,
                 selectedEvent: selectedEventNames,
                 selectedModule: selectedModuleNames,
                 selectedUser: selectedUserNames,
-                userId: 1
+                userId: 1 
             };
 
-            console.log("Search Params:", searchParams);
-            console.log("fromDate:", fromDate);
-            console.log("endDate:", toDate);
+            console.log('Search request:', searchRequest); // Debug log
 
-            const auditData = await auditService.findFilteredData(currentPage, searchParams);
-            console.log("BE response:", auditData);
-            setAuditTrailData(Array.isArray(auditData.commonListDto) ? auditData.commonListDto : []);
-
-
+            // Call the API
+            const response = await auditService.findFilteredData(page, searchRequest);
+            console.log('Search response:', response); // Debug log
+         
+            setAuditTrailData(response.commonListDto || []);
+            setTotalElements(response.totalElements || 0);
+            setCurrentPage(page);
+            setExpandedRowIndices([]);
 
         } catch (error) {
-            console.error("Search failed:", error);
-            setAuditDataError("Failed to fetch audit data. Please try again.");
+            console.error('Search error:', error);
+            setAuditDataError('Failed to fetch audit trail data. Please try again.');
             setAuditTrailData([]);
         } finally {
             setIsLoadingAuditData(false);
         }
     };
 
+
     // Handle row expansion
-const handleExpandClick = (index: number) => {
-    setExpandedRowIndices((prevIndices) => {
-        const isExpanded = prevIndices.includes(index);
-        if (isExpanded) {
-            return prevIndices.filter((i) => i !== index);
-        } else {
-            return [...prevIndices, index];
-        }
-    });
-};
+    const handleExpandClick = (index: number) => {
+        setExpandedRowIndices((prevIndices) => {
+            const isExpanded = prevIndices.includes(index);
+            if (isExpanded) {
+                return prevIndices.filter((i) => i !== index);
+            } else {
+                return [...prevIndices, index];
+            }
+        });
+    };
+    const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
     return (
         <div className="p-6 max-w-9xl mx-auto space-y-6">
@@ -210,6 +217,7 @@ const handleExpandClick = (index: number) => {
                     <Input
                         type="date"
                         value={endDate}
+                         min={fromDate}
                         onChange={(e) => setEndDate(e.target.value)}
                     />
                 </div>
@@ -267,7 +275,7 @@ const handleExpandClick = (index: number) => {
                 {/* Search Button */}
                 <div className="flex-shrink-0">
                     <Button
-                        onClick={handleSearch}
+                        onClick={() => handleSearch(0)}
                         disabled={isLoadingAuditData}
                     >                        <Search size={16} className="mr-1" />
                         Search
@@ -311,7 +319,7 @@ const handleExpandClick = (index: number) => {
                                 </TableRow>
                             ) : (
                                 auditTrailData.map((record, index) => (
-    <React.Fragment key={index}>
+                                    <React.Fragment key={index}>
                                         {/* Main Row */}
                                         <TableRow>
                                             {/* Expand button column */}
@@ -368,6 +376,26 @@ const handleExpandClick = (index: number) => {
                     </Table>
                 </CardContent>
             </Card>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                        disabled={currentPage === 0}
+                        onClick={() => handleSearch(currentPage - 1)}
+                    >
+                        Prev
+                    </Button>
+                    <span className="px-2 py-1">
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <Button
+                        disabled={currentPage >= totalPages - 1}
+                        onClick={() => handleSearch(currentPage + 1)}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
