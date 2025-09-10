@@ -77,6 +77,7 @@ const EmployeesPage: React.FC = () => {
   );
    const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
 const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
 const [emailExists, setEmailExists] = useState(false);
 const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -93,19 +94,7 @@ const [checkingEmail, setCheckingEmail] = useState(false);
     email: "",
   });
 
-  // //Arrays for dropdown
-  // const levelOptions = [
-  //   { id: 1, key: "L1", value: "L1" },
-  //   { id: 2, key: "L2", value: "L2" },
-  //   { id: 3, key: "L3", value: "L3" },
-  //   { id: 4, key: "L4", value: "L4" },
-  // ];
-
-  // const labOptions = [
-  //   { id: 101, key: "Lab1", value: "Lab1" },
-  //   { id: 102, key: "Lab2", value: "Lab2" },
-  // ];
-
+    // Fetch lookup data for Levels and Labs
    const fetchLookupData = async () => {
       try {
         const levels = await adminService.getLookupItems("Level");
@@ -113,6 +102,10 @@ const [checkingEmail, setCheckingEmail] = useState(false);
 
         const labs = await adminService.getLookupItems("Lab");
         setLabOptions(labs);
+
+        const departments = await adminService.getLookupItems("Department");
+        setDepartmentOptions(departments);
+
       } catch (error) {
         // console.error("Failed to fetch lookup items:", error);
         toast.error("Failed to load dropdown options.");
@@ -692,18 +685,27 @@ setCheckingEmail(false);
                   <label className="block text-sm font-medium mb-1">
                     Department
                   </label>
-                  <input
-                    type="text"
-                    value={newEmployee.department ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        department: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Engineering, HR, Sales"
-                  />
+                  <SearchableDropdown
+  options={departmentOptions}
+  value={
+    departmentOptions.find(
+      (option) => option.value === newEmployee.department
+    )?.id
+  }
+  onChange={(id) => {
+    const selectedDept = departmentOptions.find(
+      (option) => option.id === id
+    )?.value;
+    setNewEmployee({
+      ...newEmployee,
+      department: selectedDept || "",
+    });
+  }}
+  placeholder="Select Department"
+  displayFullValue={false}
+  isEmployeePage={true}
+/>
+
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Role</label>

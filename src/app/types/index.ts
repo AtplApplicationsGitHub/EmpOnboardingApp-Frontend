@@ -74,6 +74,7 @@ export interface Question {
   response: "yes_no" | "text";
   complainceDay: string;
   questionLevel: string[];
+  questionDepartment: string[];
   period: string;
   groupId: number;
   createdTime: string;

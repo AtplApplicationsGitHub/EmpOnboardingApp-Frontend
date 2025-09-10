@@ -19,14 +19,15 @@ import {
   AuditSearchRequest, 
   AuditRecord
 } from "../types";
+import { group } from "console";
 
 // Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION
-  // baseURL: "http://localhost:8081/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
+  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION/DEV SERVER
+  // baseURL: "http://localhost:8084/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
   headers: {
     "Content-Type": "application/json",
   },
@@ -205,6 +206,11 @@ export const adminService = {
     return response.data;
   },
 
+  cloneGroup: async (group: Group): Promise<boolean> => {
+    const response = await api.post<boolean>("/group/cloneGroup", group);
+    return response.data;
+  },
+
   updateGroup: async (data: {
     id: number;
     name: string;
@@ -239,6 +245,7 @@ export const adminService = {
     response: "yes_no" | "text";
     complainceDay: string;
     questionLevel: string[];
+    questionDepartment: string[];
     groupId: string;
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -621,11 +628,18 @@ export const auditService = {
     return response.data;
   },
 
+
  findFilteredData: async (
   pageNo: number,
   searchParams: AuditSearchRequest
-): Promise<AuditRecord[]> => {
-  const response = await api.post<AuditRecord[]>(
+): Promise<{
+    commonListDto: AuditRecord[];
+    totalElements: number;
+  }> => {
+  const response = await api.post<{
+    commonListDto: AuditRecord[];
+    totalElements: number;
+  }>(
     `/audit/findFilteredData/${pageNo}`,
     searchParams
   );
