@@ -297,6 +297,8 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
+    defaultFlag?: "yes" | "no";
+
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
     return response.data;
@@ -308,6 +310,8 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
+    defaultFlag?: "yes" | "no";
+
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;

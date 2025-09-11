@@ -87,6 +87,7 @@ export interface Question {
   groupId: number;
   createdTime: string;
   updatedTime: string;
+  defaultFlag?: "yes" | "no";
 }
 
 export interface Task {
