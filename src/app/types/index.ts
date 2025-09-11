@@ -48,6 +48,14 @@ export interface EmployeeImportResult {
   errorCount: number;
   errors?: Array<string | { row?: number; message?: string }>;
 }
+
+export interface Lab {
+  id: string;
+  location: string;
+  lab: string[];
+  createdTime: string;
+  updatedTime: string;
+}
 // export interface Group {
 //   id: number;
 //   name: string;
