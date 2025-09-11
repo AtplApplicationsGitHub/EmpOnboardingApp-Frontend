@@ -27,8 +27,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "/api", // Use Next.js proxy to avoid CORS issues
-  // baseURL: "https://employee.onboarding.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "http://localhost:8084/api", 
+    // baseURL: "https://employee.onboarding.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -633,49 +633,13 @@ export const labService = {
     commonListDto: Lab[];
     totalElements: number;
   }> => {
-    try {
       const page = pageNo ?? 0;
-      const searchTerm = location || "";
-      
-      // Use the same pattern as other entities: POST to findFiltered{EntityName}
+      const searchTerm = location || null;
       const response = await api.post<{
         commonListDto: Lab[];
         totalElements: number;
       }>(`/location/findFilteredLocation/${searchTerm}/${page}`);
       return response.data;
-    } catch (error) {
-      console.log('getLabs error with findFilteredLocation, trying simple approach:', error);
-      
-      // Try a simpler endpoint pattern
-      try {
-        const response = await api.get<Lab[]>(`/location/findAll`);
-        const filteredData = location 
-          ? response.data.filter(lab => 
-              lab.location.toLowerCase().includes(location.toLowerCase())
-            )
-          : response.data;
-        
-        return {
-          commonListDto: filteredData,
-          totalElements: filteredData.length
-        };
-      } catch (fallbackError) {
-        console.log('Simple approach also failed, returning mock data:', fallbackError);
-        // Return mock data to avoid breaking the UI
-        return {
-          commonListDto: [
-            {
-              id: "1",
-              location: "Sample Location",
-              lab: ["Lab1", "Lab2", "Lab3"],
-              createdTime: new Date().toISOString(),
-              updatedTime: new Date().toISOString()
-            }
-          ],
-          totalElements: 1
-        };
-      }
-    }
   },
 
   createLab: async (data: {

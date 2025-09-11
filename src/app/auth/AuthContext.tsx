@@ -49,43 +49,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // First check user role to get expected role
-      const roleCheck = await authService.checkUserRole(email);
-      if (!roleCheck.exists) {
-        throw new Error('User not found');
-      }
-      
-      // Attempt login with credentials
       const response = await authService.login(email, password);
-      
-      // Validate that we got a proper response
-      if (!response.accessToken) {
-        throw new Error('Invalid credentials');
-      }
-      
       localStorage.setItem('token', response.accessToken);
-      
-      // Check if userId is valid before making findById call
-      if (response.userId && response.userId !== null) {
-        const userResponse = await authService.findById(response.userId);
-        localStorage.setItem('user', JSON.stringify(userResponse));
-        setUser(userResponse);
-      } else {
-        // Create user object with the correct role from role check
-        const userFromAuth = {
-          id: response.userId || 0,
-          name: response.userName || email.split('@')[0],
-          email: email,
-          role: roleCheck.role, // Use the actual role from role check
-          createdTime: new Date().toISOString(),
-          updatedTime: new Date().toISOString(),
-        };
-        localStorage.setItem('user', JSON.stringify(userFromAuth));
-        setUser(userFromAuth);
-      }
+      const userResponse = await authService.findById(response.userId);
+      localStorage.setItem('user', JSON.stringify(userResponse));
+      setUser(userResponse);
     } catch (error: any) {
-      setError(error.response?.data?.message || error.message || 'Login failed');
+      setError(error.response?.data?.message || 'Login failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -96,49 +66,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // OTP is for employees only, so we know the role
       const response = await authService.verifyOtp(email, otp);
-      
-      // Validate that we got a proper response
-      if (!response.accessToken) {
-        throw new Error('Invalid OTP');
-      }
-      
       localStorage.setItem('token', response.accessToken);
       
-      // Check if userId is valid before making findById call  
-      if (response.userId && response.userId !== null) {
-        try {
-          const userResponse = await authService.findById(response.userId);
-          localStorage.setItem('user', JSON.stringify(userResponse));
-          setUser(userResponse);
-        } catch (findError) {
-          // If findById fails, create employee user from auth response
-          const employeeUser: User = {
-            id: response.userId,
-            name: response.userName || email.split('@')[0],
-            email: email,
-            role: 'employee', // OTP login is always for employees
-            createdTime: new Date().toISOString(),
-            updatedTime: new Date().toISOString()
-          };
-          localStorage.setItem('user', JSON.stringify(employeeUser));
-          setUser(employeeUser);
-        }
-      } else {
-        // If no userId, create user from auth response  
-        const mockEmployeeUser: User = {
-          id: 0, // Default ID if not available
-          name: response.userName || email.split('@')[0],
-          email: email,
-          role: 'employee',
-          createdTime: new Date().toISOString(),
-          updatedTime: new Date().toISOString()
-        };
-        localStorage.setItem('user', JSON.stringify(mockEmployeeUser));
-        setUser(mockEmployeeUser);
-      }
+      // TODO: API - Get employee details after OTP verification
+      // GET /api/employees/{userId} or /api/auth/employee-profile
+      const mockEmployeeUser: User = {
+        id: response.userId,
+        name: response.userName || email.split('@')[0],
+        email: email,
+        role: 'employee',
+        createdTime: new Date().toISOString(),
+        updatedTime: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user', JSON.stringify(mockEmployeeUser));
+      setUser(mockEmployeeUser);
     } catch (error: any) {
       setError(error.message || 'OTP verification failed');
       throw error;

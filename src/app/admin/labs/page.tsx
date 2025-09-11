@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { labService } from "../../services/api";
-import { Lab } from "../../types";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { adminService, labService } from "../../services/api";
+import { DropDownDTO, Lab } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -23,43 +23,64 @@ import {
   ChevronsRight,
   Search,
   Pencil,
+  Minus,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 const PAGE_SIZE = 10;
 
+type FormState = {
+  location: string; // stores the "value" from DropDownDTO
+  labInputs: string[]; // dynamic input rows for labs
+};
+
+const emptyForm: FormState = {
+  location: "",
+  labInputs: [""],
+};
+
 const LabsPage: React.FC = () => {
   const locationInputRef = useRef<HTMLInputElement>(null);
+
   const [labs, setLabs] = useState<Lab[]>([]);
   const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0); // 0-based paging
+  const [currentPage, setCurrentPage] = useState(0); // 0-based
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [searchFilter, setSearchFilter] = useState<string>("");
-  const [searchInput, setSearchInput] = useState<string>("");
+
+  const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
-    location: "",
-    labString: "", // For display purposes
-  });
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const [searchFilter, setSearchFilter] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
-  // 1. FETCH LABS
+  const [locationOptions, setLocationOptions] = useState<DropDownDTO[]>([]);
+  const [form, setForm] = useState<FormState>(emptyForm);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    [total]
+  );
+
+  // ===== API: Fetch labs (with pagination + optional search) =====
   const fetchLabs = async (page = currentPage, search = searchFilter) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await labService.getLabs(page, search || undefined);
+      const result = await labService.getLabs(page, search);
       setLabs(result.commonListDto || []);
       setTotal(result.totalElements || 0);
     } catch (err: any) {
       console.error("Failed to fetch labs:", err);
-      if (err.message?.includes('Network Error') || err.message?.includes('CORS')) {
-        setError("Unable to connect to server. Please check if the backend server is running and CORS is properly configured.");
+      if (
+        err?.message?.includes("Network Error") ||
+        err?.message?.includes("CORS")
+      ) {
+        setError(
+          "Unable to connect to server. Please ensure the backend is running and CORS is configured."
+        );
       } else {
         setError("Failed to fetch labs. Please try again.");
       }
@@ -72,126 +93,148 @@ const LabsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLabs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchFilter]);
 
-  // 2. CREATE LAB
-  const handleCreateLab = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.location.trim() || !formData.labString.trim()) {
-      toast.error("Location and Labs are required");
-      return;
-    }
-    
-    // Convert comma-separated string to array
-    const labArray = formData.labString
-      .split(",")
-      .map(lab => lab.trim())
-      .filter(lab => lab.length > 0);
-    
-    if (labArray.length === 0) {
-      toast.error("At least one lab is required");
-      return;
-    }
-    
+  // ===== API: Lookup data =====
+  const fetchLookupData = async () => {
     try {
-      await labService.createLab({
-        location: formData.location,
-        lab: labArray,
-      });
-      setFormData({ location: "", labString: "" });
-      setShowCreateModal(false);
-      toast.success("Lab created successfully");
-      fetchLabs();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create lab");
+      const location = await adminService.getLookupItems("Location");
+      setLocationOptions(location || []);
+    } catch {
+      toast.error("Failed to load dropdown options.");
     }
   };
 
-  // 3. UPDATE LAB
-  const handleUpdateLab = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedLabId) return;
-    if (!formData.location.trim() || !formData.labString.trim()) {
-      toast.error("Location and Labs are required");
-      return;
-    }
-    
-    // Convert comma-separated string to array
-    const labArray = formData.labString
-      .split(",")
-      .map(lab => lab.trim())
-      .filter(lab => lab.length > 0);
-    
-    if (labArray.length === 0) {
-      toast.error("At least one lab is required");
-      return;
-    }
-    
-    try {
-      await labService.updateLab({
-        id: selectedLabId,
-        location: formData.location,
-        lab: labArray,
-      });
-      setShowCreateModal(false);
-      setFormData({ location: "", labString: "" });
-      setEditMode(false);
-      setSelectedLabId(null);
-      toast.success("Lab updated successfully");
-      fetchLabs();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update lab");
-    }
-  };
+  useEffect(() => {
+    fetchLookupData();
+  }, []);
 
-  // Reset Modal
-  const resetForm = () => {
-    setFormData({ location: "", labString: "" });
-    setShowCreateModal(false);
-    setEditMode(false);
-    setSelectedLabId(null);
-  };
-
-  // Search logic
+  // ===== Search =====
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchFilter(searchInput);
+    setSearchFilter(searchInput.trim());
     setCurrentPage(0);
   };
 
-  // For update: open modal, load lab data by id
-  const handleEditLab = async (labId: string) => {
+  // ===== Modal helpers =====
+  const openCreateModal = () => {
+    setEditMode(false);
+    setSelectedLabId(null);
+    setForm({ ...emptyForm });
+    setShowModal(true);
+
+    setTimeout(() => {
+      locationInputRef.current?.focus();
+    }, 100);
+  };
+
+  const openEditModal = async (labId: string) => {
     try {
       const lab = await labService.findLabById(labId);
-      setFormData({
+      setForm({
         location: lab.location || "",
-        labString: lab.lab.join(", ") || "",
+        labInputs: Array.isArray(lab.lab) && lab.lab.length ? lab.lab : [""],
       });
       setSelectedLabId(labId);
       setEditMode(true);
-      setShowCreateModal(true);
-      
-      // Focus on location input after modal opens
+      setShowModal(true);
+
       setTimeout(() => {
         locationInputRef.current?.focus();
       }, 100);
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to load lab details");
     }
   };
 
-  // Pagination
-  const handlePageChange = (page: number) => {
-    if (page >= 0 && page < totalPages) {
-      setCurrentPage(page);
+  const closeModal = () => {
+    setShowModal(false);
+    setEditMode(false);
+    setSelectedLabId(null);
+    setForm({ ...emptyForm });
+  };
+
+  // ===== Dynamic lab inputs =====
+  const addLabRow = () => {
+    setForm((prev) => ({ ...prev, labInputs: [...prev.labInputs, ""] }));
+  };
+
+  const removeLabRow = (index: number) => {
+    setForm((prev) => {
+      const next = [...prev.labInputs];
+      next.splice(index, 1);
+      return { ...prev, labInputs: next.length ? next : [""] };
+    });
+  };
+
+  const updateLabRow = (index: number, value: string) => {
+    setForm((prev) => {
+      const next = [...prev.labInputs];
+      next[index] = value;
+      return { ...prev, labInputs: next };
+    });
+  };
+
+  // ===== Create / Update =====
+  const validateAndBuildPayload = (): {
+    location: string;
+    lab: string[];
+  } | null => {
+    const location = form.location.trim();
+    const lab = form.labInputs.map((s) => s.trim()).filter(Boolean);
+
+    if (!location) {
+      toast.error("Location is required");
+      return null;
+    }
+    if (!lab.length) {
+      toast.error("Add at least one lab");
+      return null;
+    }
+    return { location, lab };
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = validateAndBuildPayload();
+    if (!payload) return;
+
+    try {
+      await labService.createLab(payload);
+      toast.success("Lab created successfully");
+      closeModal();
+      fetchLabs();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to create lab");
     }
   };
 
-  // Generate page numbers for pagination
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLabId) return;
+    const payload = validateAndBuildPayload();
+    if (!payload) return;
+
+    try {
+      await labService.updateLab({ id: selectedLabId, ...payload });
+      toast.success("Lab updated successfully");
+      closeModal();
+      fetchLabs();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update lab");
+    }
+  };
+
+  // ===== Pagination =====
+  const handlePageChange = (page: number) => {
+    if (page >= 0 && page < totalPages) setCurrentPage(page);
+  };
+
   const generatePageNumbers = () => {
     const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
+    const range: Array<number> = [];
+    const out: Array<number | string> = [];
 
     for (
       let i = Math.max(2, currentPage + 1 - delta);
@@ -202,22 +245,23 @@ const LabsPage: React.FC = () => {
     }
 
     if (currentPage + 1 - delta > 2) {
-      rangeWithDots.push(1, "...");
+      out.push(1, "...");
     } else {
-      rangeWithDots.push(1);
+      out.push(1);
     }
 
-    rangeWithDots.push(...range);
+    out.push(...range);
 
     if (currentPage + 1 + delta < totalPages - 1) {
-      rangeWithDots.push("...", totalPages);
-    } else {
-      rangeWithDots.push(totalPages);
+      out.push("...", totalPages);
+    } else if (totalPages > 1) {
+      out.push(totalPages);
     }
 
-    return rangeWithDots;
+    return out;
   };
 
+  // ===== Loading state (first load) =====
   if (loading && labs.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -227,59 +271,30 @@ const LabsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Manage Labs</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage laboratory locations and assignments
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditMode(false);
-            setShowCreateModal(true);
-            setTimeout(() => {
-              locationInputRef.current?.focus();
-            }, 100);
-          }}
-          className="flex items-center gap-2"
-        >
+        <form onSubmit={handleSearchSubmit}  className="flex items-center gap-2">
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by location..."
+              className="w-64"
+            />
+          </div>
+        </form>
+        <Button onClick={openCreateModal} className="flex items-center gap-2">
           <Plus size={16} />
           Add New Lab
         </Button>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <form onSubmit={handleSearchSubmit} className="flex gap-4">
-            <div className="flex-1">
-              <Input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by location..."
-                className="w-full"
-              />
-            </div>
-            <Button type="submit" variant="outline">
-              <Search size={16} className="mr-2" />
-              Search
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Labs Table */}
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              <MapPin size={20} className="text-muted-foreground" />
-              <span className="font-medium">Labs</span>
-            </div>
+          <div className="flex items-center justify-between px-4 py-2">
             <div className="text-sm text-muted-foreground">
               Showing {labs.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
               {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} labs
@@ -313,23 +328,32 @@ const LabsPage: React.FC = () => {
                         size="sm"
                         variant="ghost"
                         className="p-1 hover:bg-transparent hover:text-primary"
-                        onClick={() => handleEditLab(lab.id)}
+                        onClick={() => openEditModal(lab.id)}
+                        aria-label={`Edit ${lab.location}`}
                       >
                         <Pencil size={14} />
                       </Button>
                     </TableCell>
-                    <TableCell className="font-medium">{lab.location}</TableCell>
+                    <TableCell className="font-medium">
+                      {lab.location}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {lab.lab.map((labName, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                          >
-                            {labName}
-                          </span>
-                        ))}
-                      </div>
+                      {Array.isArray(lab.lab) && lab.lab.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {lab.lab.map((name, idx) => (
+                            <span
+                              key={`${lab.id}-${idx}-${name}`}
+                              className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                            >
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          No labs
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {lab.createdTime}
@@ -372,24 +396,26 @@ const LabsPage: React.FC = () => {
                 >
                   <ChevronLeft size={16} />
                 </Button>
-                {generatePageNumbers().map((page, index) => (
-                  <React.Fragment key={index}>
-                    {page === "..." ? (
-                      <span className="px-2 text-muted-foreground">...</span>
-                    ) : (
-                      <Button
-                        variant={
-                          page === currentPage + 1 ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => handlePageChange((page as number) - 1)}
-                        className="min-w-[32px] px-2"
-                      >
-                        {page}
-                      </Button>
-                    )}
-                  </React.Fragment>
-                ))}
+                {generatePageNumbers().map((p, i) =>
+                  p === "..." ? (
+                    <span
+                      key={`dots-${i}`}
+                      className="px-2 text-muted-foreground"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <Button
+                      key={`page-${p}`}
+                      variant={p === currentPage + 1 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange((p as number) - 1)}
+                      className="min-w-[32px] px-2"
+                    >
+                      {p}
+                    </Button>
+                  )
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -414,54 +440,104 @@ const LabsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Create/Edit Lab Modal */}
-      {showCreateModal && (
+      {/* Create / Edit Modal */}
+      {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card rounded-lg p-6 w-full max-w-md border border-border">
             <h2 className="text-xl font-semibold mb-4">
               {editMode ? "Update Lab" : "Create New Lab"}
             </h2>
+
             <form
-              onSubmit={editMode ? handleUpdateLab : handleCreateLab}
+              onSubmit={editMode ? handleUpdate : handleCreate}
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label
+                  className="block text-sm font-medium mb-2"
+                  htmlFor="location"
+                >
                   Location
                 </label>
-                <Input
-                  id="location"
-                  ref={locationInputRef}
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
+                <SearchableDropdown
+                  options={locationOptions}
+                  value={
+                    locationOptions.find((opt) => opt.value === form.location)
+                      ?.id
                   }
-                  placeholder="Enter location name"
-                  required
+                  onChange={(id) => {
+                    const selected = locationOptions.find((o) => o.id === id);
+                    setForm((prev) => ({
+                      ...prev,
+                      location: selected?.value ?? "",
+                    }));
+                  }}
+                  placeholder="Select Location"
+                  displayFullValue={false}
+                  isEmployeePage={true}
                 />
+                <input ref={locationInputRef} className="sr-only" aria-hidden />
               </div>
+
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Labs (comma-separated)
-                </label>
-                <Input
-                  id="labs"
-                  type="text"
-                  value={formData.labString}
-                  onChange={(e) =>
-                    setFormData({ ...formData, labString: e.target.value })
-                  }
-                  placeholder="Lab1, Lab2, Lab3..."
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter lab names separated by commas
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">Labs</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addLabRow}
+                    className="h-8 px-2"
+                    aria-label="Add lab row"
+                  >
+                    <Plus size={16} />
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {form.labInputs.map((value, idx) => (
+                    <div
+                      key={`lab-row-${idx}`}
+                      className="flex items-center gap-2"
+                    >
+                      <Input
+                        type="text"
+                        value={value}
+                        onChange={(e) => updateLabRow(idx, e.target.value)}
+                        placeholder={`Lab ${idx + 1}`}
+                        required={idx === 0}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeLabRow(idx)}
+                        className="h-8 px-2"
+                        aria-label={`Remove lab row ${idx + 1}`}
+                        disabled={form.labInputs.length === 1}
+                        title={
+                          form.labInputs.length === 1
+                            ? "At least one lab is required"
+                            : "Remove"
+                        }
+                      >
+                        <Minus size={16} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  Click <span className="font-semibold">+</span> to add another
+                  lab row, and <span className="font-semibold">–</span> to
+                  remove a row.
                 </p>
               </div>
 
+              {/* Actions */}
               <div className="flex justify-end gap-2 mt-6">
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button type="button" variant="outline" onClick={closeModal}>
                   Cancel
                 </Button>
                 <Button type="submit">
