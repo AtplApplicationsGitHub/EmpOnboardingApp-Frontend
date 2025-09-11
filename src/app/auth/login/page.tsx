@@ -103,9 +103,16 @@ const LoginPage: React.FC = () => {
   const onPasswordSubmit = async (data: PasswordFormInputs) => {
     try {
       setLoginError(null);
+      
+      // Basic client-side validation
+      if (!data.password || data.password.trim().length < 1) {
+        setLoginError('Password is required');
+        return;
+      }
+      
       await login(userEmail, data.password);
     } catch (error: any) {
-      setLoginError(error.response?.data?.message || error.message || 'Login failed');
+      setLoginError(error.response?.data?.message || error.message || 'Invalid email or password');
     }
   };
 

@@ -13,7 +13,9 @@ import {
   UserPlus,
   Settings,
   ClipboardListIcon,
-  ScrollText
+  ScrollText,
+  MapPin,
+  FlaskConical,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -76,6 +78,18 @@ const Navbar: React.FC = () => {
                   <span>Manage Groups</span>
                 </Link>{" "}
                 <Link
+                  href="/admin/labs"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/labs"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  <span>Manage Labs</span>
+                </Link>
+                <Link
                   href="/admin/employees"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -99,7 +113,7 @@ const Navbar: React.FC = () => {
                   <ClipboardListIcon className="h-4 w-4" />
                   <span>Manage Tasks</span>
                 </Link>
-                 <Link
+                <Link
                   href="/admin/users"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -179,6 +193,18 @@ const Navbar: React.FC = () => {
                   <ClipboardListIcon className="h-4 w-4" />
                   <span>My Tasks</span>
                 </Link>
+                <Link
+                  href="/employee/questions"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/employee/questions"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ClipboardListIcon className="h-4 w-4" />
+                  <span>My Questions</span>
+                </Link>
               </>
             )}
           </div>
@@ -192,7 +218,11 @@ const Navbar: React.FC = () => {
                 {user.name}
               </span>
               <span className="text-xs text-muted-foreground">
-                {user.role === "admin" ? "Administrator" : user.role === "group_lead" ? "Group Lead" : "Employee"}
+                {user.role === "admin"
+                  ? "Administrator"
+                  : user.role === "group_lead"
+                  ? "Group Lead"
+                  : "Employee"}
               </span>
             </div>
             <ThemeToggle />

@@ -38,7 +38,7 @@ const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [allQuestions, setAllQuestions] = useState<EmployeeQuestion[]>([]);
-  const [loading, setLoading] = useState(false); // Start with false since we don't auto-fetch anymore
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<EmployeeQuestion | null>(null);
