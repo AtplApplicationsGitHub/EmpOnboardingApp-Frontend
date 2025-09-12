@@ -221,7 +221,7 @@ const EmployeeQuestionsPage: React.FC = () => {
                             onBlur={(e) => {
                               const newVal = e.target.value.trim();
                               if (saving) return;
-                              if (newVal === saved) return; // compare to SAVED baseline
+                              if (newVal === saved) return;
                               void saveQuestionResponse(q, newVal);
                             }}
                             disabled={saving}
@@ -249,7 +249,7 @@ const EmployeeQuestionsPage: React.FC = () => {
                                     disabled={saving}
                                     onClick={() => {
                                       onChangeDraft(key, "YES");
-                                      void saveQuestionResponse(q, "YES"); // send canonical
+                                      void saveQuestionResponse(q, "YES"); 
                                     }}
                                   >
                                     Yes
