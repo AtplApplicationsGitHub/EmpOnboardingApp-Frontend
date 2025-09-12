@@ -8,7 +8,7 @@ RUN npm run build
 
 # Stage 2: Final image with nginx and Next.js
 FROM nginx:1.27-alpine
-#RUN apk add --no-cache nodejs npm dumb-init
+RUN apk add --no-cache nodejs npm dumb-init
 WORKDIR /app
 COPY --from=builder /app /app
 COPY nginx.conf /etc/nginx/nginx.conf
