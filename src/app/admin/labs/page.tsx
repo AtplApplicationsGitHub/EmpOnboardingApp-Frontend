@@ -480,7 +480,7 @@ const LabsPage: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <label className="block text-sm font-medium">Labs</label>
                   <Button
                     type="button"
