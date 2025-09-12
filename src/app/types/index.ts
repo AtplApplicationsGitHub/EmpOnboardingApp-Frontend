@@ -4,7 +4,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: "admin" | "group_lead"| "employee";
+  role: "admin" | "group_lead" | "employee";
   createdTime: string;
   updatedTime: string;
 }
@@ -74,7 +74,7 @@ export interface EmployeeFeedback {
   star: number;
   taskId: string;
   completed: boolean;
-  }
+}
 
 export interface Question {
   id: number;
@@ -88,6 +88,13 @@ export interface Question {
   createdTime: string;
   updatedTime: string;
   defaultFlag?: "yes" | "no";
+}
+
+export interface GLDashboard {
+  totalEmployees: number;
+  totalPendingTasks: number;
+  totalCompletedTasks: number;
+  overdueTasks: number;
 }
 
 export interface Task {
@@ -116,7 +123,7 @@ export interface Task {
   feedback?: string;
   createdTime: string;
   updatedTime: string;
-  
+
   // Additional fields that might come from API
   mock_employee_id?: string;
   mock_employee_name?: string;
@@ -125,11 +132,11 @@ export interface Task {
 }
 
 export interface EmployeeQuestions {
-  id:number;
-  question:string;
-  responseType:string;
-  response:string;
-  completedFlag:boolean;
+  id: number;
+  question: string;
+  responseType: string;
+  response: string;
+  completedFlag: boolean;
 }
 
 export interface TaskQuestions {
@@ -153,7 +160,7 @@ export interface TaskProjection {
   completedQuetions: number;
   pendingQuetions: number;
   status: string;
-  freeze:string
+  freeze: string;
   doj: string;
   lab: string;
 }
@@ -283,13 +290,12 @@ export interface AuditSearchRequest {
   userId: number;
 }
 
-
 export interface AuditRecord {
   loginUserId: number;
   loginUserName: string;
   event: string;
   ipAddress: string;
-  createdTime: string;  
+  createdTime: string;
   fromDate: string;
   toDate: string;
   systemRemarks: string;
