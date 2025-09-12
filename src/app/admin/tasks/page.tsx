@@ -64,7 +64,6 @@ const TasksPage: React.FC = () => {
       const search = searchFilter.trim();
       if (search) params.search = search;
       const response = await taskService.getTask(params);
-      console.log("Fetched tasks:", response);
       const taskList = response.commonListDto.content ?? [];
       setTasks(taskList);
       setTotalElements(response.totalElements ?? 0);
@@ -130,30 +129,6 @@ const TasksPage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete group");
     }
-  };
-
-  const shouldShowFreeze = (
-    task: {
-      employeeId?: string | number | null;
-      status?: string | null;
-      freeze?: string | null;
-      lab?: string | null;
-    },
-    employeesWithQuestions: Set<string | number>
-  ) => {
-    const idNum = Number(task.employeeId);
-    const hasEmployee =
-      Number.isFinite(idNum) &&
-      (employeesWithQuestions.has(idNum) ||
-        employeesWithQuestions.has(String(idNum)));
-
-    const isCompleted =
-      (task.status ?? "").toString().trim().toLowerCase() === "completed";
-    const isNotFrozen =
-      (task.freeze ?? "").toString().trim().toUpperCase() === "N";
-    const hasLab = (task.lab ?? "").toString().trim().length > 0;
-
-    return hasEmployee && isCompleted && isNotFrozen && hasLab;
   };
 
   const ProgressBar: React.FC<{ value: number; color: string }> = ({
@@ -360,7 +335,9 @@ const TasksPage: React.FC = () => {
                         </Button>
 
                         {/* View Answers button - only show for employees who have questions assigned */}
-                       {shouldShowFreeze(task, employeesWithQuestions) && (
+                        {employeesWithQuestions.has(
+                          parseInt(task.employeeId, 10)
+                        ) && (
                           <Button
                             variant="outline"
                             size="icon"
@@ -377,10 +354,7 @@ const TasksPage: React.FC = () => {
                           </Button>
                         )}
 
-                        {employeesWithQuestions.has(
-                          parseInt(task.employeeId, 10)
-                        ) &&
-                          task.status?.toLowerCase() === "completed" &&
+                        {task.status?.toLowerCase() === "completed" &&
                           task.freeze === "N" &&
                           (task.lab ?? "").toString().trim() !== "" && (
                             <Button
