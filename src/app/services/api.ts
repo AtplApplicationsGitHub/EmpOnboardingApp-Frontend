@@ -15,10 +15,11 @@ import {
   EmployeeTaskResponse,
   EmployeeFeedback,
   EmployeeQuestions,
-  MultiSelectDropDownDTO, 
-  AuditSearchRequest, 
+  MultiSelectDropDownDTO,
+  AuditSearchRequest,
   AuditRecord,
-  Lab
+  Lab,
+  GLDashboard,
 } from "../types";
 import { group } from "console";
 
@@ -27,8 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "http://localhost:8084/api", 
-    // baseURL: "https://employee.onboarding.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "http://localhost:8084/api",
+  // baseURL: "https://employee.onboarding.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -75,47 +76,47 @@ export const authService = {
         signInId: email,
         password,
       });
-      
-      console.log('Login response:', response.data); // Debug log
-      
+
+      console.log("Login response:", response.data); // Debug log
+
       // Validate response structure
       if (!response.data) {
-        throw new Error('Invalid response from server');
+        throw new Error("Invalid response from server");
       }
-      
+
       const data = response.data;
-      
+
       // Check if login was actually successful
       if (data.success === false) {
-        throw new Error(data.message || 'Invalid credentials');
+        throw new Error(data.message || "Invalid credentials");
       }
-      
+
       const accessToken = data.accessToken || data.token;
       if (!accessToken) {
-        throw new Error('Invalid credentials - no access token received');
+        throw new Error("Invalid credentials - no access token received");
       }
-      
+
       return {
         accessToken: accessToken,
         userName: data.userName,
         userId: data.userId,
         success: data.success || true,
-        message: data.message || 'Login successful',
+        message: data.message || "Login successful",
         loginAttemptCount: data.loginAttemptCount || 1,
-        newUser: data.newUser || false
+        newUser: data.newUser || false,
       };
     } catch (error: any) {
-      console.error('Login error:', error); // Debug log
+      console.error("Login error:", error); // Debug log
       if (error.response?.status === 401) {
-        throw new Error('Invalid email or password');
+        throw new Error("Invalid email or password");
       } else if (error.response?.status === 403) {
-        throw new Error('Account access denied');
+        throw new Error("Account access denied");
       } else if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       } else if (error.message) {
         throw error; // Re-throw our custom errors
       } else {
-        throw new Error('Login failed. Please check your credentials.');
+        throw new Error("Login failed. Please check your credentials.");
       }
     }
   },
@@ -298,7 +299,6 @@ export const adminService = {
     questionDepartment: string[];
     groupId: string;
     defaultFlag?: "yes" | "no";
-
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
     return response.data;
@@ -311,7 +311,6 @@ export const adminService = {
     complainceDay?: string;
     questionLevel?: string[];
     defaultFlag?: "yes" | "no";
-
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
@@ -633,13 +632,13 @@ export const labService = {
     commonListDto: Lab[];
     totalElements: number;
   }> => {
-      const page = pageNo ?? 0;
-      const searchTerm = location || null;
-      const response = await api.post<{
-        commonListDto: Lab[];
-        totalElements: number;
-      }>(`/location/findFilteredLocation/${searchTerm}/${page}`);
-      return response.data;
+    const page = pageNo ?? 0;
+    const searchTerm = location || null;
+    const response = await api.post<{
+      commonListDto: Lab[];
+      totalElements: number;
+    }>(`/location/findFilteredLocation/${searchTerm}/${page}`);
+    return response.data;
   },
 
   createLab: async (data: {
@@ -726,27 +725,25 @@ export const auditService = {
   },
 
   getUserByName: async (): Promise<MultiSelectDropDownDTO[]> => {
-    const response = await api.get<MultiSelectDropDownDTO[]>(`/audit/getUserByName`);
+    const response = await api.get<MultiSelectDropDownDTO[]>(
+      `/audit/getUserByName`
+    );
     return response.data;
   },
 
-
- findFilteredData: async (
-  pageNo: number,
-  searchParams: AuditSearchRequest
-): Promise<{
+  findFilteredData: async (
+    pageNo: number,
+    searchParams: AuditSearchRequest
+  ): Promise<{
     commonListDto: AuditRecord[];
     totalElements: number;
   }> => {
-  const response = await api.post<{
-    commonListDto: AuditRecord[];
-    totalElements: number;
-  }>(
-    `/audit/findFilteredData/${pageNo}`,
-    searchParams
-  );
-  return response.data;
-},
+    const response = await api.post<{
+      commonListDto: AuditRecord[];
+      totalElements: number;
+    }>(`/audit/findFilteredData/${pageNo}`, searchParams);
+    return response.data;
+  },
 };
 
 // Task Management
@@ -785,6 +782,10 @@ export const taskService = {
     }>(`/task/findFilteredTask/${search}/${page}`);
     return response.data;
   },
+  getDashboardForGL: async (): Promise<GLDashboard> => {
+    const response = await api.get<GLDashboard>(`/task/taskCountForGL`);
+    return response.data;
+  },
 
   getTaskById: async (id?: string): Promise<Task[]> => {
     const response = await api.get<Task[]>(`/task/findById/${id}`);
@@ -821,15 +822,15 @@ export const taskService = {
   },
 
   getDateFormat: async (): Promise<string> => {
-  try {
-    const response = await api.get('/employee/getConstant/DateFormat');
-    return response.data as string;
-  } catch (error) {
-    console.error("Failed to fetch date format:", error);
-    // fallback
-    return "dd-MM-yyyy";
-  }
-}
+    try {
+      const response = await api.get("/employee/getConstant/DateFormat");
+      return response.data as string;
+    } catch (error) {
+      console.error("Failed to fetch date format:", error);
+      // fallback
+      return "dd-MM-yyyy";
+    }
+  },
 };
 
 // Helper function to convert TaskProjection to Task
