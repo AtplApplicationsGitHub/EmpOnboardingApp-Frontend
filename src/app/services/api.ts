@@ -17,7 +17,8 @@ import {
   EmployeeQuestions,
   MultiSelectDropDownDTO, 
   AuditSearchRequest, 
-  AuditRecord
+  AuditRecord,
+  Lab
 } from "../types";
 import { group } from "console";
 
@@ -26,8 +27,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://employee.onboarding.goval.app:8084/api", // PRODUCTION
-  // baseURL: "http://localhost:8084/api", // LOCAL DEVELOPMENT - DO NOT COMMIT
+  baseURL: "http://localhost:8084/api", 
+    // baseURL: "https://employee.onboarding.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -69,11 +70,54 @@ api.interceptors.response.use(
 // Authentication Services
 export const authService = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>("/auth/signin", {
-      signInId: email,
-      password,
-    });
-    return response.data;
+    try {
+      const response = await api.post("/auth/signin", {
+        signInId: email,
+        password,
+      });
+      
+      console.log('Login response:', response.data); // Debug log
+      
+      // Validate response structure
+      if (!response.data) {
+        throw new Error('Invalid response from server');
+      }
+      
+      const data = response.data;
+      
+      // Check if login was actually successful
+      if (data.success === false) {
+        throw new Error(data.message || 'Invalid credentials');
+      }
+      
+      const accessToken = data.accessToken || data.token;
+      if (!accessToken) {
+        throw new Error('Invalid credentials - no access token received');
+      }
+      
+      return {
+        accessToken: accessToken,
+        userName: data.userName,
+        userId: data.userId,
+        success: data.success || true,
+        message: data.message || 'Login successful',
+        loginAttemptCount: data.loginAttemptCount || 1,
+        newUser: data.newUser || false
+      };
+    } catch (error: any) {
+      console.error('Login error:', error); // Debug log
+      if (error.response?.status === 401) {
+        throw new Error('Invalid email or password');
+      } else if (error.response?.status === 403) {
+        throw new Error('Account access denied');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw error; // Re-throw our custom errors
+      } else {
+        throw new Error('Login failed. Please check your credentials.');
+      }
+    }
   },
 
   checkUserRole: async (
@@ -146,7 +190,7 @@ export const authService = {
       const response = await api.post("/auth/employeeSignIn", requestBody);
       const data = response.data;
 
-      if (data?.success) {
+      if (data?.success && (data.accessToken || data.token)) {
         return {
           accessToken: data.accessToken || data.token,
           userName: data.userName || normalizedEmail.split("@")[0],
@@ -161,7 +205,13 @@ export const authService = {
       }
     } catch (error: any) {
       console.error("OTP verification failed:", error);
-      throw new Error("Invalid OTP. Please check the code and try again.");
+      if (error.response?.status === 401) {
+        throw new Error("Invalid or expired OTP");
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error("Invalid OTP. Please check the code and try again.");
+      }
     }
   },
 
@@ -570,6 +620,54 @@ export const adminService = {
         },
       }
     );
+    return response.data;
+  },
+};
+
+// Lab Services
+export const labService = {
+  getLabs: async (
+    pageNo: number,
+    location?: string
+  ): Promise<{
+    commonListDto: Lab[];
+    totalElements: number;
+  }> => {
+      const page = pageNo ?? 0;
+      const searchTerm = location || null;
+      const response = await api.post<{
+        commonListDto: Lab[];
+        totalElements: number;
+      }>(`/location/findFilteredLocation/${searchTerm}/${page}`);
+      return response.data;
+  },
+
+  createLab: async (data: {
+    location: string;
+    lab: string[];
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>("/location/saveLocation", {
+      location: data.location,
+      lab: data.lab,
+    });
+    return response.data;
+  },
+
+  findLabById: async (id: string): Promise<Lab> => {
+    const response = await api.get<Lab>(`/location/findById/${id}`);
+    return response.data;
+  },
+
+  updateLab: async (data: {
+    id: string;
+    location: string;
+    lab: string[];
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>("/location/saveLocation", {
+      id: data.id,
+      location: data.location,
+      lab: data.lab,
+    });
     return response.data;
   },
 };

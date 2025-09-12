@@ -184,6 +184,7 @@ const GroupsPage: React.FC = () => {
     if(!group) return;
     try {
     await adminService.cloneGroup(group);
+    await fetchPage(0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to clone group");
     }

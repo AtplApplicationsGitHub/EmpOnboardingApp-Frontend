@@ -44,7 +44,9 @@ const TasksPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
+  const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
+    Set<number>
+  >(new Set());
   const [dateFormat, setDateFormat] = useState<string | null>(null);
 
   const totalPages = useMemo(
@@ -62,13 +64,15 @@ const TasksPage: React.FC = () => {
       const search = searchFilter.trim();
       if (search) params.search = search;
       const response = await taskService.getTask(params);
+      console.log("Fetched tasks:", response);
       const taskList = response.commonListDto.content ?? [];
       setTasks(taskList);
       setTotalElements(response.totalElements ?? 0);
-      
+
       // Get list of employees who have questions assigned (from employee_question table)
       try {
-        const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
+        const employeesWithQuestionsArray =
+          await EQuestions.getEmployeesWithQuestions();
         setEmployeesWithQuestions(new Set(employeesWithQuestionsArray));
       } catch (error) {
         console.error("Error fetching employees with questions:", error);
@@ -128,7 +132,34 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const ProgressBar: React.FC<{ value: number; color: string }> = ({ value, color }) => (
+  const shouldShowFreeze = (
+    task: {
+      employeeId?: string | number | null;
+      status?: string | null;
+      freeze?: string | null;
+      lab?: string | null;
+    },
+    employeesWithQuestions: Set<string | number>
+  ) => {
+    const idNum = Number(task.employeeId);
+    const hasEmployee =
+      Number.isFinite(idNum) &&
+      (employeesWithQuestions.has(idNum) ||
+        employeesWithQuestions.has(String(idNum)));
+
+    const isCompleted =
+      (task.status ?? "").toString().trim().toLowerCase() === "completed";
+    const isNotFrozen =
+      (task.freeze ?? "").toString().trim().toUpperCase() === "N";
+    const hasLab = (task.lab ?? "").toString().trim().length > 0;
+
+    return hasEmployee && isCompleted && isNotFrozen && hasLab;
+  };
+
+  const ProgressBar: React.FC<{ value: number; color: string }> = ({
+    value,
+    color,
+  }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
         className={`h-full ${color}`}
@@ -136,8 +167,6 @@ const TasksPage: React.FC = () => {
       />
     </div>
   );
-
-
 
   return (
     <div className="p-8 space-y-6">
@@ -216,7 +245,9 @@ const TasksPage: React.FC = () => {
                   }
 
                   return (
-                    <TableRow key={(task as any).id ?? (task as any).employeeId}>
+                    <TableRow
+                      key={(task as any).id ?? (task as any).employeeId}
+                    >
                       {/* Employee Name */}
                       <TableCell className="font-semibold min-w-[150px]">
                         {(task as any).name}
@@ -238,9 +269,17 @@ const TasksPage: React.FC = () => {
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const dojArray = (task as any).doj;
-                          if (Array.isArray(dojArray) && dateFormat && dojArray.length >= 3) {
+                          if (
+                            Array.isArray(dojArray) &&
+                            dateFormat &&
+                            dojArray.length >= 3
+                          ) {
                             try {
-                              const dateObject = new Date(dojArray[0], dojArray[1] - 1, dojArray[2]);
+                              const dateObject = new Date(
+                                dojArray[0],
+                                dojArray[1] - 1,
+                                dojArray[2]
+                              );
                               if (isNaN(dateObject.getTime())) {
                                 return "Invalid Date";
                               }
@@ -253,7 +292,9 @@ const TasksPage: React.FC = () => {
                         })()}
                       </TableCell>
                       {/* Lab */}
-                      <TableCell className="min-w-[80px]">{(task as any).lab}</TableCell>
+                      <TableCell className="min-w-[80px]">
+                        {(task as any).lab}
+                      </TableCell>
                       {/* Progress */}
                       <TableCell className="min-w-[120px]">
                         <div className="flex flex-col gap-2">
@@ -272,11 +313,14 @@ const TasksPage: React.FC = () => {
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
-                          const base = "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                          const base =
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
 
                           if (status === "overdue") {
                             return (
-                              <span className={`${base} bg-red-600/20 text-red-600`}>
+                              <span
+                                className={`${base} bg-red-600/20 text-red-600`}
+                              >
                                 Overdue
                               </span>
                             );
@@ -284,14 +328,18 @@ const TasksPage: React.FC = () => {
 
                           if (status === "completed") {
                             return (
-                              <span className={`${base} bg-green-600/20 text-green-600`}>
+                              <span
+                                className={`${base} bg-green-600/20 text-green-600`}
+                              >
                                 Completed
                               </span>
                             );
                           }
 
                           return (
-                            <span className={`${base} bg-amber-500/20 text-amber-600`}>
+                            <span
+                              className={`${base} bg-amber-500/20 text-amber-600`}
+                            >
                               In Progress
                             </span>
                           );
@@ -303,21 +351,23 @@ const TasksPage: React.FC = () => {
                           variant="outline"
                           size="icon"
                           className="rounded-lg"
-                          onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
+                          onClick={() =>
+                            (window.location.href = `/admin/tasks/${task.taskIds}`)
+                          }
                           aria-label="View details"
                         >
                           <Eye size={16} />
                         </Button>
 
                         {/* View Answers button - only show for employees who have questions assigned */}
-                        {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
+                       {shouldShowFreeze(task, employeesWithQuestions) && (
                           <Button
                             variant="outline"
                             size="icon"
                             className="rounded-lg ml-2"
                             onClick={() => {
                               // Use the first task ID from the comma-separated list
-                              const firstTaskId = task.taskIds.split(',')[0];
+                              const firstTaskId = task.taskIds.split(",")[0];
                               window.location.href = `/admin/tasks/answers/${firstTaskId}`;
                             }}
                             aria-label="View answers"
@@ -327,10 +377,12 @@ const TasksPage: React.FC = () => {
                           </Button>
                         )}
 
-                        {employeesWithQuestions.has(parseInt(task.employeeId, 10)) &&
+                        {employeesWithQuestions.has(
+                          parseInt(task.employeeId, 10)
+                        ) &&
                           task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" && 
-                          ((task.lab ?? '').toString().trim() !== '') && (
+                          task.freeze === "N" &&
+                          (task.lab ?? "").toString().trim() !== "" && (
                             <Button
                               variant="outline"
                               size="icon"
