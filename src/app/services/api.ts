@@ -28,8 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "http://localhost:8084/api",
-  baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "http://localhost:8084/api",
+  // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -371,12 +371,20 @@ export const adminService = {
 
   // LookUp
 
+  getLab: async (dep: string): Promise<String[]> => {
+    const response = await api.get<String[]>(
+      `/location/findByDepartment/${dep}`
+    );
+    return response.data;
+  },
+
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/lookup/getCategoryItemByName/${type}`
     );
     return response.data;
   },
+
 
   // New admin reassignment methods
   reassignTaskToUser: async (
