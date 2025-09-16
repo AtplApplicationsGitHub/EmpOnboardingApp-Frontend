@@ -46,6 +46,7 @@ const TaskAnswersPage: React.FC = () => {
         }
 
         const response = await EQuestions.getQuestionsByTask(taskId);
+        console.log("Fetched questions:", response); // Debug log
         setQuestions(response);
       } catch (err: any) {
         console.error("Error fetching task answers:", err);
@@ -59,6 +60,11 @@ const TaskAnswersPage: React.FC = () => {
       fetchTaskAnswers();
     }
   }, [taskId]);
+
+  const completedQuestions = questions.filter(question => 
+    question.completedFlag === true
+  ).length;
+  const totalQuestions = questions.length;
 
   if (loading) {
     return (
@@ -141,8 +147,20 @@ const TaskAnswersPage: React.FC = () => {
 
       {/* Questions Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-gray-100">Questions and Responses</CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-gray-900 dark:text-gray-100">
+              Questions and Responses
+            </CardTitle>
+            <div className="text-center">
+              <div className="text-3xl font-bold">
+                {completedQuestions}/{totalQuestions}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Questions
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

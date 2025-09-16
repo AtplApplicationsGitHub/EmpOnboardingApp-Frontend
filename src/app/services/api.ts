@@ -251,6 +251,7 @@ export const adminService = {
     name: string;
     pgLead?: number;
     egLead?: number;
+     autoAssign?: boolean;
   }): Promise<Group> => {
     const response = await api.post<Group>("/group/saveGroup", data);
     return response.data;
@@ -266,6 +267,7 @@ export const adminService = {
     name: string;
     pgLead?: number;
     egLead?: number;
+     autoAssign?: boolean;
   }): Promise<Group> => {
     const response = await api.post<Group>(`/group/updateGroup`, data);
     return response.data;
@@ -368,12 +370,20 @@ export const adminService = {
 
   // LookUp
 
+  getLab: async (dep: string): Promise<String[]> => {
+    const response = await api.get<String[]>(
+      `/location/findByDepartment/${dep}`
+    );
+    return response.data;
+  },
+
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/lookup/getCategoryItemByName/${type}`
     );
     return response.data;
   },
+
 
   // New admin reassignment methods
   reassignTaskToUser: async (

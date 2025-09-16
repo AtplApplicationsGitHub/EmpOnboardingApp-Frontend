@@ -99,7 +99,7 @@ const LabsPage: React.FC = () => {
   // ===== API: Lookup data =====
   const fetchLookupData = async () => {
     try {
-      const location = await adminService.getLookupItems("Location");
+      const location = await adminService.getLookupItems("Department");
       setLocationOptions(location || []);
     } catch {
       toast.error("Failed to load dropdown options.");
@@ -280,7 +280,7 @@ const LabsPage: React.FC = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by location..."
+              placeholder="Search by department..."
               className="w-64"
             />
           </div>
@@ -304,7 +304,7 @@ const LabsPage: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Lab</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Updated</TableHead>
@@ -324,7 +324,7 @@ const LabsPage: React.FC = () => {
                 labs.map((lab) => (
                   <TableRow key={lab.id}>
                     <TableCell className="flex items-center gap-2">
-                      <Button
+                      {/* <Button
                         size="sm"
                         variant="ghost"
                         className="p-1 hover:bg-transparent hover:text-primary"
@@ -332,7 +332,7 @@ const LabsPage: React.FC = () => {
                         aria-label={`Edit ${lab.location}`}
                       >
                         <Pencil size={14} />
-                      </Button>
+                      </Button> */}
                     </TableCell>
                     <TableCell className="font-medium">
                       {lab.location}
@@ -457,7 +457,7 @@ const LabsPage: React.FC = () => {
                   className="block text-sm font-medium mb-2"
                   htmlFor="location"
                 >
-                  Location
+                  Department
                 </label>
                 <SearchableDropdown
                   options={locationOptions}

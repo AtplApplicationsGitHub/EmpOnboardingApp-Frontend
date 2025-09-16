@@ -35,12 +35,16 @@ const LoginPage: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [otpMessage, setOtpMessage] = useState<string>('');
+   const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
+    const [isResendDisabled, setIsResendDisabled] = useState<boolean>(true);
+  const [resendTimer, setResendTimer] = useState<number>(30);
   const isVisible = useAnimation();
 
   // Form configurations for each step
   const emailForm = useForm<EmailFormInputs>();
   const passwordForm = useForm<PasswordFormInputs>();
   const otpForm = useForm<OtpFormInputs>();
+  
 
   // Redirect if already logged in
   useEffect(() => {
@@ -63,10 +67,34 @@ const LoginPage: React.FC = () => {
     }
   }, [user, router]);
 
+    // Helper to start the resend countdown
+  const startResendTimer = () => {
+    setIsResendDisabled(true);
+    setResendTimer(30);
+
+    const timerId = setInterval(() => {
+      setResendTimer((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timerId);
+          setIsResendDisabled(false);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+  };
+
+    useEffect(() => {
+    if (currentStep === 'otp') {
+      startResendTimer();
+    }
+  }, [currentStep]);
+
   // Handle email submission (Step 1)
   const onEmailSubmit = async (data: EmailFormInputs) => {
     try {
       setLoginError(null);
+       setIsEmailLoading(true);
       
       // TODO: API - Check user role and existence
       // POST /api/auth/check-user-role
@@ -96,6 +124,9 @@ const LoginPage: React.FC = () => {
     } catch (error: any) {
       console.error('Role check error:', error);
       setLoginError(error.message || 'Failed to verify email');
+    }
+    finally {
+      setIsEmailLoading(false); 
     }
   };
 
@@ -147,6 +178,7 @@ const LoginPage: React.FC = () => {
   // Resend OTP
   const handleResendOtp = async () => {
     try {
+        startResendTimer();
       setLoginError(null);
       // TODO: API - Resend OTP to employee email
       // POST /api/auth/send-otp
@@ -222,9 +254,8 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   variant="primary"
                   className={`w-full ${isLoading ? animationClasses.pulse : animationClasses.hoverScale}`}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Checking...' : 'Continue'}
+ disabled={isEmailLoading}                >
+                  {isEmailLoading ? 'Checking...' : 'Continue'}
                 </Button>
               </div>
             </form>
@@ -308,10 +339,9 @@ const LoginPage: React.FC = () => {
                     type="button"
                     onClick={handleResendOtp}
                     className="text-sm text-primary hover:underline"
-                    disabled={isLoading}
-                  >
-                    Didn't receive OTP? Resend
-                  </button>
+ disabled={isLoading || isResendDisabled}                  
+ >
+{isResendDisabled ? `Resend OTP in ${resendTimer}s` : "Didn't receive OTP? Resend"}                  </button>
                 </div>
               </div>
             </div>

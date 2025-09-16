@@ -76,6 +76,7 @@ const EmployeesPage: React.FC = () => {
   );
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [departmentLabs, setDepartmentLabs] = useState<String[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
@@ -93,14 +94,14 @@ const EmployeesPage: React.FC = () => {
     email: "",
   });
 
-  // Fetch lookup data for Levels and Labs
+  // Fetch lookup data for Levels Labs and Departments
   const fetchLookupData = async () => {
     try {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      const labs = await adminService.getLookupItems("Lab");
-      setLabOptions(labs);
+      // const labs = await adminService.getLookupItems("Lab");
+      // setLabOptions(labs);
 
       const departments = await adminService.getLookupItems("Department");
       setDepartmentOptions(departments);
@@ -109,6 +110,24 @@ const EmployeesPage: React.FC = () => {
       toast.error("Failed to load dropdown options.");
     }
   };
+
+  const fetchLabsByDepartment = async (departmentValue: string) => {
+    if (!departmentValue) {
+      setDepartmentLabs([]);
+      return;
+    }
+    
+    try {
+      const labs = await adminService.getLab(departmentValue);
+      setDepartmentLabs(labs);
+    } catch (error) {
+      toast.error("Failed to load lab options for selected department.");
+      setDepartmentLabs([]);
+    } 
+  };
+
+
+
 
   useEffect(() => {
     fetchLookupData();
@@ -180,6 +199,7 @@ const EmployeesPage: React.FC = () => {
       setShowAddModal(false);
       setEmailExists(false);
       setCheckingEmail(false);
+       setDepartmentLabs([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
@@ -208,6 +228,10 @@ const EmployeesPage: React.FC = () => {
         complianceDay: emp.complianceDay,
         email: emp.email,
       });
+      // Fetch labs for the employee's department changes
+       if (emp.department) {
+        await fetchLabsByDepartment(emp.department);
+      }
 
       setEditMode(true);
       setSelectedEmployeeId(employeeId);
@@ -267,6 +291,7 @@ const EmployeesPage: React.FC = () => {
       setSelectedEmployeeId(null);
       setEmailExists(false);
       setCheckingEmail(false);
+        setDepartmentLabs([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
@@ -287,6 +312,28 @@ const EmployeesPage: React.FC = () => {
       setCheckingEmail(false);
     }
   };
+
+ const handleDepartmentChange = (value: number | number[] | undefined) => {
+  const departmentId = Array.isArray(value) ? value[0] : value;
+
+  const selectedDept = departmentOptions.find(
+    (option) => option.id === departmentId
+  );
+
+  setNewEmployee({
+    ...newEmployee,
+    department: selectedDept?.value || "",
+    labAllocation: "",
+  });
+
+  if (selectedDept?.value) {
+    // fetchLabsByDepartment is async, but we can call it without awaiting
+    fetchLabsByDepartment(selectedDept.value);
+  } else {
+    setDepartmentLabs([]);
+  }
+};
+
 
   //delete
   const handleDeleteEmployee = async () => {
@@ -465,6 +512,7 @@ const EmployeesPage: React.FC = () => {
                   setSelectedEmployeeId(null);
                   setEmailExists(false);
                   setCheckingEmail(false);
+                   setDepartmentLabs([]);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -495,9 +543,9 @@ const EmployeesPage: React.FC = () => {
                 <TableCell className="w-44">Email</TableCell>
                 <TableCell className="w-24">DOJ</TableCell>
                 <TableCell>Department</TableCell>
-                <TableCell>Role</TableCell>
+                <TableCell>Lab</TableCell> 
                 <TableCell>Level</TableCell>
-                <TableCell>Lab</TableCell>
+                <TableCell>Role</TableCell>
                 <TableCell>Compliance Day</TableCell>
               </TableRow>
             </TableHeader>
@@ -548,7 +596,7 @@ const EmployeesPage: React.FC = () => {
                       {emp.date}
                     </TableCell>
                     <TableCell>{emp.department || "N/A"}</TableCell>
-                    <TableCell>{emp.role || "N/A"}</TableCell>
+                      <TableCell>{emp.labAllocation || "N/A"}</TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
@@ -564,7 +612,8 @@ const EmployeesPage: React.FC = () => {
                         {emp.level || "L1"}
                       </span>
                     </TableCell>
-                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
+                    <TableCell>{emp.role || "N/A"}</TableCell>
+                  
                     <TableCell>
                       {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </TableCell>
@@ -689,15 +738,7 @@ const EmployeesPage: React.FC = () => {
                         (option) => option.value === newEmployee.department
                       )?.id
                     }
-                    onChange={(id) => {
-                      const selectedDept = departmentOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        department: selectedDept || "",
-                      });
-                    }}
+                    onChange={handleDepartmentChange}
                     placeholder="Select Department"
                     displayFullValue={false}
                     isEmployeePage={true}
@@ -705,17 +746,31 @@ const EmployeesPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Role</label>
-                  <input
-                    type="text"
-                    value={newEmployee.role ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, role: e.target.value })
+                  <label className="block text-sm font-medium mb-1">
+                    Lab Allocation
+                  </label>
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={
+                      labOptions.find(
+                        (option) => option.value === newEmployee.labAllocation
+                      )?.id
                     }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Software Engineer, Manager"
+                    onChange={(id) => {
+                      const selectedLab = labOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setNewEmployee({
+                        ...newEmployee,
+                        labAllocation: selectedLab as "Lab1" | "Lab2",
+                      });
+                    }}
+                    placeholder="Select Lab"
+                    displayFullValue={false}
+                    isEmployeePage={true}
                   />
                 </div>
+               
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Level *
@@ -777,28 +832,15 @@ const EmployeesPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Lab Allocation
-                  </label>
-                  <SearchableDropdown
-                    options={labOptions}
-                    value={
-                      labOptions.find(
-                        (option) => option.value === newEmployee.labAllocation
-                      )?.id
+                  <label className="block text-sm font-medium mb-1">Role</label>
+                  <input
+                    type="text"
+                    value={newEmployee.role ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, role: e.target.value })
                     }
-                    onChange={(id) => {
-                      const selectedLab = labOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        labAllocation: selectedLab as "Lab1" | "Lab2",
-                      });
-                    }}
-                    placeholder="Select Lab"
-                    displayFullValue={false}
-                    isEmployeePage={true}
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="e.g., Software Engineer, Manager"
                   />
                 </div>
 

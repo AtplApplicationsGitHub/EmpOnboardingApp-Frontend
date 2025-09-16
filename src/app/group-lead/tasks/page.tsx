@@ -60,18 +60,21 @@ const GroupLeadTasksPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  
+
   // Employee questions functionality
   const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
   const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<EmployeeQuestions[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
+  const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
+  const [totalQuestionCount, setTotalQuestionCount] = useState(0);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
     [totalElements]
   );
+
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -85,7 +88,7 @@ const GroupLeadTasksPage: React.FC = () => {
       const response = await taskService.getTaskForGL(params);
       setAllTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
-      
+
       // Get list of employees who have questions assigned (from employee_question table)
       try {
         const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
@@ -115,7 +118,11 @@ const GroupLeadTasksPage: React.FC = () => {
       setQuestionsLoading(true);
       setSelectedEmployeeName(employeeName);
       const questions = await EQuestions.getQuestionsByTask(taskId);
+      const completedQuestions = questions.filter(question => question.completedFlag === true).length;
+      const totalQuestions = questions.length;
       setSelectedTaskQuestions(questions);
+      setCompletedQuestionCount(completedQuestions);
+      setTotalQuestionCount(totalQuestions);
       setShowQuestionsModal(true);
     } catch (error) {
       console.error("Error fetching task questions:", error);
@@ -124,6 +131,7 @@ const GroupLeadTasksPage: React.FC = () => {
       setQuestionsLoading(false);
     }
   };
+
 
   const generatePageNumbers = () => {
     const pages: Array<number | "..."> = [];
@@ -263,75 +271,75 @@ const GroupLeadTasksPage: React.FC = () => {
                     const taskId = String(task.id);
                     const isFirstOccurrence = !seenEmployees.has(employeeId);
                     const hasQuestions = employeesWithQuestions.has(parseInt(employeeId, 10));
-                    
+
                     if (isFirstOccurrence) {
                       seenEmployees.add(employeeId);
                     }
 
                     return (
-                    <TableRow key={(task as any).id ?? (task as any).id}>
-                      <TableCell className="font-semibold">
-                        {(task as any).id}
-                      </TableCell>
-                      <TableCell>{(task as any).employeeName}</TableCell>
-                      <TableCell>{(task as any).groupName}</TableCell>
-                      <TableCell>{(task as any).level}</TableCell>
-                      <TableCell>{(task as any).role}</TableCell>
-                      <TableCell>{(task as any).department}</TableCell>
-                      <TableCell className="min-w-[220px]">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="font-semibold">
-                              {completed}/{totalQ}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {percent}%
-                            </span>
+                      <TableRow key={(task as any).id ?? (task as any).id}>
+                        <TableCell className="font-semibold">
+                          {(task as any).id}
+                        </TableCell>
+                        <TableCell>{(task as any).employeeName}</TableCell>
+                        <TableCell>{(task as any).groupName}</TableCell>
+                        <TableCell>{(task as any).level}</TableCell>
+                        <TableCell>{(task as any).role}</TableCell>
+                        <TableCell>{(task as any).department}</TableCell>
+                        <TableCell className="min-w-[220px]">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold">
+                                {completed}/{totalQ}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {percent}%
+                              </span>
+                            </div>
+                            <ProgressBar value={percent} />
                           </div>
-                          <ProgressBar value={percent} />
-                        </div>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Status */}
-                      <TableCell>
-                        {(() => {
-                          const status = (task.status || "").toLowerCase();
-                          const base =
-                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                        {/* Status */}
+                        <TableCell>
+                          {(() => {
+                            const status = (task.status || "").toLowerCase();
+                            const base =
+                              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
 
-                          if (status === "overdue") {
+                            if (status === "overdue") {
+                              return (
+                                <span
+                                  className={`${base} bg-red-600/20 text-red-600`}
+                                >
+                                  Overdue
+                                </span>
+                              );
+                            }
+
+                            if (status === "completed") {
+                              return (
+                                <span
+                                  className={`${base} bg-green-600/20 text-green-600`}
+                                >
+                                  Completed
+                                </span>
+                              );
+                            }
+
                             return (
                               <span
-                                className={`${base} bg-red-600/20 text-red-600`}
+                                className={`${base} bg-amber-500/20 text-amber-600`}
                               >
-                                Overdue
+                                In Progress
                               </span>
                             );
-                          }
+                          })()}
+                        </TableCell>
 
-                          if (status === "completed") {
-                            return (
-                              <span
-                                className={`${base} bg-green-600/20 text-green-600`}
-                              >
-                                Completed
-                              </span>
-                            );
-                          }
-
-                          return (
-                            <span
-                              className={`${base} bg-amber-500/20 text-amber-600`}
-                            >
-                              In Progress
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                        {/* Actions */}
+                        <TableCell>
+                          <div className="flex items-center gap-2">
                             {/* View Answers button - only show for first occurrence of employees who have questions */}
                             {isFirstOccurrence && hasQuestions && (
                               <Button
@@ -347,19 +355,19 @@ const GroupLeadTasksPage: React.FC = () => {
                               </Button>
                             )}
 
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-lg"
-                            onClick={() => router.push(`/group-lead/tasks/${task.id}`)}
-                            aria-label="View details"
-                          >
-                            <Eye size={16} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg"
+                              onClick={() => router.push(`/group-lead/tasks/${task.id}`)}
+                              aria-label="View details"
+                            >
+                              <Eye size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
                   });
                 })()
               )}
@@ -487,6 +495,16 @@ const GroupLeadTasksPage: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Employee Questions - {selectedEmployeeName}
               </h2>
+              <div className="flex-1 flex justify-end items-center">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-primary dark:text-primary-foreground">
+                    {completedQuestionCount} / {totalQuestionCount}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Questions
+                  </div>
+                </div>
+              </div>
               <Button
                 variant="outline"
                 size="icon"
@@ -495,7 +513,7 @@ const GroupLeadTasksPage: React.FC = () => {
                   setSelectedTaskQuestions([]);
                   setSelectedEmployeeName("");
                 }}
-                className="rounded-lg"
+                className="rounded-lg ml-4"
               >
                 <X size={16} />
               </Button>
