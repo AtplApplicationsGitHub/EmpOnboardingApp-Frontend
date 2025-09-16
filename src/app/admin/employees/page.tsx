@@ -93,7 +93,7 @@ const EmployeesPage: React.FC = () => {
     email: "",
   });
 
-  // Fetch lookup data for Levels and Labs
+  // Fetch lookup data for Levels Labs and Departments
   const fetchLookupData = async () => {
     try {
       const levels = await adminService.getLookupItems("Level");

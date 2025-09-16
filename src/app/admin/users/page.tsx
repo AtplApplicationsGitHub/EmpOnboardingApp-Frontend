@@ -55,6 +55,7 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
+  // Fetch roles for dropdown
   const fetchRoles = async () => {
     try {
       const rolesData = await adminService.getLookupItems("Role");
@@ -104,6 +105,7 @@ const UsersPage: React.FC = () => {
       return;
     }
     try {
+      console.log("Creating user with data:", formData);
       await adminService.createUser(formData);
       setFormData({ name: "", email: "", password: "", role: "group_lead" });
       setShowCreateModal(false);
@@ -482,24 +484,23 @@ const UsersPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
-                <select
+              <select
     value={formData.role}
     onChange={(e) => {
-        const selectedRoleKey = e.target.value;
-        const selectedRole = roles.find(r => r.key === selectedRoleKey);
         setFormData({
             ...formData,
- role: e.target.value as "admin" | "group_lead",        });
+            role: e.target.value as "admin" | "group_lead",
+        });
     }}
     className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
     required
-  >
-                  {roles.map((role) => (
-      <option key={role.id} value={role.key}>
-        {role.key}
-      </option>
+>
+    {roles.map((role) => (
+        <option key={role.id} value={role.key}>
+            {role.key}
+        </option>
     ))}
-                </select>
+</select>
               </div>
 
               {/* Password only for create */}

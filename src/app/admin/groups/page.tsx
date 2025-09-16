@@ -24,6 +24,7 @@ import {
 
 const PAGE_SIZE = 10;
 
+
 const GroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -50,12 +51,22 @@ const GroupsPage: React.FC = () => {
   const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<
     number | undefined
   >();
+  const [newAutoAssign, setNewAutoAssign] = useState<boolean>(false);
+   const [editAutoAssign, setEditAutoAssign] = useState<boolean>(false);
+
   const getOptId = (opt: DropDownDTO) =>
     Number((opt as any).id ?? (opt as any).value);
   const filterLeads = (excludeId?: number) =>
     excludeId == null
       ? groupLeads
       : groupLeads.filter((o) => getOptId(o) !== excludeId);
+
+
+       // Auto assign dropdown options
+  const autoAssignOptions: DropDownDTO[] = [
+    { id: 1, key: "Yes", value: "true" },
+    { id: 0, key: "No", value: "false" }
+  ];
 
   // Fetch paginated groups and group leads
 
@@ -117,11 +128,13 @@ const GroupsPage: React.FC = () => {
         name: newGroupName.trim(),
         pgLead: newPrimaryGroupLeadId,
         egLead: newEscalationGroupLeadId,
+        autoAssign: newAutoAssign,
       });
       setShowCreateModal(false);
       setNewGroupName("");
       setNewPrimaryGroupLeadId(undefined);
       setNewEscalationGroupLeadId(undefined);
+      setNewAutoAssign(false);
       setCurrentPage(0);
       await fetchPage(0);
     } catch (err: any) {
@@ -146,12 +159,14 @@ const GroupsPage: React.FC = () => {
         name: editGroupName.trim(),
         pgLead: editPrimaryGroupLeadId,
         egLead: editEscalationGroupLeadId,
+         autoAssign: editAutoAssign,
       });
       setShowEditModal(false);
       setEditingGroup(null);
       setEditGroupName("");
       setEditPrimaryGroupLeadId(undefined);
       setEditEscalationGroupLeadId(undefined);
+       setEditAutoAssign(false);
       await fetchPage(currentPage);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to update group");
@@ -177,6 +192,7 @@ const GroupsPage: React.FC = () => {
     setEditGroupName(group.name);
     setEditPrimaryGroupLeadId(getLeadIdByName(group.pgLead));
     setEditEscalationGroupLeadId(getLeadIdByName(group.egLead));
+      setEditAutoAssign(group.autoAssign ?? false);
     setShowEditModal(true);
   };
 
@@ -495,6 +511,30 @@ const GroupsPage: React.FC = () => {
                     className="w-full"
                   />
                 </div>
+                 <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Assign Task Automatically
+                  </label>
+                 <SearchableDropdown
+  options={autoAssignOptions}
+  value={
+    autoAssignOptions.find(
+      (option) => option.value === String(newAutoAssign) // "true" or "false"
+    )?.id
+  }
+  onChange={(id) => {
+    const selectedValue = autoAssignOptions.find(
+      (option) => option.id === id
+    )?.value;
+    setNewAutoAssign(selectedValue === "true");
+  }}
+  placeholder="Select auto assign option"
+  required={false}
+  maxDisplayItems={2}
+  className="w-full"
+/>
+
+                </div>
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" className="flex-1">
                     Create Group
@@ -572,6 +612,25 @@ const GroupsPage: React.FC = () => {
                     className="w-full"
                   />
                 </div>
+                 <SearchableDropdown
+  options={autoAssignOptions}
+  value={
+    autoAssignOptions.find(
+      (option) => option.value === String(newAutoAssign) // "true" or "false"
+    )?.id
+  }
+  onChange={(id) => {
+    const selectedValue = autoAssignOptions.find(
+      (option) => option.id === id
+    )?.value;
+    setNewAutoAssign(selectedValue === "true");
+  }}
+  placeholder="Select auto assign option"
+  required={false}
+  maxDisplayItems={2}
+  className="w-full"
+/>
+
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" className="flex-1">
                     Update Group

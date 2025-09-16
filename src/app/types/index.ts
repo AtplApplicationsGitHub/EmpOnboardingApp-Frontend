@@ -24,6 +24,7 @@ export interface Group {
   updatedTime: string;
   quesCount?: number;
   deleteFlag?: boolean;
+   autoAssign?: boolean;
 }
 
 export interface Employee {
