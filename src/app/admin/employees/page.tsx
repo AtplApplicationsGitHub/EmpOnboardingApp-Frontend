@@ -76,6 +76,7 @@ const EmployeesPage: React.FC = () => {
   );
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [labOp, setLabOp] = useState<String[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
@@ -109,6 +110,17 @@ const EmployeesPage: React.FC = () => {
       toast.error("Failed to load dropdown options.");
     }
   };
+
+  const fetchLab = async () => {
+    try {
+      const labs = await adminService.getLab("IT");
+      setLabOp(labs);
+    } catch (error) {
+      toast.error("Failed to load dropdown options.");
+    }
+  };
+
+
 
   useEffect(() => {
     fetchLookupData();

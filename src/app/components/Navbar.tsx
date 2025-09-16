@@ -87,7 +87,7 @@ const Navbar: React.FC = () => {
                   )}
                 >
                   <FlaskConical className="h-4 w-4" />
-                  <span>Manage Labs</span>
+                  <span>Manage Departments</span>
                 </Link>
                 <Link
                   href="/admin/employees"
