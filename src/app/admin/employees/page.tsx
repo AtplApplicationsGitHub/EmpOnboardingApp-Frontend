@@ -76,7 +76,6 @@ const EmployeesPage: React.FC = () => {
   );
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
-  const [departmentLabs, setDepartmentLabs] = useState<String[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
@@ -100,9 +99,6 @@ const EmployeesPage: React.FC = () => {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      // const labs = await adminService.getLookupItems("Lab");
-      // setLabOptions(labs);
-
       const departments = await adminService.getLookupItems("Department");
       setDepartmentOptions(departments);
     } catch (error) {
@@ -111,19 +107,26 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
+  // Fetch labs based on selected department
   const fetchLabsByDepartment = async (departmentValue: string) => {
     if (!departmentValue) {
-      setDepartmentLabs([]);
+      setLabOptions([]);
       return;
     }
-    
+
     try {
       const labs = await adminService.getLab(departmentValue);
-      setDepartmentLabs(labs);
+      console.log("Fetched labs ", labs); // Debug log
+      const labDropdownOptions: DropDownDTO[] = labs.map((lab, index) => ({
+        id: index + 1, 
+        value: lab as string,
+        key: lab as string
+      }));
+      setLabOptions(labDropdownOptions);
     } catch (error) {
       toast.error("Failed to load lab options for selected department.");
-      setDepartmentLabs([]);
-    } 
+      setLabOptions([]);
+    }
   };
 
 
@@ -199,7 +202,7 @@ const EmployeesPage: React.FC = () => {
       setShowAddModal(false);
       setEmailExists(false);
       setCheckingEmail(false);
-       setDepartmentLabs([]);
+     setLabOptions([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
@@ -228,8 +231,8 @@ const EmployeesPage: React.FC = () => {
         complianceDay: emp.complianceDay,
         email: emp.email,
       });
-      // Fetch labs for the employee's department changes
-       if (emp.department) {
+
+      if (emp.department) {
         await fetchLabsByDepartment(emp.department);
       }
 
@@ -291,7 +294,7 @@ const EmployeesPage: React.FC = () => {
       setSelectedEmployeeId(null);
       setEmailExists(false);
       setCheckingEmail(false);
-        setDepartmentLabs([]);
+     setLabOptions([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
@@ -313,27 +316,25 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
- const handleDepartmentChange = (value: number | number[] | undefined) => {
-  const departmentId = Array.isArray(value) ? value[0] : value;
+  const handleDepartmentChange = (value: number | number[] | undefined) => {
+    const departmentId = Array.isArray(value) ? value[0] : value;
 
-  const selectedDept = departmentOptions.find(
-    (option) => option.id === departmentId
-  );
+    const selectedDept = departmentOptions.find(
+      (option) => option.id === departmentId
+    );
 
-  setNewEmployee({
-    ...newEmployee,
-    department: selectedDept?.value || "",
-    labAllocation: "",
-  });
+    setNewEmployee({
+      ...newEmployee,
+      department: selectedDept?.value || "",
+      labAllocation: "", // Reset lab allocation when department changes
+    });
 
-  if (selectedDept?.value) {
-    // fetchLabsByDepartment is async, but we can call it without awaiting
-    fetchLabsByDepartment(selectedDept.value);
-  } else {
-    setDepartmentLabs([]);
-  }
-};
-
+    if (selectedDept?.value) {
+      fetchLabsByDepartment(selectedDept.value);
+    } else {
+      setLabOptions([]); // Reset lab options
+    }
+  };
 
   //delete
   const handleDeleteEmployee = async () => {
@@ -384,17 +385,16 @@ const EmployeesPage: React.FC = () => {
       const rawErrors = result.errors ?? [];
       const normalizedErrors: string[] = Array.isArray(rawErrors)
         ? rawErrors.map((e: any) =>
-            typeof e === "string"
-              ? e
-              : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
-          )
+          typeof e === "string"
+            ? e
+            : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
+        )
         : [];
       if (errorCount > 0) {
         setImportErrors(normalizedErrors);
         const preview = normalizedErrors.slice(0, 3).join("; ");
         toast.error(
-          `Import reported ${errorCount} error(s). ${preview}${
-            normalizedErrors.length > 3 ? "..." : ""
+          `Import reported ${errorCount} error(s). ${preview}${normalizedErrors.length > 3 ? "..." : ""
           }`
         );
       }
@@ -512,7 +512,7 @@ const EmployeesPage: React.FC = () => {
                   setSelectedEmployeeId(null);
                   setEmailExists(false);
                   setCheckingEmail(false);
-                   setDepartmentLabs([]);
+                  setLabOptions([]);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -543,7 +543,7 @@ const EmployeesPage: React.FC = () => {
                 <TableCell className="w-44">Email</TableCell>
                 <TableCell className="w-24">DOJ</TableCell>
                 <TableCell>Department</TableCell>
-                <TableCell>Lab</TableCell> 
+                <TableCell>Lab</TableCell>
                 <TableCell>Level</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Compliance Day</TableCell>
@@ -596,24 +596,23 @@ const EmployeesPage: React.FC = () => {
                       {emp.date}
                     </TableCell>
                     <TableCell>{emp.department || "N/A"}</TableCell>
-                      <TableCell>{emp.labAllocation || "N/A"}</TableCell>
+                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          emp.level === "L1"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            : emp.level === "L2"
+                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : emp.level === "L2"
                             ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                             : emp.level === "L3"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          }`}
                       >
                         {emp.level || "L1"}
                       </span>
                     </TableCell>
                     <TableCell>{emp.role || "N/A"}</TableCell>
-                  
+
                     <TableCell>
                       {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </TableCell>
@@ -749,6 +748,7 @@ const EmployeesPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-1">
                     Lab Allocation
                   </label>
+
                   <SearchableDropdown
                     options={labOptions}
                     value={
@@ -762,15 +762,22 @@ const EmployeesPage: React.FC = () => {
                       )?.value;
                       setNewEmployee({
                         ...newEmployee,
-                        labAllocation: selectedLab as "Lab1" | "Lab2",
+                        labAllocation: selectedLab || "",
                       });
                     }}
-                    placeholder="Select Lab"
+                    placeholder={
+                      !newEmployee.department
+                        ? "Select Department First"
+                        : labOptions.length === 0
+                          ? "No labs available"
+                          : "Select Lab"
+                    }
                     displayFullValue={false}
                     isEmployeePage={true}
+                    disabled={!newEmployee.department || labOptions.length === 0}
                   />
                 </div>
-               
+
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Level *
@@ -993,7 +1000,7 @@ const EmployeesPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              {/* <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
                   Expected Format:
                 </h4>
@@ -1002,7 +1009,7 @@ const EmployeesPage: React.FC = () => {
                   <li>• Role, Level, Total Experience, Past Organization</li>
                   <li>• Lab Allocation, Compliance Day</li>
                 </ul>
-              </div>
+              </div> */}
             </CardContent>
 
             {/* Action Buttons - Fixed at bottom */}
