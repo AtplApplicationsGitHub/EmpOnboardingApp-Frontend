@@ -28,7 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-    baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+    baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
+    // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -810,6 +811,11 @@ export const taskService = {
 
   freezeTask: async (taskId: string): Promise<boolean> => {
     const response = await api.get<boolean>(`/task/freezeTask/${taskId}`);
+    return response.data;
+  },
+
+  deleteQuestion: async (id: number, remarks: string): Promise<boolean> => {
+    const response = await api.delete(`/employee/deleteQues/${id}/${remarks}`);
     return response.data;
   },
 

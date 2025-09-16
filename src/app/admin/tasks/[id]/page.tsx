@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Users,
   Star,
+  Trash2,
 } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { set } from "react-hook-form";
@@ -70,8 +71,12 @@ const TaskDetailsPage: React.FC = () => {
     null
   );
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
-  
- 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<number | undefined>(
+    undefined
+  );
+  const [deleteReason, setDeleteReason] = useState("");
+
 
   useEffect(() => {
     fetchTasks();
@@ -83,6 +88,7 @@ const TaskDetailsPage: React.FC = () => {
       setError(null);
       const t = await taskService.getTaskById(taskId);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
+      console.log("Fetched tasks:", list);
       setTasks(list);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load task(s)");
@@ -100,7 +106,7 @@ const TaskDetailsPage: React.FC = () => {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
   }, []);
-   
+
   const fetchLabs = useCallback(async () => {
     try {
       const labs = await adminService.getLookupItems("Lab");
@@ -152,7 +158,6 @@ const TaskDetailsPage: React.FC = () => {
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
 
-
   useEffect(() => {
     if (labOptions.length > 0 && lab) {
       const id = labOptions.find((opt) => opt.value === lab)?.id;
@@ -185,6 +190,23 @@ const TaskDetailsPage: React.FC = () => {
       );
       const prevId = labOptions.find((o) => o.value === lab)?.id;
       setSelectedLabId(prevId);
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    try {
+      if (!questionToDelete) {
+        toast.error("No question selected to delete.");
+        return;
+      }
+      await taskService.deleteQuestion(questionToDelete, deleteReason);
+      toast.success("Question deleted");
+      setShowDeleteModal(false);
+      setQuestionToDelete(undefined);
+      setDeleteReason("");
+      await fetchTasks();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Failed to delete question");
     }
   };
 
@@ -291,7 +313,7 @@ const TaskDetailsPage: React.FC = () => {
         <div className="ml-auto flex items-end gap-3">
           <div className="min-w-[240px]">
             <div className="flex items-center gap-2">
-             <SearchableDropdown
+              <SearchableDropdown
                 options={labOptions}
                 value={selectedLabId}
                 disabled={freezeTask === "Y"}
@@ -347,10 +369,11 @@ const TaskDetailsPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                            className={`w-4 h-4 ${
+                              star <= Number(t?.efstar ?? 0)
                                 ? "text-yellow-400 fill-current"
                                 : "text-gray-300"
-                              }`}
+                            }`}
                           />
                         ))}
                       </button>
@@ -377,7 +400,7 @@ const TaskDetailsPage: React.FC = () => {
                           {/* Feedback text (from t.feedback) */}
                           <div className="text-sm whitespace-pre-wrap">
                             {t?.feedback &&
-                              String(t.feedback).trim().length > 0 ? (
+                            String(t.feedback).trim().length > 0 ? (
                               String(t.feedback)
                             ) : (
                               <span className="text-muted-foreground">
@@ -426,6 +449,7 @@ const TaskDetailsPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
+                    <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -463,6 +487,21 @@ const TaskDetailsPage: React.FC = () => {
                             ? q.response
                             : "No response yet"}
                         </TableCell>
+
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500"
+                            disabled={freezeTask === "Y"}
+                            onClick={() => {
+                              setQuestionToDelete(q.id);
+                              setShowDeleteModal(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -472,6 +511,54 @@ const TaskDetailsPage: React.FC = () => {
           </Card>
         );
       })}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && questionToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Question</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the Question This action cannot
+                be undone.
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Reason for deletion
+                </label>
+                <input
+                  type="text"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  placeholder="Enter reason"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {showReassignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
