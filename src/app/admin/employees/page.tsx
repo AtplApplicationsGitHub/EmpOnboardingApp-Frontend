@@ -66,7 +66,6 @@ const EmployeesPage: React.FC = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
 
-
   const [editMode, setEditMode] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     null
@@ -75,11 +74,11 @@ const EmployeesPage: React.FC = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
     null
   );
-   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
-const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
-const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
-const [emailExists, setEmailExists] = useState(false);
-const [checkingEmail, setCheckingEmail] = useState(false);
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
@@ -94,24 +93,23 @@ const [checkingEmail, setCheckingEmail] = useState(false);
     email: "",
   });
 
-    // Fetch lookup data for Levels and Labs
-   const fetchLookupData = async () => {
-      try {
-        const levels = await adminService.getLookupItems("Level");
-        setLevelOptions(levels);
+  // Fetch lookup data for Levels and Labs
+  const fetchLookupData = async () => {
+    try {
+      const levels = await adminService.getLookupItems("Level");
+      setLevelOptions(levels);
 
-        const labs = await adminService.getLookupItems("Lab");
-        setLabOptions(labs);
+      const labs = await adminService.getLookupItems("Lab");
+      setLabOptions(labs);
 
-        const departments = await adminService.getLookupItems("Department");
-        setDepartmentOptions(departments);
+      const departments = await adminService.getLookupItems("Department");
+      setDepartmentOptions(departments);
+    } catch (error) {
+      // console.error("Failed to fetch lookup items:", error);
+      toast.error("Failed to load dropdown options.");
+    }
+  };
 
-      } catch (error) {
-        // console.error("Failed to fetch lookup items:", error);
-        toast.error("Failed to load dropdown options.");
-      }
-    };
-  
   useEffect(() => {
     fetchLookupData();
   }, []);
@@ -181,7 +179,7 @@ const [checkingEmail, setCheckingEmail] = useState(false);
       });
       setShowAddModal(false);
       setEmailExists(false);
-setCheckingEmail(false);
+      setCheckingEmail(false);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
@@ -196,7 +194,6 @@ setCheckingEmail(false);
       const emp: Employee = await adminService.findByEmployee(employeeId);
 
       const formattedDate = formatDateForInput(emp.date);
-
 
       // Prefill the modal form with fetched employee data
       setNewEmployee({
@@ -216,7 +213,7 @@ setCheckingEmail(false);
       setSelectedEmployeeId(employeeId);
       setShowAddModal(true);
       setEmailExists(false);
-setCheckingEmail(false);
+      setCheckingEmail(false);
     } catch (err: any) {
       toast.error("Failed to load employee data");
     }
@@ -248,7 +245,6 @@ setCheckingEmail(false);
         email: newEmployee.email,
       };
 
-
       await adminService.updateEmployee(updatePayload as Employee);
 
       toast.success("Employee updated successfully!");
@@ -270,7 +266,7 @@ setCheckingEmail(false);
       setEditMode(false);
       setSelectedEmployeeId(null);
       setEmailExists(false);
-setCheckingEmail(false);
+      setCheckingEmail(false);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
@@ -278,19 +274,19 @@ setCheckingEmail(false);
   };
 
   const handleEmailChange = async (value: string) => {
-  setNewEmployee({ ...newEmployee, email: value });
-  if (!value || editMode) return;
-  
-  setCheckingEmail(true);
-  try {
-    const res = await adminService.isEmployeeEmailExists(value);
-    setEmailExists(res);
-  } catch (error) {
-    setEmailExists(false);
-  } finally {
-    setCheckingEmail(false);
-  }
-};
+    setNewEmployee({ ...newEmployee, email: value });
+    if (!value || editMode) return;
+
+    setCheckingEmail(true);
+    try {
+      const res = await adminService.isEmployeeEmailExists(value);
+      setEmailExists(res);
+    } catch (error) {
+      setEmailExists(false);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
 
   //delete
   const handleDeleteEmployee = async () => {
@@ -341,16 +337,17 @@ setCheckingEmail(false);
       const rawErrors = result.errors ?? [];
       const normalizedErrors: string[] = Array.isArray(rawErrors)
         ? rawErrors.map((e: any) =>
-          typeof e === "string"
-            ? e
-            : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
-        )
+            typeof e === "string"
+              ? e
+              : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
+          )
         : [];
       if (errorCount > 0) {
         setImportErrors(normalizedErrors);
         const preview = normalizedErrors.slice(0, 3).join("; ");
         toast.error(
-          `Import reported ${errorCount} error(s). ${preview}${normalizedErrors.length > 3 ? "..." : ""
+          `Import reported ${errorCount} error(s). ${preview}${
+            normalizedErrors.length > 3 ? "..." : ""
           }`
         );
       }
@@ -372,8 +369,7 @@ setCheckingEmail(false);
       const base64: string = data.pdf;
       if (!base64) throw new Error("No base64 file content in response.");
 
-      const fileName: string =
-        data.fileName ?? `AddEmployee_${Date.now()}.xls`;
+      const fileName: string = data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
       const blob = base64ToBlob(
         base64,
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -467,8 +463,8 @@ setCheckingEmail(false);
                   setShowAddModal(true);
                   setEditMode(false);
                   setSelectedEmployeeId(null);
-                    setEmailExists(false);  
-  setCheckingEmail(false); 
+                  setEmailExists(false);
+                  setCheckingEmail(false);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -555,14 +551,15 @@ setCheckingEmail(false);
                     <TableCell>{emp.role || "N/A"}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          emp.level === "L1"
                             ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                             : emp.level === "L2"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : emp.level === "L3"
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                          }`}
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : emp.level === "L3"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        }`}
                       >
                         {emp.level || "L1"}
                       </span>
@@ -683,30 +680,29 @@ setCheckingEmail(false);
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
- Department *
-                   </label>
+                    Department *
+                  </label>
                   <SearchableDropdown
-  options={departmentOptions}
-  value={
-    departmentOptions.find(
-      (option) => option.value === newEmployee.department
-    )?.id
-  }
-  onChange={(id) => {
-    const selectedDept = departmentOptions.find(
-      (option) => option.id === id
-    )?.value;
-    setNewEmployee({
-      ...newEmployee,
-      department: selectedDept || "",
-    });
-  }}
-  placeholder="Select Department"
-  displayFullValue={false}
-  isEmployeePage={true}
-  disabled={editMode}
-/>
-
+                    options={departmentOptions}
+                    value={
+                      departmentOptions.find(
+                        (option) => option.value === newEmployee.department
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedDept = departmentOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setNewEmployee({
+                        ...newEmployee,
+                        department: selectedDept || "",
+                      });
+                    }}
+                    placeholder="Select Department"
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                    disabled={editMode}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Role</label>
@@ -824,47 +820,50 @@ setCheckingEmail(false);
                     placeholder="Number of compliance days"
                   />
                 </div>
-              <div>
-  <label className="block text-sm font-medium mb-1">
-    Email *
-  </label>
-  <Input
-    type="email"
-    value={newEmployee.email ?? ""}
-    onChange={(e) => handleEmailChange(e.target.value)}
-    className="w-full px-3 py-2 border rounded-md bg-background"
-    placeholder="Enter email address"
-    disabled={editMode}
-  />
-  {!editMode && emailExists && (
-    <p className="text-red-500 text-sm mt-1">
-      Email already exists
-    </p>
-  )}
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Email *
+                  </label>
+                  <Input
+                    type="email"
+                    value={newEmployee.email ?? ""}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    placeholder="Enter email address"
+                    disabled={editMode}
+                  />
+                  {!editMode && emailExists && (
+                    <p className="text-red-500 text-sm mt-1">
+                      Email already exists
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
                 <Button
-  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
-  className="flex-1"
-  disabled={
- !newEmployee.name || !newEmployee.name.trim() ||
-     !newEmployee.level || 
-    !newEmployee.department ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
-    emailExists ||
-    checkingEmail
-  }
->
-  {editMode ? "Update User" : "Create User"}
-</Button>
+                  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
+                  className="flex-1"
+                  disabled={
+                    !newEmployee.name ||
+                    !newEmployee.name.trim() ||
+                    !newEmployee.level ||
+                    !newEmployee.department ||
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                      newEmployee.email || ""
+                    ) ||
+                    emailExists ||
+                    checkingEmail
+                  }
+                >
+                  {editMode ? "Update User" : "Create User"}
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowAddModal(false);
-                     setEmailExists(false);     
-  setCheckingEmail(false);  
+                    setEmailExists(false);
+                    setCheckingEmail(false);
                     setNewEmployee({
                       name: "",
                       date: "",
