@@ -51,8 +51,8 @@ const GroupsPage: React.FC = () => {
   const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<
     number | undefined
   >();
-  const [newAutoAssign, setNewAutoAssign] = useState<boolean>(false);
-   const [editAutoAssign, setEditAutoAssign] = useState<boolean>(false);
+  const [newAutoAssign, setNewAutoAssign] = useState<string>("Yes");
+  const [editAutoAssign, setEditAutoAssign] = useState<string>("Yes");
 
   const getOptId = (opt: DropDownDTO) =>
     Number((opt as any).id ?? (opt as any).value);
@@ -62,14 +62,13 @@ const GroupsPage: React.FC = () => {
       : groupLeads.filter((o) => getOptId(o) !== excludeId);
 
 
-       // Auto assign dropdown options
+  // Auto assign dropdown options
   const autoAssignOptions: DropDownDTO[] = [
-    { id: 1, key: "Yes", value: "true" },
-    { id: 0, key: "No", value: "false" }
+    { id: 1, key: "Yes", value: "Yes" },
+    { id: 0, key: "No", value: "No" }
   ];
 
   // Fetch paginated groups and group leads
-
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
     const found = groupLeads.find((lead) => lead.key === name);
@@ -113,7 +112,7 @@ const GroupsPage: React.FC = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   // Create Group
-  const handleCreateGroup = async (e: React.FormEvent) => {
+   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim()) {
       setError("Group name is required");
@@ -123,18 +122,23 @@ const GroupsPage: React.FC = () => {
       setError("Primary group lead is required");
       return;
     }
+
+    const payload = {
+      name: newGroupName.trim(),
+      pgLead: newPrimaryGroupLeadId,
+      egLead: newEscalationGroupLeadId,
+      autoAssign: newAutoAssign,
+    };
+
+    console.log(" [Create] Payload sent to backend:", payload);
+
     try {
-      await adminService.createGroup({
-        name: newGroupName.trim(),
-        pgLead: newPrimaryGroupLeadId,
-        egLead: newEscalationGroupLeadId,
-        autoAssign: newAutoAssign,
-      });
+      await adminService.createGroup(payload);
       setShowCreateModal(false);
       setNewGroupName("");
       setNewPrimaryGroupLeadId(undefined);
       setNewEscalationGroupLeadId(undefined);
-      setNewAutoAssign(false);
+      setNewAutoAssign("Yes");
       setCurrentPage(0);
       await fetchPage(0);
     } catch (err: any) {
@@ -153,25 +157,31 @@ const GroupsPage: React.FC = () => {
       setError("Primary group lead is required");
       return;
     }
+
+    const payload = {
+      id: editingGroup.id,
+      name: editGroupName.trim(),
+      pgLead: editPrimaryGroupLeadId,
+      egLead: editEscalationGroupLeadId,
+      autoAssign: editAutoAssign,
+    };
+
+    console.log(" [Update] Payload sent to backend:", payload);
+
     try {
-      await adminService.updateGroup({
-        id: editingGroup.id,
-        name: editGroupName.trim(),
-        pgLead: editPrimaryGroupLeadId,
-        egLead: editEscalationGroupLeadId,
-         autoAssign: editAutoAssign,
-      });
+      await adminService.updateGroup(payload);
       setShowEditModal(false);
       setEditingGroup(null);
       setEditGroupName("");
       setEditPrimaryGroupLeadId(undefined);
       setEditEscalationGroupLeadId(undefined);
-       setEditAutoAssign(false);
+      setEditAutoAssign("Yes");
       await fetchPage(currentPage);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to update group");
     }
   };
+
 
   // Delete Group
   const handleDeleteGroup = async () => {
@@ -188,19 +198,20 @@ const GroupsPage: React.FC = () => {
 
   // Open Edit Modal
   const openEditModal = (group: Group) => {
+       console.log("[Prefill] Group data from backend:", group);
     setEditingGroup(group);
     setEditGroupName(group.name);
     setEditPrimaryGroupLeadId(getLeadIdByName(group.pgLead));
     setEditEscalationGroupLeadId(getLeadIdByName(group.egLead));
-      setEditAutoAssign(group.autoAssign ?? false);
+setEditAutoAssign(group.autoAssign ?? "Yes");
     setShowEditModal(true);
   };
 
-  const clone = async(group: Group) => {
-    if(!group) return;
+  const clone = async (group: Group) => {
+    if (!group) return;
     try {
-    await adminService.cloneGroup(group);
-    await fetchPage(0);
+      await adminService.cloneGroup(group);
+      await fetchPage(0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to clone group");
     }
@@ -511,28 +522,28 @@ const GroupsPage: React.FC = () => {
                     className="w-full"
                   />
                 </div>
-                 <div>
+                <div>
                   <label className="block text-sm font-medium mb-2">
                     Assign Task Automatically
                   </label>
-                 <SearchableDropdown
-  options={autoAssignOptions}
-  value={
-    autoAssignOptions.find(
-      (option) => option.value === String(newAutoAssign) // "true" or "false"
-    )?.id
-  }
-  onChange={(id) => {
-    const selectedValue = autoAssignOptions.find(
-      (option) => option.id === id
-    )?.value;
-    setNewAutoAssign(selectedValue === "true");
-  }}
-  placeholder="Select auto assign option"
-  required={false}
-  maxDisplayItems={2}
-  className="w-full"
-/>
+                  <SearchableDropdown
+                    options={autoAssignOptions}
+                    value={
+                      autoAssignOptions.find(
+                        (option) => option.value === newAutoAssign 
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedValue = autoAssignOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setNewAutoAssign(selectedValue || "Yes");
+                    }}
+                    placeholder="Select auto assign option"
+                    required={false}
+                    maxDisplayItems={2}
+                    className="w-full"
+                  />
 
                 </div>
                 <div className="flex gap-3 pt-4">
@@ -612,24 +623,31 @@ const GroupsPage: React.FC = () => {
                     className="w-full"
                   />
                 </div>
-                 <SearchableDropdown
-  options={autoAssignOptions}
-  value={
-    autoAssignOptions.find(
-      (option) => option.value === String(newAutoAssign) // "true" or "false"
-    )?.id
-  }
-  onChange={(id) => {
-    const selectedValue = autoAssignOptions.find(
-      (option) => option.id === id
-    )?.value;
-    setNewAutoAssign(selectedValue === "true");
-  }}
-  placeholder="Select auto assign option"
-  required={false}
-  maxDisplayItems={2}
-  className="w-full"
-/>
+                 <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Assign Task Automatically
+                  </label>
+                <SearchableDropdown
+                  options={autoAssignOptions}
+                 value={
+                    autoAssignOptions.find(
+                      (option) => option.value === editAutoAssign
+                    )?.id
+                  }
+                  onChange={(id) => {
+                    const selectedValue = autoAssignOptions.find(
+                      (option) => option.id === id
+                    )?.value;
+                    setEditAutoAssign(selectedValue || "Yes");
+                  }}
+                  placeholder="Select auto assign option"
+                  required={false}
+                  maxDisplayItems={2}
+                  className="w-full"
+                  isEmployeePage={true}
+                    displayFullValue={false}
+                />
+                </div>
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" className="flex-1">

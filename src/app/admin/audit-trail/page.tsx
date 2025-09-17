@@ -83,7 +83,6 @@ const AuditTrailPage = () => {
                 setIsLoadingEvents(true);
                 const eventResponse = await auditService.getEventByName();
 
-                // Transform the received data to the component's required format
                 const transformedEvents = eventResponse.map((item: any) => ({
                     id: item.id,
                     key: item.itemName,
