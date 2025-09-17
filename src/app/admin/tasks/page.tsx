@@ -597,8 +597,7 @@ const handleLabChangeSubmit = async () => {
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-              
-                Change Lab
+              Change Lab
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
