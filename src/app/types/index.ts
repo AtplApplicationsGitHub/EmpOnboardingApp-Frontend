@@ -42,6 +42,7 @@ export interface Employee {
   createdTime: string;
   updatedTime: string;
   deleteFlag?: boolean;
+  group?: string;
 }
 
 export interface EmployeeImportResult {

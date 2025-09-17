@@ -77,6 +77,7 @@ const EmployeesPage: React.FC = () => {
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [groupOptions, setGroupOptions] = useState<DropDownDTO[]>([]);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -91,6 +92,7 @@ const EmployeesPage: React.FC = () => {
     labAllocation: "",
     complianceDay: "",
     email: "",
+    group: '',
   });
 
   // Fetch lookup data for Levels Labs and Departments
@@ -118,7 +120,7 @@ const EmployeesPage: React.FC = () => {
       const labs = await adminService.getLab(departmentValue);
       console.log("Fetched labs ", labs); // Debug log
       const labDropdownOptions: DropDownDTO[] = labs.map((lab, index) => ({
-        id: index + 1, 
+        id: index + 1,
         value: lab as string,
         key: lab as string
       }));
@@ -129,6 +131,31 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
+  // Fetch groups based on selected level and employee id
+  const fetchEmployeeGroups = async (level: string, employeeId: number) => {
+    if (!level || !employeeId) {
+      setGroupOptions([]);
+      return;
+    }
+
+    try {
+      const groups = await adminService.getEmployeeGroup(level, employeeId);
+      console.log("Fetched groups:", groups); // Debug log
+
+      // Transform the response into DropDownDTO format
+      const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
+        id: group.id || index + 1,
+        value: group.name || group.value || group,
+        key: group.key || group.name || group.value || group
+      }));
+
+      setGroupOptions(groupDropdownOptions);
+    } catch (error) {
+      console.error("Failed to fetch employee groups:", error);
+      toast.error("Failed to load group options.");
+      setGroupOptions([]);
+    }
+  };
 
 
 
@@ -198,11 +225,13 @@ const EmployeesPage: React.FC = () => {
         labAllocation: "",
         complianceDay: "",
         email: "",
+        group: "",
       });
       setShowAddModal(false);
       setEmailExists(false);
       setCheckingEmail(false);
-     setLabOptions([]);
+      setLabOptions([]);
+      setGroupOptions([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
@@ -215,7 +244,7 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-
+      console.log("Fetched employee data for edit:", emp); // Debug log
       const formattedDate = formatDateForInput(emp.date);
 
       // Prefill the modal form with fetched employee data
@@ -230,10 +259,15 @@ const EmployeesPage: React.FC = () => {
         labAllocation: emp.labAllocation,
         complianceDay: emp.complianceDay,
         email: emp.email,
+        group: emp.group || "",
       });
 
       if (emp.department) {
         await fetchLabsByDepartment(emp.department);
+      }
+
+      if (emp.level && employeeId) {
+        await fetchEmployeeGroups(emp.level, employeeId);
       }
 
       setEditMode(true);
@@ -270,6 +304,7 @@ const EmployeesPage: React.FC = () => {
         labAllocation: newEmployee.labAllocation,
         complianceDay: newEmployee.complianceDay,
         email: newEmployee.email,
+        group: newEmployee.group,
       };
 
       await adminService.updateEmployee(updatePayload as Employee);
@@ -288,13 +323,15 @@ const EmployeesPage: React.FC = () => {
         labAllocation: "",
         complianceDay: "",
         email: "",
+        group: "",
       });
       setShowAddModal(false);
       setEditMode(false);
       setSelectedEmployeeId(null);
       setEmailExists(false);
       setCheckingEmail(false);
-     setLabOptions([]);
+      setLabOptions([]);
+      setGroupOptions([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
@@ -513,6 +550,7 @@ const EmployeesPage: React.FC = () => {
                   setEmailExists(false);
                   setCheckingEmail(false);
                   setLabOptions([]);
+                  setGroupOptions([]);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -524,6 +562,7 @@ const EmployeesPage: React.FC = () => {
                     labAllocation: "",
                     complianceDay: "",
                     email: "",
+                    group: "",
                   });
                 }}
               >
@@ -869,6 +908,44 @@ const EmployeesPage: React.FC = () => {
                     placeholder="Number of compliance days"
                   />
                 </div>
+                {editMode && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Select Group
+                    </label>
+                    <SearchableDropdown
+                      options={groupOptions}
+                      value={
+                        groupOptions.find(
+                          (option) => option.value === newEmployee.group
+                        )?.id
+                      }
+                      onChange={(id) => {
+                        const selectedGroup = groupOptions.find(
+                          (option) => option.id === id
+                        )?.value;
+                        setNewEmployee({
+                          ...newEmployee,
+                          group: selectedGroup || "",
+                        });
+                      }}
+                      placeholder={
+                        !newEmployee.level || !selectedEmployeeId
+                          ? "Level and Employee ID required"
+                          : groupOptions.length === 0
+                            ? "No groups available"
+                            : "Select Group"
+                      }
+                      displayFullValue={false}
+                      isEmployeePage={true}
+                      disabled={
+                        !newEmployee.level ||
+                        !selectedEmployeeId ||
+                        groupOptions.length === 0
+                      }
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Email *
@@ -924,9 +1001,11 @@ const EmployeesPage: React.FC = () => {
                       labAllocation: "",
                       complianceDay: "3",
                       email: "",
+                      group: "",
                     });
                     setSelectedEmployeeId(null);
                     setEditMode(false);
+                    setGroupOptions([]);
                   }}
                   className="flex-1"
                 >
