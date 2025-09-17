@@ -107,14 +107,49 @@ const TaskDetailsPage: React.FC = () => {
     }
   }, []);
 
-  const fetchLabs = useCallback(async () => {
-    try {
-      const labs = await adminService.getLookupItems("Lab");
-      setLabOptions(labs);
-    } catch (error) {
-      toast.error("Failed to load lab options.");
-    }
-  }, []);
+  // const fetchLabs = useCallback(async () => {
+  //   try {
+  //     const labs = await adminService.getLookupItems("Lab");
+  //     setLabOptions(labs);
+  //   } catch (error) {
+  //     toast.error("Failed to load lab options.");
+  //   }
+  // }, []);
+
+  const fetchLabsByDepartment = useCallback(
+    async (department?: string, currentLab?: string) => {
+      if (!department) {
+        setLabOptions([]);
+        return;
+      }
+      try {
+        const labs = await adminService.getLab(department);
+        console.log("Fetched labs:", labs); // Debug log
+        const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
+          id: index + 1,
+          value: lab as string,
+          key: lab as string,
+        }));
+
+        setLabOptions(labOptionsFormatted);
+
+        if (currentLab) {
+          const matchingLab = labOptionsFormatted.find(
+            (lab) => lab.value === currentLab
+          );
+          if (matchingLab) {
+            setSelectedLabId(matchingLab.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching labs:", error);
+        setLabOptions([]);
+        toast.error("Failed to fetch labs for this department");
+      }
+    },
+    []
+  );
+
 
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
@@ -145,9 +180,8 @@ const TaskDetailsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLabs();
     fetchGroupLeads();
-  }, [fetchLabs, fetchGroupLeads]);
+  }, [fetchGroupLeads]);
 
   const employeeId = tasks[0]?.employeeId;
   const employeeName = tasks[0]?.employeeName;
@@ -157,14 +191,14 @@ const TaskDetailsPage: React.FC = () => {
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
-
+ 
   useEffect(() => {
-    if (labOptions.length > 0 && lab) {
-      const id = labOptions.find((opt) => opt.value === lab)?.id;
-      setSelectedLabId(id);
+    if (department) {
+      fetchLabsByDepartment(department, lab);
     }
-  }, [lab, labOptions]);
+  }, [department, lab, fetchLabsByDepartment]);
 
+  // lab change handler
   const handleSaveLab = async (id?: number) => {
     setSelectedLabId(id);
     const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
