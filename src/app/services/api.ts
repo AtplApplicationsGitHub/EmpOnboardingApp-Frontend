@@ -28,8 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-    baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
-    // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
+  // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -252,7 +252,7 @@ export const adminService = {
     name: string;
     pgLead?: number;
     egLead?: number;
-     autoAssign?: boolean;
+    autoAssign?: boolean;
   }): Promise<Group> => {
     const response = await api.post<Group>("/group/saveGroup", data);
     return response.data;
@@ -268,7 +268,7 @@ export const adminService = {
     name: string;
     pgLead?: number;
     egLead?: number;
-     autoAssign?: boolean;
+    autoAssign?: boolean;
   }): Promise<Group> => {
     const response = await api.post<Group>(`/group/updateGroup`, data);
     return response.data;
@@ -290,6 +290,14 @@ export const adminService = {
       commonListDto: Question[];
       totalElements: number;
     }>(`/question/findFilteredQuestionByGroup/${pageNo}/${groupId}`);
+    return response.data;
+  },
+
+  getEmployeeGroup: async (
+    level: string,
+    id: number
+  ): Promise<DropDownDTO[]> => {
+    const response = await api.post<DropDownDTO[]>(`/getGroups/${level}/${id}`);
     return response.data;
   },
 
@@ -384,7 +392,6 @@ export const adminService = {
     );
     return response.data;
   },
-
 
   // New admin reassignment methods
   reassignTaskToUser: async (
