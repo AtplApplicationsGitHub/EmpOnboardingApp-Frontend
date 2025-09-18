@@ -615,7 +615,7 @@ const EmployeesPage: React.FC = () => {
                         size="sm"
                         variant="ghost"
                         className="text-red-500"
-                        disabled={!emp.deleteFlag}
+                        // disabled={!emp.deleteFlag}
                         onClick={() => {
                           setEmployeeToDelete(emp);
                           setShowDeleteModal(true);

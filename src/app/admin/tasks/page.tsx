@@ -52,9 +52,12 @@ const TasksPage: React.FC = () => {
   >(new Set());
   const [dateFormat, setDateFormat] = useState<string | null>(null);
   const [showLabChangeModal, setShowLabChangeModal] = useState(false);
-  const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] = useState<any>(null);
+  const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] =
+    useState<any>(null);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
-  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
+    undefined
+  );
   const [loadingLabs, setLoadingLabs] = useState(false);
 
   const totalPages = useMemo(
@@ -105,7 +108,10 @@ const TasksPage: React.FC = () => {
   }, [fetchTasks]);
 
   // Function to fetch labs based on department
-  const fetchLabsByDepartment = async (department: string,currentLab?: string) => {
+  const fetchLabsByDepartment = async (
+    department: string,
+    currentLab?: string
+  ) => {
     if (!department) {
       setLabOptions([]);
       return;
@@ -115,7 +121,7 @@ const TasksPage: React.FC = () => {
       const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
         id: index + 1,
         value: lab as string,
-        key: lab as string
+        key: lab as string,
       }));
 
       setLabOptions(labOptionsFormatted);
@@ -136,7 +142,7 @@ const TasksPage: React.FC = () => {
   };
 
   // Open Lab Change Modal
- const handleOpenLabChangeModal = async (employee: any) => {
+  const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
 
@@ -149,30 +155,29 @@ const TasksPage: React.FC = () => {
   };
 
   // Lab Change Submission
-const handleLabChangeSubmit = async () => {
-  if (!selectedLabId || !selectedEmployeeForLabChange) return;
+  const handleLabChangeSubmit = async () => {
+    if (!selectedLabId || !selectedEmployeeForLabChange) return;
 
-  const selectedLab = labOptions.find(lab => lab.id === selectedLabId);
-  if (!selectedLab) return;
+    const selectedLab = labOptions.find((lab) => lab.id === selectedLabId);
+    if (!selectedLab) return;
 
-  try {
-    await taskService.labAllocation(
-      selectedEmployeeForLabChange.employeeId,
-      selectedLab.value
-    );
+    try {
+      await taskService.labAllocation(
+        selectedEmployeeForLabChange.employeeId,
+        selectedLab.value
+      );
 
-    toast.success("Lab updated successfully");
-    await fetchTasks();
+      toast.success("Lab updated successfully");
+      await fetchTasks();
 
-    setShowLabChangeModal(false);
-    setSelectedEmployeeForLabChange(null);
-    setSelectedLabId(undefined);
-    setLabOptions([]);
-  } catch (err: any) {
-    toast.error(err?.response?.data?.message || "Failed to update lab");
-  }
-};
-
+      setShowLabChangeModal(false);
+      setSelectedEmployeeForLabChange(null);
+      setSelectedLabId(undefined);
+      setLabOptions([]);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update lab");
+    }
+  };
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -413,36 +418,38 @@ const handleLabChangeSubmit = async () => {
                             <Eye size={16} />
                           </Button>
 
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-lg"
-                            onClick={() => handleOpenLabChangeModal(task)}
-                            aria-label="Change lab"
-                            title="Change Lab"
-                          >
-                            <FlaskConical size={16} />
-                          </Button>
+                          {!task.lab && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg"
+                              onClick={() => handleOpenLabChangeModal(task)}
+                              aria-label="Change lab"
+                              title="Change Lab"
+                            >
+                              <FlaskConical size={16} />
+                            </Button>
+                          )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(
                             parseInt(task.employeeId, 10)
                           ) && (
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-lg "
-                                onClick={() => {
-                                  // Use the first task ID from the comma-separated list
-                                  const firstTaskId = task.taskIds.split(",")[0];
-                                  window.location.href = `/admin/tasks/answers/${firstTaskId}`;
-                                }}
-                                aria-label="View answers"
-                                title="View Employee Answers"
-                              >
-                                <TicketCheck size={16} />
-                              </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg "
+                              onClick={() => {
+                                // Use the first task ID from the comma-separated list
+                                const firstTaskId = task.taskIds.split(",")[0];
+                                window.location.href = `/admin/tasks/answers/${firstTaskId}`;
+                              }}
+                              aria-label="View answers"
+                              title="View Employee Answers"
+                            >
+                              <TicketCheck size={16} />
+                            </Button>
+                          )}
 
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "N" &&
@@ -597,16 +604,17 @@ const handleLabChangeSubmit = async () => {
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-              Change Lab
+                Change Lab
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-             
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select Lab:</label>
                 {loadingLabs ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="text-sm text-muted-foreground">Loading labs...</div>
+                    <div className="text-sm text-muted-foreground">
+                      Loading labs...
+                    </div>
                   </div>
                 ) : (
                   <SearchableDropdown
@@ -649,6 +657,5 @@ const handleLabChangeSubmit = async () => {
     </div>
   );
 };
-
 
 export default TasksPage;
