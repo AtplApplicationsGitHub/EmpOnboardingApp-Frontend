@@ -81,6 +81,8 @@ const EmployeesPage: React.FC = () => {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+   const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
+  const [groupChanged, setGroupChanged] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
@@ -157,8 +159,6 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-
-
   useEffect(() => {
     fetchLookupData();
   }, []);
@@ -167,6 +167,7 @@ const EmployeesPage: React.FC = () => {
     fetchEmployees();
   }, [searchFilter, page]);
 
+  
   const fetchEmployees = async () => {
     try {
       setLoading(true);
@@ -247,6 +248,8 @@ const EmployeesPage: React.FC = () => {
       console.log("Fetched employee data for edit:", emp); // Debug log
       const formattedDate = formatDateForInput(emp.date);
 
+      setOriginalGroupValue(emp.group || "");
+      setGroupChanged(false);
       // Prefill the modal form with fetched employee data
       setNewEmployee({
         name: emp.name,
@@ -262,10 +265,12 @@ const EmployeesPage: React.FC = () => {
         group: emp.group || "",
       });
 
+     
       if (emp.department) {
         await fetchLabsByDepartment(emp.department);
       }
 
+      // Fetch groups for the employee's level and ID
       if (emp.level && employeeId) {
         await fetchEmployeeGroups(emp.level, employeeId);
       }
@@ -308,8 +313,31 @@ const EmployeesPage: React.FC = () => {
       };
 
       await adminService.updateEmployee(updatePayload as Employee);
-
-      toast.success("Employee updated successfully!");
+ if (groupChanged && newEmployee.group && newEmployee.group !== originalGroupValue) {
+        try {
+          // Find the group ID from the selected group value
+          const selectedGroupOption = groupOptions.find(
+            option => option.value === newEmployee.group
+          );
+          
+          if (selectedGroupOption) {
+            await adminService.assignGroupsToEmployee({
+              groupId: [selectedGroupOption.id.toString()],
+              employeeId: selectedEmployeeId
+            });
+            toast.success("Employee updated and group assigned successfully!");
+          } else {
+            toast.success("Employee updated successfully!");
+            toast.error("Group assignment failed - group not found.");
+          }
+        } catch (groupError: any) {
+          console.error("Group assignment failed:", groupError);
+          toast.success("Employee updated successfully!");
+          // toast.error("Failed to assign group: " + (groupError.response?.data?.message || groupError.message));
+        }
+      } else {
+        toast.success("Employee updated successfully!");
+      }
 
       // Reset state and close the modal
       setNewEmployee({
@@ -332,6 +360,7 @@ const EmployeesPage: React.FC = () => {
       setCheckingEmail(false);
       setLabOptions([]);
       setGroupOptions([]);
+       setOriginalGroupValue("");
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
@@ -371,6 +400,20 @@ const EmployeesPage: React.FC = () => {
     } else {
       setLabOptions([]); // Reset lab options
     }
+  };
+
+  // Handle group change
+   const handleGroupChange = (id: number | number[] | undefined) => {
+    const selectedGroup = groupOptions.find(option => option.id === id);
+    const newGroupValue = selectedGroup?.value || "";
+    
+    setNewEmployee({
+      ...newEmployee,
+      group: newGroupValue
+    });
+
+    // Track if group was actually changed from original value
+    setGroupChanged(newGroupValue !== originalGroupValue && newGroupValue !== "");
   };
 
   //delete
@@ -551,6 +594,8 @@ const EmployeesPage: React.FC = () => {
                   setCheckingEmail(false);
                   setLabOptions([]);
                   setGroupOptions([]);
+                   setOriginalGroupValue("");
+                   setGroupChanged(false);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -959,15 +1004,7 @@ const EmployeesPage: React.FC = () => {
                         (option) => option.value === newEmployee.group
                       )?.id
                     }
-                    onChange={(id) => {
-                      const selectedGroup = groupOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        group: selectedGroup || "",
-                      });
-                    }}
+                    onChange={handleGroupChange}
                     placeholder={
                       !newEmployee.level || !selectedEmployeeId
                         ? "Level and Employee ID required"
@@ -1102,17 +1139,6 @@ const EmployeesPage: React.FC = () => {
                   </p>
                 )}
               </div>
-
-              {/* <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  Expected Format:
-                </h4>
-                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• Sr No, Candidate Name, DOJ, Department</li>
-                  <li>• Role, Level, Total Experience, Past Organization</li>
-                  <li>• Lab Allocation, Compliance Day</li>
-                </ul>
-              </div> */}
             </CardContent>
 
             {/* Action Buttons - Fixed at bottom */}
