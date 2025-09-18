@@ -85,19 +85,39 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
-  const fetchLabLookupData = async () => {
-  try { 
-    const labs = await adminService.getLookupItems("Lab");
-    setLabOptions(labs);  
-  } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load group leads");
-    }
-  
-};
+ const fetchLabsByDepartment = useCallback(
+    async (department?: string, currentLab?: string) => {
+      if (!department) {
+        setLabOptions([]);
+        return;
+      }
+      try {
+        const labs = await adminService.getLab(department);
+        console.log("Fetched labs:", labs); // Debug log
+        const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
+          id: index + 1,
+          value: lab as string,
+          key: lab as string,
+        }));
 
-useEffect(() => {
-  fetchLabLookupData();
-}, []);
+        setLabOptions(labOptionsFormatted);
+
+        if (currentLab) {
+          const matchingLab = labOptionsFormatted.find(
+            (lab) => lab.value === currentLab
+          );
+          if (matchingLab) {
+            setSelectedLabId(matchingLab.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching labs:", error);
+        setLabOptions([]);
+        toast.error("Failed to fetch labs for this department");
+      }
+    },
+    []
+  );
 
   const toggleFeedbackTooltip = useCallback((taskId: string) => {
     setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
@@ -213,12 +233,13 @@ useEffect(() => {
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask; // 'Y' | 'N'
 
-  // Initialize lab dropdown selection from current lab
-  useEffect(() => {
-    const id = labOptions.find((opt) => opt.value === lab)?.id;
-    setSelectedLabId(id);
-  }, [lab]);
-
+  // Fetch labs when department changes
+ useEffect(() => {
+    if (department) {
+      fetchLabsByDepartment(department, lab);
+    }
+  }, [department, lab, fetchLabsByDepartment]);
+  
   // Initialize editable response cache when tasks change
   useEffect(() => {
     const map: Record<string, string> = {};

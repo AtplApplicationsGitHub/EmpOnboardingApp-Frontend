@@ -728,7 +728,7 @@ const EmployeesPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
-    {showAddModal && (
+  {showAddModal && (
   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
       <Card className="flex flex-col h-full bg-background">
@@ -739,8 +739,8 @@ const EmployeesPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
 
-        {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Form Content */}
+        <div className={`flex-1 ${editMode ? "overflow-y-auto" : ""}`}>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 mt-3 md:grid-cols-2 gap-4">
               {/* Candidate Name */}
@@ -928,8 +928,6 @@ const EmployeesPage: React.FC = () => {
                 />
               </div>
 
-              
-
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium mb-1">Email *</label>
@@ -947,6 +945,7 @@ const EmployeesPage: React.FC = () => {
                   </p>
                 )}
               </div>
+
               {/* Group - only for edit mode */}
               {editMode && (
                 <div>
@@ -1039,6 +1038,7 @@ const EmployeesPage: React.FC = () => {
     </div>
   </div>
 )}
+
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && employeeToDelete && (

@@ -524,7 +524,7 @@ setEditAutoAssign(group.autoAssign ?? "Yes");
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Assign Task Automatically
+                    Assign Task 
                   </label>
                   <SearchableDropdown
                     options={autoAssignOptions}
@@ -625,7 +625,7 @@ setEditAutoAssign(group.autoAssign ?? "Yes");
                 </div>
                  <div>
                   <label className="block text-sm font-medium mb-2">
-                    Assign Task Automatically
+                    Assign Task
                   </label>
                 <SearchableDropdown
                   options={autoAssignOptions}
