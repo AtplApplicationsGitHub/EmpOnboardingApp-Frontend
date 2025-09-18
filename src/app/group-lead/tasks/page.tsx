@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { taskService, EQuestions } from "../../services/api";
+import { taskService, EQuestions, adminService } from "../../services/api";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { Task, EmployeeQuestions } from "@/app/types";
+import { Task, EmployeeQuestions, DropDownDTO } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -28,8 +28,12 @@ import {
   Users,
   TicketCheck,
   X,
+  FlaskConical,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { fi } from "date-fns/locale";
+import toast from "react-hot-toast";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 const PAGE_SIZE = 10;
 
@@ -62,19 +66,31 @@ const GroupLeadTasksPage: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState("");
 
   // Employee questions functionality
-  const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
+  const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
+    Set<number>
+  >(new Set());
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
-  const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<EmployeeQuestions[]>([]);
+  const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<
+    EmployeeQuestions[]
+  >([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
   const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
   const [totalQuestionCount, setTotalQuestionCount] = useState(0);
 
+  const [showLabChangeModal, setShowLabChangeModal] = useState(false);
+  const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] =
+    useState<any>(null);
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
+    undefined
+  );
+  const [loadingLabs, setLoadingLabs] = useState(false);
+
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
     [totalElements]
   );
-
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -91,7 +107,8 @@ const GroupLeadTasksPage: React.FC = () => {
 
       // Get list of employees who have questions assigned (from employee_question table)
       try {
-        const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
+        const employeesWithQuestionsArray =
+          await EQuestions.getEmployeesWithQuestions();
         setEmployeesWithQuestions(new Set(employeesWithQuestionsArray));
       } catch (error) {
         console.error("Error fetching employees with questions:", error);
@@ -118,7 +135,9 @@ const GroupLeadTasksPage: React.FC = () => {
       setQuestionsLoading(true);
       setSelectedEmployeeName(employeeName);
       const questions = await EQuestions.getQuestionsByTask(taskId);
-      const completedQuestions = questions.filter(question => question.completedFlag === true).length;
+      const completedQuestions = questions.filter(
+        (question) => question.completedFlag === true
+      ).length;
       const totalQuestions = questions.length;
       setSelectedTaskQuestions(questions);
       setCompletedQuestionCount(completedQuestions);
@@ -131,7 +150,6 @@ const GroupLeadTasksPage: React.FC = () => {
       setQuestionsLoading(false);
     }
   };
-
 
   const generatePageNumbers = () => {
     const pages: Array<number | "..."> = [];
@@ -161,6 +179,75 @@ const GroupLeadTasksPage: React.FC = () => {
       setSelectedTaskId("");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete group");
+    }
+  };
+
+  const fetchLabsByDepartment = async (
+    department: string,
+    currentLab?: string
+  ) => {
+    if (!department) {
+      setLabOptions([]);
+      return;
+    }
+    try {
+      const labs = await adminService.getLab(department);
+      const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
+        id: index + 1,
+        value: lab as string,
+        key: lab as string,
+      }));
+
+      setLabOptions(labOptionsFormatted);
+
+      if (currentLab) {
+        const matchingLab = labOptionsFormatted.find(
+          (lab) => lab.value === currentLab
+        );
+        if (matchingLab) {
+          setSelectedLabId(matchingLab.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching labs:", error);
+      setLabOptions([]);
+      setError("Failed to fetch labs for this department");
+    }
+  };
+
+  const handleOpenLabChangeModal = async (employee: any) => {
+    setSelectedEmployeeForLabChange(employee);
+    setShowLabChangeModal(true);
+
+    if (employee.department) {
+      await fetchLabsByDepartment(employee.department, employee.lab);
+    } else {
+      setLabOptions([]);
+      setSelectedLabId(undefined);
+    }
+  };
+
+  const handleLabChangeSubmit = async () => {
+    if (!selectedLabId || !selectedEmployeeForLabChange) return;
+
+    const selectedLab = labOptions.find((lab) => lab.id === selectedLabId);
+    if (!selectedLab) return;
+
+    try {
+      await taskService.labAllocation(
+        selectedEmployeeForLabChange.employeeId,
+        selectedLab.value
+      );
+
+      toast.success("Lab updated successfully");
+      await fetchTasks();
+
+      setShowLabChangeModal(false);
+      setSelectedEmployeeForLabChange(null);
+      setSelectedLabId(undefined);
+      setLabOptions([]);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update lab");
     }
   };
 
@@ -270,7 +357,9 @@ const GroupLeadTasksPage: React.FC = () => {
                     const employeeName = (task as any).employeeName;
                     const taskId = String(task.id);
                     const isFirstOccurrence = !seenEmployees.has(employeeId);
-                    const hasQuestions = employeesWithQuestions.has(parseInt(employeeId, 10));
+                    const hasQuestions = employeesWithQuestions.has(
+                      parseInt(employeeId, 10)
+                    );
 
                     if (isFirstOccurrence) {
                       seenEmployees.add(employeeId);
@@ -346,7 +435,9 @@ const GroupLeadTasksPage: React.FC = () => {
                                 variant="outline"
                                 size="icon"
                                 className="rounded-lg"
-                                onClick={() => handleViewQuestions(taskId, employeeName)}
+                                onClick={() =>
+                                  handleViewQuestions(taskId, employeeName)
+                                }
                                 disabled={questionsLoading}
                                 aria-label="View answers"
                                 title="View Employee Answers"
@@ -359,11 +450,26 @@ const GroupLeadTasksPage: React.FC = () => {
                               variant="outline"
                               size="icon"
                               className="rounded-lg"
-                              onClick={() => router.push(`/group-lead/tasks/${task.id}`)}
+                              onClick={() =>
+                                router.push(`/group-lead/tasks/${task.id}`)
+                              }
                               aria-label="View details"
                             >
                               <Eye size={16} />
                             </Button>
+
+                            { !task.lab && isFirstOccurrence && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-lg"
+                                onClick={() => handleOpenLabChangeModal(task)}
+                                aria-label="Change lab"
+                                title="Change Lab"
+                              >
+                                <FlaskConical size={16} />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -375,6 +481,62 @@ const GroupLeadTasksPage: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {showLabChangeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Change Lab
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Lab:</label>
+                {loadingLabs ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="text-sm text-muted-foreground">
+                      Loading labs...
+                    </div>
+                  </div>
+                ) : (
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={selectedLabId}
+                    onChange={(value) => setSelectedLabId(value as number)}
+                    placeholder="Select a lab..."
+                    className="w-full"
+                    isEmployeePage={true}
+                    displayFullValue={false}
+                  />
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleLabChangeSubmit}
+                  disabled={!selectedLabId}
+                  className="flex-1"
+                >
+                  Update Lab
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowLabChangeModal(false);
+                    setSelectedEmployeeForLabChange(null);
+                    setSelectedLabId(undefined);
+                    setLabOptions([]);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -500,9 +662,7 @@ const GroupLeadTasksPage: React.FC = () => {
                   <div className="text-xl font-bold text-primary dark:text-primary-foreground">
                     {completedQuestionCount} / {totalQuestionCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Questions
-                  </div>
+                  <div className="text-xs text-muted-foreground">Questions</div>
                 </div>
               </div>
               <Button
@@ -524,18 +684,23 @@ const GroupLeadTasksPage: React.FC = () => {
               {selectedTaskQuestions.length === 0 ? (
                 <div className="text-center py-8">
                   <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No questions found for this employee.</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No questions found for this employee.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {selectedTaskQuestions.map((question, index) => (
-                    <div key={question.id || index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <div
+                      key={question.id || index}
+                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                    >
                       <div className="mb-3">
                         <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
                           Question {index + 1}:
                         </h3>
                         <p className="text-gray-700 dark:text-gray-300">
-                          {question.question || 'No question text available'}
+                          {question.question || "No question text available"}
                         </p>
                       </div>
                       <div>
@@ -544,7 +709,7 @@ const GroupLeadTasksPage: React.FC = () => {
                         </h4>
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
                           <p className="text-gray-800 dark:text-gray-200">
-                            {question.response || 'No response provided'}
+                            {question.response || "No response provided"}
                           </p>
                         </div>
                       </div>

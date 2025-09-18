@@ -22,16 +22,16 @@ const PAGE_SIZE = 10;
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0'); 
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const AuditTrailPage = () => {
-   const [fromDate, setFromDate] = useState(getTodayDate());
-  const [endDate, setEndDate] = useState(getTodayDate());
+    const [fromDate, setFromDate] = useState(getTodayDate());
+    const [endDate, setEndDate] = useState(getTodayDate());
     const [selectedModuleIds, setSelectedModuleIds] = useState<number[]>([]);
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -56,7 +56,7 @@ const AuditTrailPage = () => {
             try {
                 setIsLoadingModules(true);
                 const moduleResponse = await auditService.getModuleByName();
-                
+
                 // Transform MultiSelectDropDownDTO to component format
                 const transformedModules = moduleResponse.map((item: any) => ({
                     id: item.id,
@@ -83,7 +83,6 @@ const AuditTrailPage = () => {
                 setIsLoadingEvents(true);
                 const eventResponse = await auditService.getEventByName();
 
-                // Transform the received data to the component's required format
                 const transformedEvents = eventResponse.map((item: any) => ({
                     id: item.id,
                     key: item.itemName,
@@ -160,7 +159,7 @@ const AuditTrailPage = () => {
                 selectedEvent: selectedEventNames,
                 selectedModule: selectedModuleNames,
                 selectedUser: selectedUserNames,
-                userId: 1 
+                userId: 1
             };
 
             console.log('Search request:', searchRequest); // Debug log
@@ -168,7 +167,7 @@ const AuditTrailPage = () => {
             // Call the API
             const response = await auditService.findFilteredData(page, searchRequest);
             console.log('Search response:', response); // Debug log
-         
+
             setAuditTrailData(response.commonListDto || []);
             setTotalElements(response.totalElements || 0);
             setCurrentPage(page);
@@ -217,7 +216,7 @@ const AuditTrailPage = () => {
                     <Input
                         type="date"
                         value={endDate}
-                         min={fromDate}
+                        min={fromDate}
                         onChange={(e) => setEndDate(e.target.value)}
                     />
                 </div>
@@ -349,22 +348,31 @@ const AuditTrailPage = () => {
                                         {/* Expanded Row Content */}
                                         {expandedRowIndices.includes(index) && (
                                             <TableRow>
-                                                <TableCell colSpan={7} className="p-4 bg-muted/50">
-                                                    <div className="flex flex-col space-y-2 text-sm text-muted-foreground">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            {record.systemRemarks && (
-                                                                <div>
-                                                                    <p className="font-medium text-foreground">System Remarks:</p>
-                                                                    <p>{record.systemRemarks}</p>
+                                                <TableCell colSpan={7} className="p-2">
+                                                    <div className="flex flex-col space-y-4  bg-card text-card-foreground shadow-sm p-4">
+                                                        {record.systemRemarks && (
+                                                            <div className="border border-border p-4 rounded-lg">
+                                                                <div className="border-b border-border pb-2 mb-2">
+                                                                    <h4 className="text-sm font-bold tracking-wide uppercase">
+                                                                        System Remarks
+                                                                    </h4>
                                                                 </div>
-                                                            )}
-                                                            {record.userRemarks && (
-                                                                <div>
-                                                                    <p className="font-medium text-foreground">User Remarks:</p>
-                                                                    <p>{record.userRemarks}</p>
+                                                                <p
+                                                                    className="text-sm text-muted-foreground leading-relaxed"
+                                                                    dangerouslySetInnerHTML={{ __html: record.systemRemarks }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {record.userRemarks && (
+                                                            <div className="border border-border p-4 rounded-lg">
+                                                                <div className="border-b border-border pb-2 mb-2">
+                                                                    <h4 className="text-sm font-bold tracking-wide uppercase">
+                                                                        User Remarks
+                                                                    </h4>
                                                                 </div>
-                                                            )}
-                                                        </div>
+                                                                <p className="text-sm text-muted-foreground leading-relaxed">{record.userRemarks}</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>

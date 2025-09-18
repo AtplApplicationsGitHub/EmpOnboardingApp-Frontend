@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { taskService, EQuestions } from "../../services/api";
+import { taskService, EQuestions, adminService } from "../../services/api";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { TaskProjection } from "@/app/types";
+import { TaskProjection, DropDownDTO } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -29,7 +29,10 @@ import {
   Unlock,
   Users,
   Verified,
+  FlaskConical,
 } from "lucide-react";
+import SearchableDropdown from "../../components/SearchableDropdown";
+import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 
 const PAGE_SIZE = 10;
@@ -48,6 +51,14 @@ const TasksPage: React.FC = () => {
     Set<number>
   >(new Set());
   const [dateFormat, setDateFormat] = useState<string | null>(null);
+  const [showLabChangeModal, setShowLabChangeModal] = useState(false);
+  const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] =
+    useState<any>(null);
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
+    undefined
+  );
+  const [loadingLabs, setLoadingLabs] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -95,6 +106,78 @@ const TasksPage: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  // Function to fetch labs based on department
+  const fetchLabsByDepartment = async (
+    department: string,
+    currentLab?: string
+  ) => {
+    if (!department) {
+      setLabOptions([]);
+      return;
+    }
+    try {
+      const labs = await adminService.getLab(department);
+      const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
+        id: index + 1,
+        value: lab as string,
+        key: lab as string,
+      }));
+
+      setLabOptions(labOptionsFormatted);
+
+      if (currentLab) {
+        const matchingLab = labOptionsFormatted.find(
+          (lab) => lab.value === currentLab
+        );
+        if (matchingLab) {
+          setSelectedLabId(matchingLab.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching labs:", error);
+      setLabOptions([]);
+      setError("Failed to fetch labs for this department");
+    }
+  };
+
+  // Open Lab Change Modal
+  const handleOpenLabChangeModal = async (employee: any) => {
+    setSelectedEmployeeForLabChange(employee);
+    setShowLabChangeModal(true);
+
+    if (employee.department) {
+      await fetchLabsByDepartment(employee.department, employee.lab);
+    } else {
+      setLabOptions([]);
+      setSelectedLabId(undefined);
+    }
+  };
+
+  // Lab Change Submission
+  const handleLabChangeSubmit = async () => {
+    if (!selectedLabId || !selectedEmployeeForLabChange) return;
+
+    const selectedLab = labOptions.find((lab) => lab.id === selectedLabId);
+    if (!selectedLab) return;
+
+    try {
+      await taskService.labAllocation(
+        selectedEmployeeForLabChange.employeeId,
+        selectedLab.value
+      );
+
+      toast.success("Lab updated successfully");
+      await fetchTasks();
+
+      setShowLabChangeModal(false);
+      setSelectedEmployeeForLabChange(null);
+      setSelectedLabId(undefined);
+      setLabOptions([]);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update lab");
+    }
+  };
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -224,7 +307,7 @@ const TasksPage: React.FC = () => {
                       key={(task as any).id ?? (task as any).employeeId}
                     >
                       {/* Employee Name */}
-                      <TableCell className="font-semibold min-w-[150px]">
+                      <TableCell className="font-semibold min-w-[140px]">
                         {(task as any).name}
                       </TableCell>
                       {/* Level */}
@@ -322,66 +405,81 @@ const TasksPage: React.FC = () => {
                       </TableCell>
                       {/* Actions */}
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-lg"
-                          onClick={() =>
-                            (window.location.href = `/admin/tasks/${task.taskIds}`)
-                          }
-                          aria-label="View details"
-                        >
-                          <Eye size={16} />
-                        </Button>
-
-                        {/* View Answers button - only show for employees who have questions assigned */}
-                        {employeesWithQuestions.has(
-                          parseInt(task.employeeId, 10)
-                        ) && (
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-lg ml-2"
-                            onClick={() => {
-                              // Use the first task ID from the comma-separated list
-                              const firstTaskId = task.taskIds.split(",")[0];
-                              window.location.href = `/admin/tasks/answers/${firstTaskId}`;
-                            }}
-                            aria-label="View answers"
-                            title="View Employee Answers"
+                            className="rounded-lg"
+                            onClick={() =>
+                              (window.location.href = `/admin/tasks/${task.taskIds}`)
+                            }
+                            aria-label="View details"
                           >
-                            <TicketCheck size={16} />
+                            <Eye size={16} />
                           </Button>
-                        )}
 
-                        {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "N" &&
-                          (task.lab ?? "").toString().trim() !== "" && (
+                          {!task.lab && (
                             <Button
                               variant="outline"
                               size="icon"
-                              className="rounded-lg ml-2"
-                              aria-label="Completed"
+                              className="rounded-lg"
+                              onClick={() => handleOpenLabChangeModal(task)}
+                              aria-label="Change lab"
+                              title="Change Lab"
+                            >
+                              <FlaskConical size={16} />
+                            </Button>
+                          )}
+
+                          {/* View Answers button - only show for employees who have questions assigned */}
+                          {employeesWithQuestions.has(
+                            parseInt(task.employeeId, 10)
+                          ) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="rounded-lg "
                               onClick={() => {
-                                setSelectedTaskId(task.taskIds);
-                                setShowFreezeModal(true);
+                                // Use the first task ID from the comma-separated list
+                                const firstTaskId = task.taskIds.split(",")[0];
+                                window.location.href = `/admin/tasks/answers/${firstTaskId}`;
                               }}
+                              aria-label="View answers"
+                              title="View Employee Answers"
                             >
-                              <Unlock size={16} />
+                              <TicketCheck size={16} />
                             </Button>
                           )}
-                        {task.status?.toLowerCase() === "completed" &&
-                          task.freeze === "Y" && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg ml-2"
-                              aria-label="Frozen"
-                              disabled
-                            >
-                              <Lock size={16} />
-                            </Button>
-                          )}
+
+                          {task.status?.toLowerCase() === "completed" &&
+                            task.freeze === "N" &&
+                            (task.lab ?? "").toString().trim() !== "" && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-lg"
+                                aria-label="Completed"
+                                onClick={() => {
+                                  setSelectedTaskId(task.taskIds);
+                                  setShowFreezeModal(true);
+                                }}
+                              >
+                                <Unlock size={16} />
+                              </Button>
+                            )}
+                          {task.status?.toLowerCase() === "completed" &&
+                            task.freeze === "Y" && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-lg ml-2"
+                                aria-label="Frozen"
+                                disabled
+                              >
+                                <Lock size={16} />
+                              </Button>
+                            )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -491,6 +589,61 @@ const TasksPage: React.FC = () => {
                   onClick={() => {
                     setShowFreezeModal(false);
                     setSelectedTaskId("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {showLabChangeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Change Lab
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Lab:</label>
+                {loadingLabs ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="text-sm text-muted-foreground">
+                      Loading labs...
+                    </div>
+                  </div>
+                ) : (
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={selectedLabId}
+                    onChange={(value) => setSelectedLabId(value as number)}
+                    placeholder="Select a lab..."
+                    className="w-full"
+                    isEmployeePage={true}
+                    displayFullValue={false}
+                  />
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleLabChangeSubmit}
+                  disabled={!selectedLabId}
+                  className="flex-1"
+                >
+                  Update Lab
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowLabChangeModal(false);
+                    setSelectedEmployeeForLabChange(null);
+                    setSelectedLabId(undefined);
+                    setLabOptions([]);
                   }}
                   className="flex-1"
                 >
