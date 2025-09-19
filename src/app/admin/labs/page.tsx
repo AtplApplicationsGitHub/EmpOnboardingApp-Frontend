@@ -472,7 +472,7 @@ const LabsPage: React.FC = () => {
                       location: selected?.value ?? "",
                     }));
                   }}
-                  placeholder="Select Location"
+                  placeholder="Select Department"
                   displayFullValue={false}
                   isEmployeePage={true}
                 />
