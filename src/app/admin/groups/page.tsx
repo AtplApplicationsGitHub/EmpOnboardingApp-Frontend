@@ -112,7 +112,7 @@ const GroupsPage: React.FC = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   // Create Group
-   const handleCreateGroup = async (e: React.FormEvent) => {
+  const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim()) {
       setError("Group name is required");
@@ -198,12 +198,12 @@ const GroupsPage: React.FC = () => {
 
   // Open Edit Modal
   const openEditModal = (group: Group) => {
-       console.log("[Prefill] Group data from backend:", group);
+    console.log("[Prefill] Group data from backend:", group);
     setEditingGroup(group);
     setEditGroupName(group.name);
     setEditPrimaryGroupLeadId(getLeadIdByName(group.pgLead));
     setEditEscalationGroupLeadId(getLeadIdByName(group.egLead));
-setEditAutoAssign(group.autoAssign ?? "Yes");
+    setEditAutoAssign(group.autoAssign ?? "Yes");
     setShowEditModal(true);
   };
 
@@ -524,13 +524,13 @@ setEditAutoAssign(group.autoAssign ?? "Yes");
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Assign Task 
+                    Assign Task
                   </label>
                   <SearchableDropdown
                     options={autoAssignOptions}
                     value={
                       autoAssignOptions.find(
-                        (option) => option.value === newAutoAssign 
+                        (option) => option.value === newAutoAssign
                       )?.id
                     }
                     onChange={(id) => {
@@ -542,6 +542,8 @@ setEditAutoAssign(group.autoAssign ?? "Yes");
                     placeholder="Select auto assign option"
                     required={false}
                     maxDisplayItems={2}
+                    isEmployeePage={true}        
+                    displayFullValue={false}
                     className="w-full"
                   />
 
@@ -623,30 +625,30 @@ setEditAutoAssign(group.autoAssign ?? "Yes");
                     className="w-full"
                   />
                 </div>
-                 <div>
+                <div>
                   <label className="block text-sm font-medium mb-2">
                     Assign Task
                   </label>
-                <SearchableDropdown
-                  options={autoAssignOptions}
-                 value={
-                    autoAssignOptions.find(
-                      (option) => option.value === editAutoAssign
-                    )?.id
-                  }
-                  onChange={(id) => {
-                    const selectedValue = autoAssignOptions.find(
-                      (option) => option.id === id
-                    )?.value;
-                    setEditAutoAssign(selectedValue || "Yes");
-                  }}
-                  placeholder="Select auto assign option"
-                  required={false}
-                  maxDisplayItems={2}
-                  className="w-full"
-                  isEmployeePage={true}
+                  <SearchableDropdown
+                    options={autoAssignOptions}
+                    value={
+                      autoAssignOptions.find(
+                        (option) => option.value === editAutoAssign
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedValue = autoAssignOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setEditAutoAssign(selectedValue || "Yes");
+                    }}
+                    placeholder="Select auto assign option"
+                    required={false}
+                    maxDisplayItems={2}
+                    className="w-full"
+                    isEmployeePage={true}
                     displayFullValue={false}
-                />
+                  />
                 </div>
 
                 <div className="flex gap-3 pt-4">
