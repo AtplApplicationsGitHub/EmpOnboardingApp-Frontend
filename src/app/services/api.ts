@@ -547,13 +547,13 @@ export const adminService = {
   },
 
   assignGroupsToEmployee: async (params: {
-    groupId: string[];
+    groupId: number[];
     employeeId: number;
   }): Promise<Employee> => {
     const { groupId, employeeId } = params;
     const response = await api.post<Employee>(
       `/employee/createTaskForEmployee/${employeeId}`,
-      { groupId }
+      groupId 
     );
     return response.data;
   },

@@ -16,6 +16,7 @@ import {
   ScrollText,
   MapPin,
   FlaskConical,
+Archive
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -100,6 +101,18 @@ const Navbar: React.FC = () => {
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Process Employees</span>
+                </Link>
+                  <Link
+                  href="/admin/archived-employees"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/archived-employees"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Archive className="h-4 w-4" />
+                  <span>Archived Employees</span>
                 </Link>
                 <Link
                   href="/admin/tasks"
