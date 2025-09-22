@@ -28,8 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
-  // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  // baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -547,13 +547,13 @@ export const adminService = {
   },
 
   assignGroupsToEmployee: async (params: {
-    groupId: string[];
+    groupId: number[];
     employeeId: number;
   }): Promise<Employee> => {
     const { groupId, employeeId } = params;
     const response = await api.post<Employee>(
       `/employee/createTaskForEmployee/${employeeId}`,
-      { groupId }
+      groupId 
     );
     return response.data;
   },

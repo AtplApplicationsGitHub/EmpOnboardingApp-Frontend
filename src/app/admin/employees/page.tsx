@@ -142,16 +142,19 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const groups = await adminService.getEmployeeGroup(level, employeeId);
-      console.log("Fetched groups:", groups); // Debug log
+      // console.log("Fetched groups:", groups); // Debug log
 
+      
       // Transform the response into DropDownDTO format
-      const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
-        id: group.id || index + 1,
-        value: group.name || group.value || group,
-        key: group.key || group.name || group.value || group
-      }));
+         const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
+      id: group.id || index + 1,
+      value: group.name || group.key || group.value || "Unknown", 
+      key: group.key || group.name || group.value || `group-${index}`
+    }));
+
 
       setGroupOptions(groupDropdownOptions);
+      // console.log("DEBUG - Group options set to:", groupDropdownOptions);
     } catch (error) {
       console.error("Failed to fetch employee groups:", error);
       toast.error("Failed to load group options.");
@@ -176,6 +179,7 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
+      console.log("Fetched employees:", data); // Debug log
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -207,7 +211,7 @@ const EmployeesPage: React.FC = () => {
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
         totalExperience: newEmployee.totalExperience || "0",
         pastOrganization: newEmployee.pastOrganization || "N/A",
-        labAllocation: newEmployee.labAllocation || "N/A",
+        labAllocation: newEmployee.labAllocation || "",
         complianceDay: newEmployee.complianceDay || "",
         email: newEmployee.email || "N/A",
       });
@@ -245,7 +249,8 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-      console.log("Fetched employee data for edit:", emp); // Debug log
+      console.log("Fetched employee:", emp); // Debug log
+      
       const formattedDate = formatDateForInput(emp.date);
 
       setOriginalGroupValue(emp.group || "");
@@ -286,88 +291,94 @@ const EmployeesPage: React.FC = () => {
   };
 
   //update
-  const handleUpdateEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleUpdateEmployee = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!selectedEmployeeId) return;
+  if (!selectedEmployeeId) return;
 
-    if (!newEmployee.name?.trim()) {
-      toast.error("Candidate Name is required.");
-      return;
-    }
+  if (!newEmployee.name?.trim()) {
+    toast.error("Candidate Name is required.");
+    return;
+  }
+  
+  try {
+    const updatePayload = {
+      id: selectedEmployeeId,
+      name: newEmployee.name,
+      department: newEmployee.department,
+      role: newEmployee.role,
+      date: newEmployee.date || undefined,
+      level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
+      totalExperience: newEmployee.totalExperience,
+      pastOrganization: newEmployee.pastOrganization,
+      labAllocation: newEmployee.labAllocation,
+      complianceDay: newEmployee.complianceDay,
+      email: newEmployee.email,
+      group: newEmployee.group,
+    };
 
-    try {
-      const updatePayload = {
-        id: selectedEmployeeId,
-        name: newEmployee.name,
-        department: newEmployee.department,
-        role: newEmployee.role,
-        date: newEmployee.date || undefined,
-        level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
-        totalExperience: newEmployee.totalExperience,
-        pastOrganization: newEmployee.pastOrganization,
-        labAllocation: newEmployee.labAllocation,
-        complianceDay: newEmployee.complianceDay,
-        email: newEmployee.email,
-        group: newEmployee.group,
-      };
+    await adminService.updateEmployee(updatePayload as Employee);
 
-      await adminService.updateEmployee(updatePayload as Employee);
- if (groupChanged && newEmployee.group && newEmployee.group !== originalGroupValue) {
-        try {
-          // Find the group ID from the selected group value
-          const selectedGroupOption = groupOptions.find(
-            option => option.value === newEmployee.group
-          );
-          
-          if (selectedGroupOption) {
-            await adminService.assignGroupsToEmployee({
-              groupId: [selectedGroupOption.id.toString()],
-              employeeId: selectedEmployeeId
-            });
-            toast.success("Employee updated and group assigned successfully!");
-          } else {
-            toast.success("Employee updated successfully!");
-            toast.error("Group assignment failed - group not found.");
-          }
-        } catch (groupError: any) {
-          console.error("Group assignment failed:", groupError);
-          toast.success("Employee updated successfully!");
-          // toast.error("Failed to assign group: " + (groupError.response?.data?.message || groupError.message));
-        }
-      } else {
-        toast.success("Employee updated successfully!");
-      }
+if (groupChanged && newEmployee.group && newEmployee.group !== originalGroupValue) {
+  try {
+    // Find the group ID from the selected group value
+    const selectedGroupOption = groupOptions.find(
+      option => option.value === newEmployee.group
+    );
 
-      // Reset state and close the modal
-      setNewEmployee({
-        name: "",
-        date: "",
-        department: "",
-        role: "",
-        level: "L1",
-        totalExperience: "0",
-        pastOrganization: "",
-        labAllocation: "",
-        complianceDay: "",
-        email: "",
-        group: "",
+    //  console.log("DEBUG - All available group options:", groupOptions);
+    //     console.log("DEBUG - Looking for group:", newEmployee.group);
+    //     console.log("DEBUG - Selected Group Option:", selectedGroupOption);
+    //   console.log("empid", Number(selectedEmployeeId)) // Debug log
+
+
+    if (selectedGroupOption) {
+      await adminService.assignGroupsToEmployee({
+        groupId: [selectedGroupOption.id], 
+        employeeId: Number(selectedEmployeeId)
       });
-      setShowAddModal(false);
-      setEditMode(false);
-      setSelectedEmployeeId(null);
-      setEmailExists(false);
-      setCheckingEmail(false);
-      setLabOptions([]);
-      setGroupOptions([]);
-       setOriginalGroupValue("");
-      fetchEmployees();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update employee.");
+      toast.success("Employee updated and group assigned successfully!");
+    } else {
+      toast.success("Employee updated successfully!");
+      toast.error("Group assignment failed - group not found.");
     }
-  };
+  } catch (groupError: any) {
+    console.error("Group assignment failed:", groupError);
+    console.log("DEBUG - Full error details:", groupError.response?.data);
+    toast.success("Employee updated successfully!");
+  }
+}
 
-  const handleEmailChange = async (value: string) => {
+
+    // Reset state and close the modal
+    setNewEmployee({
+      name: "",
+      date: "",
+      department: "",
+      role: "",
+      level: "L1",
+      totalExperience: "0",
+      pastOrganization: "",
+      labAllocation: "",
+      complianceDay: "",
+      email: "",
+      group: "",
+    });
+    setShowAddModal(false);
+    setEditMode(false);
+    setSelectedEmployeeId(null);
+    setEmailExists(false);
+    setCheckingEmail(false);
+    setLabOptions([]);
+    setGroupOptions([]);
+    setOriginalGroupValue("");
+    fetchEmployees();
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "Failed to update employee.");
+  }
+};
+  
+const handleEmailChange = async (value: string) => {
     setNewEmployee({ ...newEmployee, email: value });
     if (!value || editMode) return;
 
@@ -680,7 +691,7 @@ const EmployeesPage: React.FC = () => {
                       {emp.date}
                     </TableCell>
                     <TableCell>{emp.department || "N/A"}</TableCell>
-                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
+                    <TableCell>{emp.labAllocation ||""}</TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
