@@ -90,6 +90,7 @@ export interface Question {
   createdTime: string;
   updatedTime: string;
   defaultFlag?: "yes" | "no";
+  deleteFlag?: boolean;
 }
 
 export interface GLDashboard {

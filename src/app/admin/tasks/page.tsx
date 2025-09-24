@@ -282,6 +282,9 @@ const TasksPage: React.FC = () => {
                 </TableRow>
               ) : (
                 tasks.map((task) => {
+                                    console.log('task:' ,tasks);
+
+                  console.log("Task Data:", task);
                   const completed =
                     (task as any).completedQuetions ??
                     (task as any).completedQuestions ??
@@ -411,6 +414,7 @@ const TasksPage: React.FC = () => {
                             size="icon"
                             className="rounded-lg"
                             onClick={() =>
+                            
                               (window.location.href = `/admin/tasks/${task.taskIds}`)
                             }
                             aria-label="View details"

@@ -372,13 +372,27 @@ const GroupDetailsPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setQuestionToDelete(question);
-                      setShowDeleteModal(true);
+                      if (question.deleteFlag && questions.length > 1) {
+                        setQuestionToDelete(question);
+                        setShowDeleteModal(true);
+                      } else {
+                        toast.error(
+                          questions.length === 1
+                            ? "At least one question must remain. Cannot delete."
+                            : "This question cannot be deleted."
+                        );
+                      }
                     }}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                    className={`p-2 rounded-md transition-colors ${question.deleteFlag && questions.length > 1
+                        ? "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        : "text-gray-400 cursor-not-allowed opacity-50"
+                      }`}
+                    disabled={!question.deleteFlag || questions.length === 1}
                   >
                     <Trash2 size={16} />
                   </button>
+
+
                 </div>
               </div>
             </CardHeader>
@@ -668,13 +682,12 @@ const GroupDetailsPage: React.FC = () => {
                           {levelOptions.map((levelOption) => (
                             <label
                               key={levelOption.value}
-                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
-                                formData.questionLevel.includes(
-                                  levelOption.value
-                                )
+                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
+                                levelOption.value
+                              )
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-input hover:border-primary/50"
-                              }`}
+                                }`}
                             >
                               <input
                                 type="checkbox"
