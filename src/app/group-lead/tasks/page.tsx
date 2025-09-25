@@ -341,6 +341,8 @@ const GroupLeadTasksPage: React.FC = () => {
                 (() => {
                   const seenEmployees = new Set<string>();
                   return allTasks.map((task) => {
+                    console.log('fetched task from be:', allTasks);
+                    console.log("Task Data:", task);
                     const completed =
                       (task as any).completedQuetions ??
                       (task as any).completedQuestions ??
