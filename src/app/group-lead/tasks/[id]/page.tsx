@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 
-import { adminService, taskService } from "@/app/services/api";
+import { adminService, taskService, } from "@/app/services/api";
 import { DropDownDTO, Task, TaskQuestions } from "@/app/types";
 
 import {
@@ -85,6 +85,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
+  // Fetch labs for a department
   const fetchLabsByDepartment = useCallback(
     async (department?: string, currentLab?: string) => {
       if (!department) {
@@ -119,6 +120,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     []
   );
 
+  // Toggle feedback tooltip
   const toggleFeedbackTooltip = useCallback((taskId: string) => {
     setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
   }, []);
@@ -143,7 +145,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   }, [taskId]);
 
-  // Check if this task is the first one for the employee
+  //  Check if first task for employee
   const checkIfFirstTaskForEmployee = useCallback(async () => {
     if (!taskId) return;
 
@@ -308,6 +310,18 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   };
 
+  //view all button handler
+  const handleViewAll = () => {
+    if (!employeeId) {
+      toast.error("Missing employee id.");
+      return;
+    }
+
+    window.open(`/group-lead/tasks/all/${employeeId}`, "_blank");
+  };
+
+
+
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
     const doneQ = tasks.reduce((s, x) => s + (x.completedQuestions ?? 0), 0);
@@ -400,7 +414,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
         </h3>
         <div className="ml-auto flex items-end gap-3">
           {isFirstTaskForEmployee && (
-            <div className="min-w-[240px]">
+            <div className="min-w-[220px]">
               <div className="flex items-center gap-2">
                 <SearchableDropdown
                   options={labOptions}
@@ -415,6 +429,14 @@ const GroupLeadTaskDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewAll}
+            className="mt-2"
+          >
+            View All
+          </Button>
         </div>
       </div>
 
@@ -441,37 +463,28 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {t.groupName} - {t.id} - {t.assignedTo}
                       </span>
                     </CardTitle>
-                  
+
                   </div>
                   <div>
-                   <div className="flex items-center gap-2"> {/* <-- NEW WRAPPER */}
-  <button
-    type="button"
-    onClick={() => toggleFeedbackTooltip(String(t.id))}
-    className="flex items-center gap-1 focus:outline-none"
-    aria-label="Show feedback"
-    title="Show feedback"
-  >
-    {[1, 2, 3, 4, 5].map((star) => (
-      <Star
-        key={star}
-        className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
-            ? "text-yellow-400 fill-current"
-            : "text-gray-300"
-          }`}
-      />
-    ))}
-  </button>
-
-  <Button
-    variant="outline"
-    size="sm"
-    // className="ml-32"
-    onClick={() => window.open(`/group-lead/tasks/${t.id}`, "_blank")}
-  >
-    View All
-  </Button>
-</div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleFeedbackTooltip(String(t.id))}
+                        className="flex items-center gap-1 focus:outline-none"
+                        aria-label="Show feedback"
+                        title="Show feedback"
+                      >
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                              }`}
+                          />
+                        ))}
+                      </button>
+                    </div>
 
                   </div>
                 </div>
@@ -484,7 +497,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                     <div className="text-xs text-muted-foreground">
                       Questions
                     </div>
-                    
+
                   </div>
                   <Button
                     variant="outline"
@@ -504,6 +517,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             </CardHeader>
 
             <CardContent className="pt-0">
+              {/* <div className="overflow-x-auto"> Horizontal scroll for small screens */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -625,6 +639,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   )}
                 </TableBody>
               </Table>
+              {/* </div> */}
             </CardContent>
           </Card>
         );
