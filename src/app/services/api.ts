@@ -867,6 +867,12 @@ export const taskService = {
       return "dd-MM-yyyy";
     }
   },
+  
+ // Get tasks assigned to a specific employee
+ getTasksByEmployeeId: async (empId: number): Promise<Task[]> => {
+  const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
+  return response.data;
+},
 };
 
 // Helper function to convert TaskProjection to Task
@@ -1028,6 +1034,9 @@ export const groupLeadService = {
     });
     return response.data;
   },
+
+ 
+
 };
 
 // Employee Services
