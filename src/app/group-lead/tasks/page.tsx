@@ -377,7 +377,7 @@ const GroupLeadTasksPage: React.FC = () => {
                         <TableCell>{(task as any).level}</TableCell>
                         <TableCell>{(task as any).role}</TableCell>
                         <TableCell>{(task as any).department}</TableCell>
-                        <TableCell className="min-w-[220px]">
+                        <TableCell className="min-w-[145px]">
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="font-semibold">
@@ -392,7 +392,7 @@ const GroupLeadTasksPage: React.FC = () => {
                         </TableCell>
 
                         {/* Status */}
-                        <TableCell>
+                        <TableCell >
                           {(() => {
                             const status = (task.status || "").toLowerCase();
                             const base =
