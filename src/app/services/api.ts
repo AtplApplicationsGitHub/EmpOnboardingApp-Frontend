@@ -777,6 +777,33 @@ export const auditService = {
   },
 };
 
+//Achieve Services
+export const archiveService = {
+  getArchiveTask: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: TaskProjection[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredArchiveTaskForAdmin/${search}/${page}`);
+    return response.data;
+  },
+
+   getArchiveTaskById: async (id: string): Promise<Task> => {
+    const response = await api.get<Task>(`/task/findByArchTaskId/${id}`);
+    return response.data;
+  },
+}
 // Task Management
 export const taskService = {
   getTask: async (params?: {

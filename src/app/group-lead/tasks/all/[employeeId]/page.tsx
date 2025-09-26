@@ -140,7 +140,7 @@ const EmployeeTasksPage: React.FC = () => {
             <div className="p-8">
                 <div className="text-center py-12">
                     <div className="text-destructive mb-4">{error}</div>
-                    <Button onClick={() => router.push("/group-lead/tasks")}>
+                    <Button onClick={() => router.push("/group-lead/tasks/[id]")}>
                         Go Back
                     </Button>
                 </div>
@@ -153,7 +153,7 @@ const EmployeeTasksPage: React.FC = () => {
             <div className="p-8">
                 <div className="text-center py-12">
                     <div className="text-destructive">No tasks found for this employee</div>
-                    <Button onClick={() => router.push("/group-lead/tasks")} className="mt-4">
+                    <Button  onClick={() => router.back()} className="mt-4">
                         Go Back
                     </Button>
                 </div>
@@ -167,7 +167,7 @@ const EmployeeTasksPage: React.FC = () => {
             <div className="flex items-center gap-3">
                 <Button
                     variant="outline"
-                    onClick={() => router.back()}
+                    onClick={() => router.push("/group-lead/tasks")}
                     className="flex items-center gap-2"
                 >
                     <ArrowLeft size={16} />
@@ -246,7 +246,7 @@ const EmployeeTasksPage: React.FC = () => {
                                                     </div>
 
                                                     {/* Feedback text */}
-                                                    {/* <div className="text-sm whitespace-pre-wrap">
+                                                    {<div className="text-sm whitespace-pre-wrap">
                                                         {t?.feedback &&
                                                             String(t.feedback).trim().length > 0 ? (
                                                             String(t.feedback)
@@ -255,7 +255,7 @@ const EmployeeTasksPage: React.FC = () => {
                                                                 No comments.
                                                             </span>
                                                         )}
-                                                    </div> */}
+                                                    </div>}
                                                 </div>
                                             )}
                                         </div>
@@ -283,7 +283,7 @@ const EmployeeTasksPage: React.FC = () => {
                                         <TableHead>Status</TableHead>
                                         <TableHead>Compliance Day</TableHead>
                                         <TableHead>Response</TableHead>
-                                        {/* Removed Actions column */}
+
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -316,13 +316,12 @@ const EmployeeTasksPage: React.FC = () => {
                                                     {q.complianceDay ?? (q as any).complainceDay ?? "—"}
                                                 </TableCell>
 
-                                                <TableCell>
-                                                    {(q as any).answer ??
-                                                        (q as any).responseValue ??
-                                                        (q as any).userResponse ??
-                                                        (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
-                                                        "—"}
+                                                <TableCell className="text-muted-foreground">
+                                                    {q.response && String(q.response).trim().length > 0
+                                                        ? q.response
+                                                        : "No response yet"}
                                                 </TableCell>
+
                                             </TableRow>
                                         ))
                                     )}

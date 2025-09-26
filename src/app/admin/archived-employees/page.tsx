@@ -23,31 +23,16 @@ import {
     Eye,
     Users,
 } from "lucide-react";
+import { TaskProjection } from "@/app/types";
+import { archiveService,taskService } from "../../services/api";
 import { format } from "date-fns";
 
-
 const PAGE_SIZE = 10;
-
-interface ArchivedEmployee {
-
-    employeeId: string;
-    name: string;
-    department: string;
-    role: string;
-    level: string;
-    taskIds: string;
-    totalQuetions: number;
-    completedQuetions: number;
-    pendingQuetions: number;
-    status: string;
-    freeze: string;
-    doj: string;
-    lab: string;
-}
+const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 
 const ArchivedEmployeesPage: React.FC = () => {
-    const [employees, setEmployees] = useState<ArchivedEmployee[]>([]);
+    const [employees, setEmployees] = useState<TaskProjection[]>([]);
     const [totalElements, setTotalElements] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
@@ -68,14 +53,13 @@ const ArchivedEmployeesPage: React.FC = () => {
             };
             const search = searchFilter.trim();
             if (search) params.search = search;
-
-            //  Replace with actual API call when backend is ready
-            // const response = await archivedEmployeeService.getArchivedEmployees(params);
-            // setEmployees(response.commonListDto.content ?? []);
-            // setTotalElements(response.totalElements ?? 0);
-
-            setEmployees([]);
-            setTotalElements(0);
+        const [response, formatResponse] = await Promise.all([
+            archiveService.getArchiveTask(params),
+            taskService.getDateFormat() 
+        ]);
+            setEmployees(response.commonListDto.content ?? []);
+            setTotalElements(response.totalElements ?? 0);
+             setDateFormat(formatResponse);
         } catch (err: any) {
             setError(err?.response?.data?.message ?? "Failed to load archived employees");
             setEmployees([]);
@@ -87,8 +71,18 @@ const ArchivedEmployeesPage: React.FC = () => {
         fetchArchivedEmployees();
     }, [fetchArchivedEmployees]);
 
-      
-   
+    const ProgressBar: React.FC<{ value: number; color: string }> = ({
+        value,
+        color,
+    }) => (
+        <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
+            <div
+                className={`h-full ${color}`}
+                style={{ width: `${clampPercent(value)}%` }}
+            />
+        </div>
+    );
+
     const handlePageChange = (page: number) => {
         if (page >= 0 && page < totalPages) setCurrentPage(page);
     };
@@ -112,7 +106,7 @@ const ArchivedEmployeesPage: React.FC = () => {
         return pages;
     };
 
-    
+
 
     return (
         <div className="p-8 space-y-6">
@@ -170,83 +164,132 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                employees.map((employee) => (
-                                    <TableRow >
-                                        {/* Employee Name */}
-                                        <TableCell className="font-semibold min-w-[140px]">
-                                            {employee.name}
-                                        </TableCell>
-                                        {/* Level */}
-                                        <TableCell>{employee.level}</TableCell>
-                                        {/* Role & Department */}
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="text-base font-semibold">
-                                                    {employee.role}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {employee.department}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        {/* DOJ */}
-                                        <TableCell className="min-w-[100px]">
-                                            {/* {(() => {
-                                                const dojArray = (task as any).doj;
-                                                if (
-                                                    Array.isArray(dojArray) &&
-                                                    dateFormat &&
-                                                    dojArray.length >= 3
-                                                ) {
-                                                    try {
-                                                        const dateObject = new Date(
-                                                            dojArray[0],
-                                                            dojArray[1] - 1,
-                                                            dojArray[2]
-                                                        );
-                                                        if (isNaN(dateObject.getTime())) {
-                                                            return "Invalid Date";
+                                employees.map((employee) => {
+                                    console.log("Employee Data:", employee);
+
+                                    // compute progress values
+                                    const completed =
+                                        (employee as any).completedQuetions ??
+                                        (employee as any).completedQuestions ??
+                                        0;
+                                    const totalQ =
+                                        (employee as any).totalQuetions ??
+                                        (employee as any).totalQuestions ??
+                                        0;
+                                    const percent = totalQ ? Math.round((completed / totalQ) * 100) : 0;
+
+                                    let progressColor = "bg-muted-foreground/60";
+                                    const status = (employee.status || "").toLowerCase();
+                                    if (status === "completed") {
+                                        progressColor = "bg-green-600";
+                                    } else if (status === "in progress") {
+                                        progressColor = "bg-amber-500";
+                                    } else if (status === "overdue") {
+                                        progressColor = "bg-red-600";
+                                    }
+
+                                    return (
+                                        <TableRow key={employee.taskIds}>
+                                            {/* Employee Name */}
+                                            <TableCell className="font-semibold min-w-[140px]">
+                                                {employee.name}
+                                            </TableCell>
+
+                                            {/* Level */}
+                                            <TableCell>{employee.level}</TableCell>
+
+                                            {/* Role & Department */}
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="text-base font-semibold">{employee.role}</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {employee.department}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+
+                                            {/* DOJ */}
+                                            <TableCell className="min-w-[100px]">
+                                                 {(() => {
+                                                                         const dojArray = (employee as any).doj;
+                                                                         if (
+                                                                           Array.isArray(dojArray) &&
+                                                                           dateFormat &&
+                                                                           dojArray.length >= 3
+                                                                         ) {
+                                                                           try {
+                                                                             const dateObject = new Date(
+                                                                               dojArray[0],
+                                                                               dojArray[1] - 1,
+                                                                               dojArray[2]
+                                                                             );
+                                                                             if (isNaN(dateObject.getTime())) {
+                                                                               return "Invalid Date";
+                                                                             }
+                                                                             return format(dateObject, dateFormat);
+                                                                           } catch (error) {
+                                                                             return "Invalid Date";
+                                                                           }
+                                                                         }
+                                                                         return "Invalid Date";
+                                                                       })()}
+                                            </TableCell>
+
+                                            {/* Lab */}
+                                            <TableCell className="min-w-[80px]">{employee.lab}</TableCell>
+
+                                            {/* Progress */}
+                                            <TableCell className="min-w-[120px]">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <span className="font-semibold">
+                                                            {completed}/{totalQ}
+                                                        </span>
+                                                        <span className="text-muted-foreground">{percent}%</span>
+                                                    </div>
+                                                    <ProgressBar value={percent} color={progressColor} />
+                                                </div>
+                                            </TableCell>
+
+                                            {/* Status */}
+                                            <TableCell className="min-w-[100px]">
+                                                {status === "completed" ? (
+                                                    <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium bg-green-600/20 text-green-600">
+                                                        Completed
+                                                    </span>
+                                                ) : status === "overdue" ? (
+                                                    <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium bg-red-600/20 text-red-600">
+                                                        Overdue
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium bg-amber-500/20 text-amber-600">
+                                                        In Progress
+                                                    </span>
+                                                )}
+                                            </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="rounded-lg"
+                                                        onClick={() =>
+                                                            (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
-                                                        return format(dateObject, dateFormat);
-                                                    } catch (error) {
-                                                        return "Invalid Date";
-                                                    }
-                                                }
-                                                return "Invalid Date";
-                                            })()} */}
-                                        </TableCell>
-                                        {/* Lab */}
-                                        <TableCell className="min-w-[80px]">
-                                            {employee.lab}
-                                        </TableCell>
-                                        {/* Progress */}
-                                        <TableCell className="min-w-[120px]">
-
-                                        </TableCell>
-                                        {/* Status */}
-                                        <TableCell className="min-w-[100px]">
-
-                                        </TableCell>
-                                        {/* Actions */}
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="rounded-lg"
-                                                    onClick={() =>
-                                                        (window.location.href = `/admin/archived-employees/${employee.employeeId}`)
-                                                    }
-                                                    aria-label="View details"
-                                                >
-                                                    <Eye size={16} />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                        aria-label="View details"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
+
                     </Table>
                 </CardContent>
             </Card>
