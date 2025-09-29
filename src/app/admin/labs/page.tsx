@@ -534,8 +534,10 @@ const LabsPage: React.FC = () => {
                         placeholder={`Lab ${idx + 1}`}
                         required={idx === 0}
                         className="flex-1"
+                        disabled={editMode}
+                        readOnly={editMode}
                       />
-                      {!editMode && ( 
+                      {!editMode && (
                         <Button
                           type="button"
                           variant="outline"
@@ -559,7 +561,7 @@ const LabsPage: React.FC = () => {
 
                 <p className="text-xs text-muted-foreground mt-2">
                   Click <span className="font-semibold">+</span> to add another lab row
-                  {!editMode && (  
+                  {!editMode && (
                     <>
                       , and <span className="font-semibold">–</span> to remove a row
                     </>
