@@ -28,8 +28,8 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
-  baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
+  // baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
   headers: {
     "Content-Type": "application/json",
   },
@@ -553,7 +553,7 @@ export const adminService = {
     const { groupId, employeeId } = params;
     const response = await api.post<Employee>(
       `/employee/createTaskForEmployee/${employeeId}`,
-      groupId 
+      groupId
     );
     return response.data;
   },
@@ -586,6 +586,11 @@ export const adminService = {
       "/admin/process-employees",
       { employees }
     );
+    return response.data;
+  },
+
+  achiveEmployees: async (id: number): Promise<void> => {
+    const response = await api.get<void>(`/employee/archiveEmployee/${id}`);
     return response.data;
   },
 
@@ -688,16 +693,16 @@ export const labService = {
     return response.data;
   },
 
-  updateLab: async (data: {
-    id: string;
-    location: string;
-    lab: string[];
-  }): Promise<boolean> => {
-    const response = await api.post<boolean>("/location/saveLocation", {
-      id: data.id,
-      location: data.location,
-      lab: data.lab,
-    });
+updateLab: async ({ lab, id }: { lab: string[]; id: string }): Promise<void> => {
+  const response = await api.post<void>(`/location/labInlineSave/${id}`, {
+    lab,
+  });
+  return response.data;
+},
+
+
+  getDepartments: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(`/location/findAllLocation`);
     return response.data;
   },
 };
@@ -799,11 +804,11 @@ export const archiveService = {
     return response.data;
   },
 
-   getArchiveTaskById: async (id: string): Promise<Task> => {
+  getArchiveTaskById: async (id: string): Promise<Task> => {
     const response = await api.get<Task>(`/task/findByArchTaskId/${id}`);
     return response.data;
   },
-}
+};
 // Task Management
 export const taskService = {
   getTask: async (params?: {
@@ -894,12 +899,12 @@ export const taskService = {
       return "dd-MM-yyyy";
     }
   },
-  
- // Get tasks assigned to a specific employee
- getTasksByEmployeeId: async (empId: number): Promise<Task[]> => {
-  const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
-  return response.data;
-},
+
+  // Get tasks assigned to a specific employee
+  getTasksByEmployeeId: async (empId: number): Promise<Task[]> => {
+    const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
+    return response.data;
+  },
 };
 
 // Helper function to convert TaskProjection to Task
@@ -1061,9 +1066,6 @@ export const groupLeadService = {
     });
     return response.data;
   },
-
- 
-
 };
 
 // Employee Services

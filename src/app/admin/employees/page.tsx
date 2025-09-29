@@ -443,6 +443,17 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
+    const archiveEmployee = async (id:number) => {
+    try {
+      console.log("Archiving employee with id:", id); // Debug log
+      await adminService.achiveEmployees(id);
+      toast.success("Employee Archival successfully!");
+      fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to archive employee.");
+    }
+  };
+
   //download template
 
   const base64ToBlob = (b64: string, mime: string) => {
@@ -671,6 +682,7 @@ const EmployeesPage: React.FC = () => {
                       <Button
                         size="sm"
                         variant="ghost"
+                        onClick={() => archiveEmployee(emp.id)}
                       >
                         <Archive size={14} />
                       </Button>
