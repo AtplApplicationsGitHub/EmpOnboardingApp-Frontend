@@ -87,28 +87,30 @@ const LabsPage: React.FC = () => {
       setLabs([]);
       setTotal(0);
     } finally {
+      fetchLookupData();
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLabs();
+    fetchLookupData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchFilter]);
 
   // ===== API: Lookup data =====
   const fetchLookupData = async () => {
     try {
-      const location = await adminService.getLookupItems("Department");
+      const location = await labService.getDepartments();
       setLocationOptions(location || []);
     } catch {
       toast.error("Failed to load dropdown options.");
     }
   };
 
-  useEffect(() => {
-    fetchLookupData();
-  }, []);
+  // useEffect(() => {
+  //   fetchLookupData();
+  // }, []);
 
   // ===== Search =====
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -274,7 +276,7 @@ const LabsPage: React.FC = () => {
     <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <form onSubmit={handleSearchSubmit}  className="flex items-center gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
           <div className="flex-1">
             <Input
               type="text"
