@@ -682,6 +682,7 @@ const EmployeesPage: React.FC = () => {
                       <Button
                         size="sm"
                         variant="ghost"
+                        disabled={!emp.archiveFlag}
                         onClick={() => archiveEmployee(emp.id)}
                       >
                         <Archive size={14} />
