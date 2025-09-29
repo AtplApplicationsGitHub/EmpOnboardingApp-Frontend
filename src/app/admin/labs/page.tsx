@@ -339,17 +339,33 @@ const LabsPage: React.FC = () => {
                     <TableCell className="font-medium">
                       {lab.location}
                     </TableCell>
-                    <TableCell>
+                  <TableCell>
                       {Array.isArray(lab.lab) && lab.lab.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {lab.lab.map((name, idx) => (
-                            <span
-                              key={`${lab.id}-${idx}-${name}`}
-                              className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                            >
-                              {name}
-                            </span>
-                          ))}
+                          {lab.lab.length < 3 ? (
+                            lab.lab.map((name, idx) => (
+                              <span
+                                key={`${lab.id}-${idx}-${name}`}
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                {name}
+                              </span>
+                            ))
+                          ) : (
+                            <>
+                              <span
+                                key={`${lab.id}-0-${lab.lab[0]}`}
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                {lab.lab[0]}
+                              </span>
+                              <span
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                +{lab.lab.length - 1}
+                              </span>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">
