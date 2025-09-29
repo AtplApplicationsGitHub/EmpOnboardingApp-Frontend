@@ -87,28 +87,30 @@ const LabsPage: React.FC = () => {
       setLabs([]);
       setTotal(0);
     } finally {
+      fetchLookupData();
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLabs();
+    fetchLookupData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchFilter]);
 
   // ===== API: Lookup data =====
   const fetchLookupData = async () => {
     try {
-      const location = await adminService.getLookupItems("Department");
+      const location = await labService.getDepartments();
       setLocationOptions(location || []);
     } catch {
       toast.error("Failed to load dropdown options.");
     }
   };
 
-  useEffect(() => {
-    fetchLookupData();
-  }, []);
+  // useEffect(() => {
+  //   fetchLookupData();
+  // }, []);
 
   // ===== Search =====
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -213,11 +215,20 @@ const LabsPage: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLabId) return;
-    const payload = validateAndBuildPayload();
-    if (!payload) return;
+
+    // Only validate and send lab array
+    const lab = form.labInputs.map((s) => s.trim()).filter(Boolean);
+
+    if (!lab.length) {
+      toast.error("Add at least one lab");
+      return;
+    }
+
+    console.log("Sending to API:", { id: selectedLabId, lab });
+    console.log("Lab array:", lab);
 
     try {
-      await labService.updateLab({ id: selectedLabId, ...payload });
+      await labService.updateLab({ lab, id: selectedLabId, });
       toast.success("Lab updated successfully");
       closeModal();
       fetchLabs();
@@ -225,7 +236,6 @@ const LabsPage: React.FC = () => {
       toast.error(err?.response?.data?.message || "Failed to update lab");
     }
   };
-
   // ===== Pagination =====
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -274,7 +284,7 @@ const LabsPage: React.FC = () => {
     <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <form onSubmit={handleSearchSubmit}  className="flex items-center gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
           <div className="flex-1">
             <Input
               type="text"
@@ -324,7 +334,7 @@ const LabsPage: React.FC = () => {
                 labs.map((lab) => (
                   <TableRow key={lab.id}>
                     <TableCell className="flex items-center gap-2">
-                      {/* <Button
+                      <Button
                         size="sm"
                         variant="ghost"
                         className="p-1 hover:bg-transparent hover:text-primary"
@@ -332,7 +342,7 @@ const LabsPage: React.FC = () => {
                         aria-label={`Edit ${lab.location}`}
                       >
                         <Pencil size={14} />
-                      </Button> */}
+                      </Button>
                     </TableCell>
                     <TableCell className="font-medium">
                       {lab.location}
@@ -340,14 +350,30 @@ const LabsPage: React.FC = () => {
                     <TableCell>
                       {Array.isArray(lab.lab) && lab.lab.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {lab.lab.map((name, idx) => (
-                            <span
-                              key={`${lab.id}-${idx}-${name}`}
-                              className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                            >
-                              {name}
-                            </span>
-                          ))}
+                          {lab.lab.length < 3 ? (
+                            lab.lab.map((name, idx) => (
+                              <span
+                                key={`${lab.id}-${idx}-${name}`}
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                {name}
+                              </span>
+                            ))
+                          ) : (
+                            <>
+                              <span
+                                key={`${lab.id}-0-${lab.lab[0]}`}
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                {lab.lab[0]}
+                              </span>
+                              <span
+                                className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                              >
+                                +{lab.lab.length - 1}
+                              </span>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">
@@ -475,8 +501,9 @@ const LabsPage: React.FC = () => {
                   placeholder="Select Department"
                   displayFullValue={false}
                   isEmployeePage={true}
+                  disabled={editMode}
                 />
-                <input ref={locationInputRef} className="sr-only" aria-hidden />
+                <input ref={locationInputRef} className="sr-only" />
               </div>
 
               <div>
@@ -507,31 +534,39 @@ const LabsPage: React.FC = () => {
                         placeholder={`Lab ${idx + 1}`}
                         required={idx === 0}
                         className="flex-1"
+                        disabled={editMode}
+                        readOnly={editMode}
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeLabRow(idx)}
-                        className="h-8 px-2"
-                        aria-label={`Remove lab row ${idx + 1}`}
-                        disabled={form.labInputs.length === 1}
-                        title={
-                          form.labInputs.length === 1
-                            ? "At least one lab is required"
-                            : "Remove"
-                        }
-                      >
-                        <Minus size={16} />
-                      </Button>
+                      {!editMode && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeLabRow(idx)}
+                          className="h-8 px-2"
+                          aria-label={`Remove lab row ${idx + 1}`}
+                          disabled={form.labInputs.length === 1}
+                          title={
+                            form.labInputs.length === 1
+                              ? "At least one lab is required"
+                              : "Remove"
+                          }
+                        >
+                          <Minus size={16} />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 <p className="text-xs text-muted-foreground mt-2">
-                  Click <span className="font-semibold">+</span> to add another
-                  lab row, and <span className="font-semibold">–</span> to
-                  remove a row.
+                  Click <span className="font-semibold">+</span> to add another lab row
+                  {!editMode && (
+                    <>
+                      , and <span className="font-semibold">–</span> to remove a row
+                    </>
+                  )}
+                  .
                 </p>
               </div>
 

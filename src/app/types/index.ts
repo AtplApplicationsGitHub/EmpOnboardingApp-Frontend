@@ -43,6 +43,7 @@ export interface Employee {
   updatedTime: string;
   deleteFlag?: boolean;
   group?: string;
+  archiveFlag?: boolean;
 }
 
 export interface EmployeeImportResult {
@@ -90,6 +91,7 @@ export interface Question {
   createdTime: string;
   updatedTime: string;
   defaultFlag?: "yes" | "no";
+  deleteFlag?: boolean;
 }
 
 export interface GLDashboard {

@@ -553,7 +553,7 @@ export const adminService = {
     const { groupId, employeeId } = params;
     const response = await api.post<Employee>(
       `/employee/createTaskForEmployee/${employeeId}`,
-      groupId 
+      groupId
     );
     return response.data;
   },
@@ -586,6 +586,11 @@ export const adminService = {
       "/admin/process-employees",
       { employees }
     );
+    return response.data;
+  },
+
+  achiveEmployees: async (id: number): Promise<void> => {
+    const response = await api.get<void>(`/employee/archiveEmployee/${id}`);
     return response.data;
   },
 
@@ -688,16 +693,16 @@ export const labService = {
     return response.data;
   },
 
-  updateLab: async (data: {
-    id: string;
-    location: string;
-    lab: string[];
-  }): Promise<boolean> => {
-    const response = await api.post<boolean>("/location/saveLocation", {
-      id: data.id,
-      location: data.location,
-      lab: data.lab,
+  updateLab: async ({ lab, id }: { lab: string[]; id: string }): Promise<void> => {
+    const response = await api.post<void>(`/location/labInlineSave/${id}`, {
+      lab,
     });
+    return response.data;
+  },
+
+
+  getDepartments: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(`/location/findAllLocation`);
     return response.data;
   },
 };
@@ -777,6 +782,33 @@ export const auditService = {
   },
 };
 
+//Achieve Services
+export const archiveService = {
+  getArchiveTask: async (params?: {
+    search?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: TaskProjection[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredArchiveTaskForAdmin/${search}/${page}`);
+    return response.data;
+  },
+
+  getArchiveTaskById: async (id: string): Promise<Task> => {
+    const response = await api.get<Task>(`/task/findByArchTaskId/${id}`);
+    return response.data;
+  },
+};
 // Task Management
 export const taskService = {
   getTask: async (params?: {
@@ -866,6 +898,12 @@ export const taskService = {
       // fallback
       return "dd-MM-yyyy";
     }
+  },
+
+  // Get tasks assigned to a specific employee
+  getTasksByEmployeeId: async (empId: number): Promise<Task[]> => {
+    const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
+    return response.data;
   },
 };
 

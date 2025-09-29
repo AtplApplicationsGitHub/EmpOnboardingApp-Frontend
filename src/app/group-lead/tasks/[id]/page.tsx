@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 
-import { adminService, taskService } from "@/app/services/api";
+import { adminService, taskService, } from "@/app/services/api";
 import { DropDownDTO, Task, TaskQuestions } from "@/app/types";
 
 import {
@@ -85,7 +85,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
- const fetchLabsByDepartment = useCallback(
+  // Fetch labs for a department
+  const fetchLabsByDepartment = useCallback(
     async (department?: string, currentLab?: string) => {
       if (!department) {
         setLabOptions([]);
@@ -119,6 +120,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     []
   );
 
+  // Toggle feedback tooltip
   const toggleFeedbackTooltip = useCallback((taskId: string) => {
     setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
   }, []);
@@ -143,33 +145,33 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   }, [taskId]);
 
-  // Check if this task is the first one for the employee
+  //  Check if first task for employee
   const checkIfFirstTaskForEmployee = useCallback(async () => {
     if (!taskId) return;
-    
+
     try {
       // Get all tasks for the group leader to check ordering
-      const response = await taskService.getTaskForGL({ 
+      const response = await taskService.getTaskForGL({
         page: 0
         // Get all tasks by not specifying size limit, or using a large page
       });
       const allTasks = response.commonListDto ?? [];
-      
+
       // Get current task details
       const currentTask = allTasks.find((task: any) => String(task.id) === String(taskId));
       if (!currentTask) return;
-      
+
       const currentEmployeeId = (currentTask as any).employeeId;
-      
+
       // Find all tasks for this employee, sorted by task ID (assuming lower ID = earlier task)
-      const employeeTasks = allTasks.filter((task: any) => 
+      const employeeTasks = allTasks.filter((task: any) =>
         (task as any).employeeId === currentEmployeeId
       ).sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)));
-      
+
       // Check if current task is the first one for this employee
       const isFirst = employeeTasks.length > 0 && String(employeeTasks[0].id) === String(taskId);
       setIsFirstTaskForEmployee(isFirst);
-      
+
     } catch (error) {
       console.error("Error checking task order:", error);
       setIsFirstTaskForEmployee(false);
@@ -234,12 +236,12 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const freezeTask = tasks[0]?.freezeTask; // 'Y' | 'N'
 
   // Fetch labs when department changes
- useEffect(() => {
+  useEffect(() => {
     if (department) {
       fetchLabsByDepartment(department, lab);
     }
   }, [department, lab, fetchLabsByDepartment]);
-  
+
   // Initialize editable response cache when tasks change
   useEffect(() => {
     const map: Record<string, string> = {};
@@ -307,6 +309,18 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       setRespSaving((s) => ({ ...s, [key]: false }));
     }
   };
+
+  //view all button handler
+  const handleViewAll = () => {
+    if (!employeeId) {
+      toast.error("Missing employee id.");
+      return;
+    }
+
+    window.open(`/group-lead/tasks/all/${employeeId}`, "_blank");
+  };
+
+
 
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
@@ -400,7 +414,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
         </h3>
         <div className="ml-auto flex items-end gap-3">
           {isFirstTaskForEmployee && (
-            <div className="min-w-[240px]">
+            <div className="min-w-[220px]">
               <div className="flex items-center gap-2">
                 <SearchableDropdown
                   options={labOptions}
@@ -415,16 +429,25 @@ const GroupLeadTaskDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewAll}
+            className="mt-2"
+          >
+            View All
+          </Button>
         </div>
       </div>
 
       {/* Tasks */}
       {tasks.map((t) => {
+        console.log('Task Item:', t);
         const qList = t.questionList ?? [];
         const totalTasks = qList.length;
         const completed = qList.filter(
-  (q) => (q.status || "").toLowerCase() === "completed"
-).length;
+          (q) => (q.status || "").toLowerCase() === "completed"
+        ).length;
 
         return (
           <Card key={t.id}>
@@ -440,9 +463,10 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {t.groupName} - {t.id} - {t.assignedTo}
                       </span>
                     </CardTitle>
+
                   </div>
                   <div>
-                    <div className="relative" data-fb-trigger>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => toggleFeedbackTooltip(String(t.id))}
@@ -453,59 +477,27 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${
-                              star <= Number(t?.efstar ?? 0)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                              }`}
                           />
                         ))}
                       </button>
-
-                      {/* Tooltip */}
-                      {openFeedbackTaskId === String(t.id) && (
-                        <div
-                          data-fb-tooltip
-                          className="absolute z-50 top-full mt-2 left-0 w-72 rounded-lg border border-border bg-card shadow-lg p-3"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold">
-                              Feedback
-                            </span>
-                            <button
-                              type="button"
-                              className="text-xs text-muted-foreground hover:underline"
-                              onClick={() => setOpenFeedbackTaskId(null)}
-                            >
-                              Close
-                            </button>
-                          </div>
-
-                          {/* Feedback text (from t.feedback) */}
-                          <div className="text-sm whitespace-pre-wrap">
-                            {t?.feedback &&
-                            String(t.feedback).trim().length > 0 ? (
-                              String(t.feedback)
-                            ) : (
-                              <span className="text-muted-foreground">
-                                No comments.
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
+
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                   <div className="text-3xl font-bold">
-      {completed}/{totalTasks}
-    </div>
-    <div className="text-xs text-muted-foreground">
-      Questions 
-    </div>
+                    <div className="text-3xl font-bold">
+                      {completed}/{totalTasks}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Questions
+                    </div>
+
                   </div>
                   <Button
                     variant="outline"
@@ -525,6 +517,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             </CardHeader>
 
             <CardContent className="pt-0">
+              {/* <div className="overflow-x-auto"> Horizontal scroll for small screens */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -646,6 +639,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   )}
                 </TableBody>
               </Table>
+              {/* </div> */}
             </CardContent>
           </Card>
         );
