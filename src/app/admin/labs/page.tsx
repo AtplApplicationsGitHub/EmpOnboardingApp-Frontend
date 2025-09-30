@@ -43,22 +43,24 @@ const emptyForm: FormState = {
 const LabsPage: React.FC = () => {
   const locationInputRef = useRef<HTMLInputElement>(null);
 
+  //fetching lab
   const [labs, setLabs] = useState<Lab[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // 0-based
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  //modal create/edit
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
 
   const [searchFilter, setSearchFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
-
+//dropdown options
   const [locationOptions, setLocationOptions] = useState<DropDownDTO[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
-
+const [existingLabCount, setExistingLabCount] = useState(0);
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
     [total]
@@ -131,30 +133,58 @@ const LabsPage: React.FC = () => {
     }, 100);
   };
 
-  const openEditModal = async (labId: string) => {
-    try {
-      const lab = await labService.findLabById(labId);
-      setForm({
-        location: lab.location || "",
-        labInputs: Array.isArray(lab.lab) && lab.lab.length ? lab.lab : [""],
-      });
-      setSelectedLabId(labId);
-      setEditMode(true);
-      setShowModal(true);
-
-      setTimeout(() => {
-        locationInputRef.current?.focus();
-      }, 100);
-    } catch {
-      toast.error("Failed to load lab details");
+const openEditModal = async (labId: string) => {
+  try {
+    if (locationOptions.length === 0) {
+      await fetchLookupData();
     }
-  };
+    
+    const lab = await labService.findLabById(labId);
+    
+    const existingLabs = Array.isArray(lab.lab) && lab.lab.length > 0 
+      ? lab.lab 
+      : [""];
+    
+    console.log("Lab data from API:", lab);
+    console.log("Location from API:", lab.location);
+    console.log("Available location options:", locationOptions);
+    
+    // Find matching location from dropdown options
+    const matchingLocation = locationOptions.find(
+      opt => opt.value === lab.location || 
+             opt.value?.toLowerCase() === lab.location?.toLowerCase()
+    );
+    
+    console.log("Matching location found:", matchingLocation);
+    
+    setForm({
+      location: matchingLocation?.value || lab.location || "",
+      labInputs: existingLabs,
+    });
+    
+    setExistingLabCount(existingLabs.length);
+    
+    setSelectedLabId(labId);
+    setEditMode(true);
+    setShowModal(true);
+
+    // Focus on first lab input after modal opens
+    setTimeout(() => {
+      const firstLabInput = document.querySelector('input[placeholder="Lab 1"]') as HTMLInputElement;
+      firstLabInput?.focus();
+    }, 100);
+  } catch (error) {
+    console.error("Failed to load lab details:", error);
+    toast.error("Failed to load lab details");
+  }
+};
 
   const closeModal = () => {
     setShowModal(false);
     setEditMode(false);
     setSelectedLabId(null);
     setForm({ ...emptyForm });
+      setExistingLabCount(0); 
   };
 
   // ===== Dynamic lab inputs =====
@@ -212,30 +242,30 @@ const LabsPage: React.FC = () => {
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedLabId) return;
+ const handleUpdate = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!selectedLabId) return;
 
-    // Only validate and send lab array
-    const lab = form.labInputs.map((s) => s.trim()).filter(Boolean);
+  // Validate and prepare lab array (including newly added rows)
+  const lab = form.labInputs.map((s) => s.trim()).filter(Boolean);
 
-    if (!lab.length) {
-      toast.error("Add at least one lab");
-      return;
-    }
+  if (!lab.length) {
+    toast.error("At least one lab is required");
+    return;
+  }
 
-    console.log("Sending to API:", { id: selectedLabId, lab });
-    console.log("Lab array:", lab);
+  console.log("Sending to API:", { id: selectedLabId, lab });
 
-    try {
-      await labService.updateLab({ lab, id: selectedLabId, });
-      toast.success("Lab updated successfully");
-      closeModal();
-      fetchLabs();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to update lab");
-    }
-  };
+  try {
+    await labService.updateLab({ lab, id: selectedLabId });
+    toast.success("Lab updated successfully");
+    closeModal();
+    fetchLabs();
+  } catch (err: any) {
+    console.error("Update error:", err);
+    toast.error(err?.response?.data?.message || "Failed to update lab");
+  }
+};
   // ===== Pagination =====
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -467,122 +497,134 @@ const LabsPage: React.FC = () => {
       )}
 
       {/* Create / Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md border border-border">
-            <h2 className="text-xl font-semibold mb-4">
-              {editMode ? "Update Lab" : "Create New Lab"}
-            </h2>
+{showModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-card rounded-lg p-6 w-full max-w-md border border-border">
+      <h2 className="text-xl font-semibold mb-4">
+        {editMode ? "Update Lab" : "Create New Lab"}
+      </h2>
 
-            <form
-              onSubmit={editMode ? handleUpdate : handleCreate}
-              className="space-y-4"
+      <form
+        onSubmit={editMode ? handleUpdate : handleCreate}
+        className="space-y-4"
+      >
+       <div>
+  <label
+    className="block text-sm font-medium mb-2"
+    htmlFor="location"
+  >
+    Department
+  </label>
+  
+  {editMode ? (
+    <div className="px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground">
+      {form.location}
+    </div>
+  ) : (
+    <SearchableDropdown
+      options={locationOptions}
+      value={
+        locationOptions.find((opt) => opt.value === form.location)
+          ?.id
+      }
+      onChange={(id) => {
+        const selected = locationOptions.find((o) => o.id === id);
+        setForm((prev) => ({
+          ...prev,
+          location: selected?.value ?? "",
+        }));
+      }}
+      placeholder="Select Department"
+      displayFullValue={false}
+      isEmployeePage={true}
+      disabled={false}
+    />
+  )}
+  <input ref={locationInputRef} className="sr-only" />
+</div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium">Labs</label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addLabRow}
+              className="h-8 px-2"
+              aria-label="Add lab row"
             >
-              <div>
-                <label
-                  className="block text-sm font-medium mb-2"
-                  htmlFor="location"
-                >
-                  Department
-                </label>
-                <SearchableDropdown
-                  options={locationOptions}
-                  value={
-                    locationOptions.find((opt) => opt.value === form.location)
-                      ?.id
-                  }
-                  onChange={(id) => {
-                    const selected = locationOptions.find((o) => o.id === id);
-                    setForm((prev) => ({
-                      ...prev,
-                      location: selected?.value ?? "",
-                    }));
-                  }}
-                  placeholder="Select Department"
-                  displayFullValue={false}
-                  isEmployeePage={true}
-                  disabled={editMode}
-                />
-                <input ref={locationInputRef} className="sr-only" />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium">Labs</label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addLabRow}
-                    className="h-8 px-2"
-                    aria-label="Add lab row"
-                  >
-                    <Plus size={16} />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {form.labInputs.map((value, idx) => (
-                    <div
-                      key={`lab-row-${idx}`}
-                      className="flex items-center gap-2"
-                    >
-                      <Input
-                        type="text"
-                        value={value}
-                        onChange={(e) => updateLabRow(idx, e.target.value)}
-                        placeholder={`Lab ${idx + 1}`}
-                        required={idx === 0}
-                        className="flex-1"
-                        disabled={editMode}
-                        readOnly={editMode}
-                      />
-                      {!editMode && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeLabRow(idx)}
-                          className="h-8 px-2"
-                          aria-label={`Remove lab row ${idx + 1}`}
-                          disabled={form.labInputs.length === 1}
-                          title={
-                            form.labInputs.length === 1
-                              ? "At least one lab is required"
-                              : "Remove"
-                          }
-                        >
-                          <Minus size={16} />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-xs text-muted-foreground mt-2">
-                  Click <span className="font-semibold">+</span> to add another lab row
-                  {!editMode && (
-                    <>
-                      , and <span className="font-semibold">–</span> to remove a row
-                    </>
-                  )}
-                  .
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-2 mt-6">
-                <Button type="button" variant="outline" onClick={closeModal}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editMode ? "Update Lab" : "Create Lab"}
-                </Button>
-              </div>
-            </form>
+              <Plus size={16} />
+            </Button>
           </div>
+
+          <div className="space-y-2">
+  {form.labInputs.map((value, idx) => {
+    // Check if this is an existing lab (index < existingLabCount) in edit mode
+    const isExistingLab = editMode && idx < existingLabCount;
+    
+    return (
+      <div
+        key={`lab-row-${idx}`}
+        className="flex items-center gap-2"
+      >
+        <Input
+          type="text"
+          value={value}
+          onChange={(e) => updateLabRow(idx, e.target.value)}
+          placeholder={`Lab ${idx + 1}`}
+          required={idx === 0}
+          className="flex-1"
+          disabled={isExistingLab}
+          readOnly={isExistingLab}
+        />
+        {/* Show minus button only in create mode */}
+        {!editMode && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => removeLabRow(idx)}
+            className="h-8 px-2"
+            aria-label={`Remove lab row ${idx + 1}`}
+            disabled={form.labInputs.length === 1}
+            title={
+              form.labInputs.length === 1
+                ? "At least one lab is required"
+                : "Remove"
+            }
+          >
+            <Minus size={16} />
+          </Button>
+        )}
+      </div>
+    );
+  })}
+</div>
+
+          <p className="text-xs text-muted-foreground mt-2">
+            {editMode 
+              ? "Click + to add new lab rows. Existing labs will be updated."
+              : <>
+                  Click <span className="font-semibold">+</span> to add another lab row
+                  , and <span className="font-semibold">–</span> to remove a row.
+                </>
+            }
+          </p>
         </div>
-      )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" onClick={closeModal}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {editMode ? "Update Lab" : "Create Lab"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };
