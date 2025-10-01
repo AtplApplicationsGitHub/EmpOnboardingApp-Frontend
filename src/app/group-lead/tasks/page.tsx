@@ -650,93 +650,96 @@ const GroupLeadTasksPage: React.FC = () => {
         </div>
       )}
 
-      {/* Questions Modal */}
-      {showQuestionsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Employee Questions - {selectedEmployeeName}
-              </h2>
-              <div className="flex-1 flex justify-end items-center">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-primary dark:text-primary-foreground">
-                    {completedQuestionCount} / {totalQuestionCount}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Questions</div>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setShowQuestionsModal(false);
-                  setSelectedTaskQuestions([]);
-                  setSelectedEmployeeName("");
-                }}
-                className="rounded-lg ml-4"
-              >
-                <X size={16} />
-              </Button>
+   {/* Questions Modal */}
+{showQuestionsModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white dark:bg-black rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark: border">
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          Employee Questions - {selectedEmployeeName}
+        </h2>
+        <div className="flex-1 flex justify-end items-center">
+          <div className="text-center">
+            <div className="text-xl font-bold text-primary dark:text-primary">
+              {completedQuestionCount} / {totalQuestionCount}
             </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[70vh]">
-              {selectedTaskQuestions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No questions found for this employee.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {selectedTaskQuestions.map((question, index) => (
-                    <div
-                      key={question.id || index}
-                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
-                    >
-                      <div className="mb-3">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Question {index + 1}:
-                        </h3>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          {question.question || "No question text available"}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Response:
-                        </h4>
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
-                          <p className="text-gray-800 dark:text-gray-200">
-                            {question.response || "No response provided"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowQuestionsModal(false);
-                  setSelectedTaskQuestions([]);
-                  setSelectedEmployeeName("");
-                }}
-              >
-                Close
-              </Button>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Questions
             </div>
           </div>
         </div>
-      )}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            setShowQuestionsModal(false);
+            setSelectedTaskQuestions([]);
+            setSelectedEmployeeName("");
+          }}
+          className="rounded-lg ml-4"
+        >
+          <X size={16} />
+        </Button>
+      </div>
+
+      {/* Modal Content */}
+      <div className="p-6 overflow-y-auto max-h-[70vh]">
+        {selectedTaskQuestions.length === 0 ? (
+          <div className="text-center py-8">
+            <Users size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">
+              No questions found for this employee.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {selectedTaskQuestions.map((question, index) => (
+              <div
+                key={question.id || index}
+                className="border border-gray-200 dark: rounded-lg p-4 bg-white dark:bg-black"
+              >
+                <div className="mb-3">
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Question {index + 1}:
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {question.question || "No question text available"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Response:
+                  </h4>
+                  <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {question.response || "No response provided"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Footer */}
+      {/* <div className="flex justify-end p-6 border-t border-gray-200 dark:border-t">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setShowQuestionsModal(false);
+            setSelectedTaskQuestions([]);
+            setSelectedEmployeeName("");
+          }}
+        >
+          Close
+        </Button>
+      </div> */}
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

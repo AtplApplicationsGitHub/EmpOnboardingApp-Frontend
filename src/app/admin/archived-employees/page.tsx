@@ -22,10 +22,14 @@ import {
     ChevronsRight,
     Eye,
     Users,
+    TicketCheck,
+    X
 } from "lucide-react";
 import { TaskProjection } from "@/app/types";
-import { archiveService,taskService } from "../../services/api";
+import { archiveService, taskService, EQuestions } from "../../services/api";
 import { format } from "date-fns";
+import { toast } from "react-hot-toast";
+
 
 const PAGE_SIZE = 10;
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
@@ -38,6 +42,14 @@ const ArchivedEmployeesPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [searchFilter, setSearchFilter] = useState("");
     const [dateFormat, setDateFormat] = useState<string | null>(null);
+    const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
+    const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+    const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<any[]>([]);
+    const [questionsLoading, setQuestionsLoading] = useState(false);
+    const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
+    const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
+    const [totalQuestionCount, setTotalQuestionCount] = useState(0);
+
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -53,13 +65,29 @@ const ArchivedEmployeesPage: React.FC = () => {
             };
             const search = searchFilter.trim();
             if (search) params.search = search;
-        const [response, formatResponse] = await Promise.all([
-            archiveService.getArchiveTask(params),
-            taskService.getDateFormat() 
-        ]);
+            const [response, formatResponse] = await Promise.all([
+                archiveService.getArchiveTask(params),
+                taskService.getDateFormat()
+            ]);
             setEmployees(response.commonListDto.content ?? []);
             setTotalElements(response.totalElements ?? 0);
-             setDateFormat(formatResponse);
+            setDateFormat(formatResponse);
+
+            try {
+                const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
+                // console.log("🔍 Raw API Response:", employeesWithQuestionsArray);
+                // console.log("🔍 Type of response:", typeof employeesWithQuestionsArray);
+                // console.log("🔍 Is Array?", Array.isArray(employeesWithQuestionsArray));
+
+                const employeeIdsSet = new Set(employeesWithQuestionsArray);
+                // console.log("🔍 Set created:", employeeIdsSet);
+                // console.log("🔍 Set size:", employeeIdsSet.size);
+
+                setEmployeesWithQuestions(employeeIdsSet);
+            } catch (error) {
+                // console.error("❌ Error fetching employees with questions:", error);
+                setEmployeesWithQuestions(new Set());
+            }
         } catch (err: any) {
             setError(err?.response?.data?.message ?? "Failed to load archived employees");
             setEmployees([]);
@@ -70,6 +98,31 @@ const ArchivedEmployeesPage: React.FC = () => {
     useEffect(() => {
         fetchArchivedEmployees();
     }, [fetchArchivedEmployees]);
+
+    const handleViewQuestions = async (taskId: string, employeeName: string) => {
+        try {
+            setQuestionsLoading(true);
+            setSelectedEmployeeName(employeeName);
+            const questions = await EQuestions.getQuestionsByTask(taskId);
+            // console.log("Fetched questions from BE:", questions);  // 👈 log full response
+
+
+            const completedQuestions = questions.filter(
+                (question) => question.completedFlag === true
+            ).length;
+            const totalQuestions = questions.length;
+            setSelectedTaskQuestions(questions);
+            setCompletedQuestionCount(completedQuestions);
+            setTotalQuestionCount(totalQuestions);
+            setShowQuestionsModal(true);
+        } catch (error) {
+            console.error("Error fetching task questions:", error);
+            toast.error("Failed to load questions");
+        } finally {
+            setQuestionsLoading(false);
+        }
+    };
+   
 
     const ProgressBar: React.FC<{ value: number; color: string }> = ({
         value,
@@ -165,7 +218,11 @@ const ArchivedEmployeesPage: React.FC = () => {
                                 </TableRow>
                             ) : (
                                 employees.map((employee) => {
-                                    console.log("Employee Data:", employee);
+                                    // console.log("Employee Data:", employee);
+                                    //                                     console.log("🔵 Current Employee ID:", employee.employeeId);
+                                    // console.log("🔵 Parsed ID:", parseInt(employee.employeeId, 10));
+                                    // console.log("🔵 Set contains:", Array.from(employeesWithQuestions));
+                                    // console.log("🔵 Does Set have this ID?", employeesWithQuestions.has(parseInt(employee.employeeId, 10)));
 
                                     // compute progress values
                                     const completed =
@@ -210,29 +267,29 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                                             {/* DOJ */}
                                             <TableCell className="min-w-[100px]">
-                                                 {(() => {
-                                                                         const dojArray = (employee as any).doj;
-                                                                         if (
-                                                                           Array.isArray(dojArray) &&
-                                                                           dateFormat &&
-                                                                           dojArray.length >= 3
-                                                                         ) {
-                                                                           try {
-                                                                             const dateObject = new Date(
-                                                                               dojArray[0],
-                                                                               dojArray[1] - 1,
-                                                                               dojArray[2]
-                                                                             );
-                                                                             if (isNaN(dateObject.getTime())) {
-                                                                               return "Invalid Date";
-                                                                             }
-                                                                             return format(dateObject, dateFormat);
-                                                                           } catch (error) {
-                                                                             return "Invalid Date";
-                                                                           }
-                                                                         }
-                                                                         return "Invalid Date";
-                                                                       })()}
+                                                {(() => {
+                                                    const dojArray = (employee as any).doj;
+                                                    if (
+                                                        Array.isArray(dojArray) &&
+                                                        dateFormat &&
+                                                        dojArray.length >= 3
+                                                    ) {
+                                                        try {
+                                                            const dateObject = new Date(
+                                                                dojArray[0],
+                                                                dojArray[1] - 1,
+                                                                dojArray[2]
+                                                            );
+                                                            if (isNaN(dateObject.getTime())) {
+                                                                return "Invalid Date";
+                                                            }
+                                                            return format(dateObject, dateFormat);
+                                                        } catch (error) {
+                                                            return "Invalid Date";
+                                                        }
+                                                    }
+                                                    return "Invalid Date";
+                                                })()}
                                             </TableCell>
 
                                             {/* Lab */}
@@ -271,6 +328,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                             {/* Actions */}
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
+
                                                     <Button
                                                         variant="outline"
                                                         size="icon"
@@ -282,6 +340,22 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                     >
                                                         <Eye size={16} />
                                                     </Button>
+                                                    {employeesWithQuestions.has(parseInt(employee.employeeId, 10)) && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="rounded-lg"
+                                                            onClick={() => {
+                                                                const firstTaskId = employee.taskIds.split(",")[0];
+                                                                handleViewQuestions(firstTaskId, employee.name);
+                                                            }}
+                                                            disabled={questionsLoading}
+                                                            aria-label="View answers"
+                                                            title="View Employee Answers"
+                                                        >
+                                                            <TicketCheck size={16} />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -368,6 +442,92 @@ const ArchivedEmployeesPage: React.FC = () => {
                         </div>
                     </CardContent>
                 </Card>
+            )}
+            {showQuestionsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                Employee Task Questions - {selectedEmployeeName}
+                            </h2>
+                            <div className="flex-1 flex justify-end items-center">
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-primary dark:text-primary-foreground">
+                                        {completedQuestionCount} / {totalQuestionCount}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">Questions</div>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                    setShowQuestionsModal(false);
+                                    setSelectedTaskQuestions([]);
+                                    setSelectedEmployeeName("");
+                                }}
+                                className="rounded-lg ml-4"
+                            >
+                                <X size={16} />
+                            </Button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 overflow-y-auto max-h-[70vh]">
+                            {selectedTaskQuestions.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <Users size={48} className="mx-auto text-gray-400 mb-4" />
+                                    <p className="text-gray-500 dark:text-gray-400">
+                                        No questions found for this employee.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {selectedTaskQuestions.map((question, index) => (
+                                        <div
+                                            key={question.id || index}
+                                            className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                                        >
+                                            <div className="mb-3">
+                                                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                                    Question {index + 1}:
+                                                </h3>
+                                                <p className="text-gray-700 dark:text-gray-300">
+                                                    {question.question || "No question text available"}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                                    Response:
+                                                </h4>
+                                                <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                                                    <p className="text-gray-800 dark:text-gray-200">
+                                                        {question.response || "No response provided"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowQuestionsModal(false);
+                                    setSelectedTaskQuestions([]);
+                                    setSelectedEmployeeName("");
+                                }}
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
