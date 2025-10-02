@@ -30,6 +30,7 @@ import {
   Users,
   Verified,
   FlaskConical,
+  X,
 } from "lucide-react";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -47,6 +48,7 @@ const TasksPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
     Set<number>
   >(new Set());
@@ -59,6 +61,12 @@ const TasksPage: React.FC = () => {
     undefined
   );
   const [loadingLabs, setLoadingLabs] = useState(false);
+  const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+  const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<any[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
+  const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
+  const [totalQuestionCount, setTotalQuestionCount] = useState(0);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -141,6 +149,26 @@ const TasksPage: React.FC = () => {
     }
   };
 
+  const handleViewQuestions = async (taskId: string, employeeName: string) => {
+    try {
+      setQuestionsLoading(true);
+      setSelectedEmployeeName(employeeName);
+      const questions = await EQuestions.getQuestionsByTask(taskId);
+      const completedQuestions = questions.filter(
+        (question) => question.completedFlag === true
+      ).length;
+      const totalQuestions = questions.length;
+      setSelectedTaskQuestions(questions);
+      setCompletedQuestionCount(completedQuestions);
+      setTotalQuestionCount(totalQuestions);
+      setShowQuestionsModal(true);
+    } catch (error) {
+      console.error("Error fetching task questions:", error);
+      toast.error("Failed to load questions");
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
   // Open Lab Change Modal
   const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
@@ -202,17 +230,34 @@ const TasksPage: React.FC = () => {
     return pages;
   };
 
-  const handleFreezeTask = async () => {
-    if (!selectedTaskId) return;
+  const handleFreezeTask = async (shouldArchive: boolean) => {
+    if (!selectedTaskId || selectedEmployeeId === null) return;
+
     try {
-      await taskService.freezeTask(selectedTaskId);
+      if (shouldArchive) {
+        // Call both APIs when "Yes" is clicked
+        await Promise.all([
+          taskService.freezeTask(selectedTaskId),
+          adminService.achiveEmployees(selectedEmployeeId)
+        ]);
+        toast.success("Employee archived and tasks frozen successfully");
+      } else {
+        // Call only freeze API when "No" is clicked
+        await taskService.freezeTask(selectedTaskId);
+        toast.success("Tasks frozen successfully");
+      }
+
       await fetchTasks();
       setShowFreezeModal(false);
       setSelectedTaskId("");
+      setSelectedEmployeeId(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to delete group");
+      const errorMessage = err.response?.data?.message || "Failed to complete operation";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
+
 
   const ProgressBar: React.FC<{ value: number; color: string }> = ({
     value,
@@ -282,7 +327,7 @@ const TasksPage: React.FC = () => {
                 </TableRow>
               ) : (
                 tasks.map((task) => {
-                                    console.log('task:' ,tasks);
+                  console.log('task:', tasks);
 
                   console.log("Task Data:", task);
                   const completed =
@@ -414,7 +459,7 @@ const TasksPage: React.FC = () => {
                             size="icon"
                             className="rounded-lg"
                             onClick={() =>
-                            
+
                               (window.location.href = `/admin/tasks/${task.taskIds}`)
                             }
                             aria-label="View details"
@@ -436,18 +481,16 @@ const TasksPage: React.FC = () => {
                           )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
-                          {employeesWithQuestions.has(
-                            parseInt(task.employeeId, 10)
-                          ) && (
+                          {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
                             <Button
                               variant="outline"
                               size="icon"
-                              className="rounded-lg "
+                              className="rounded-lg"
                               onClick={() => {
-                                // Use the first task ID from the comma-separated list
                                 const firstTaskId = task.taskIds.split(",")[0];
-                                window.location.href = `/admin/tasks/answers/${firstTaskId}`;
+                                handleViewQuestions(firstTaskId, (task as any).name);
                               }}
+                              disabled={questionsLoading}
                               aria-label="View answers"
                               title="View Employee Answers"
                             >
@@ -462,9 +505,11 @@ const TasksPage: React.FC = () => {
                                 variant="outline"
                                 size="icon"
                                 className="rounded-lg"
-                                aria-label="Completed"
+                                aria-label="Archive and Freeze"
+                                title="Archive Employee"
                                 onClick={() => {
                                   setSelectedTaskId(task.taskIds);
+                                  setSelectedEmployeeId(parseInt(task.employeeId, 10));
                                   setShowFreezeModal(true);
                                 }}
                               >
@@ -573,31 +618,28 @@ const TasksPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-sm mx-4">
             <CardHeader>
-              <CardTitle>Freeze Tasks</CardTitle>
+              <CardTitle>Archive Employee</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Are you sure you want to Freeze the Tasks{" "}
-                {/* <span className="font-semibold">{tasks.id}</span>? */}
+                Do you want to archive this employee?
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
                 <Button
-                  variant="outline"
-                  onClick={handleFreezeTask}
-                  className="flex-1"
+                  variant="default"
+                  onClick={() => handleFreezeTask(true)}
+                  className="w-full"
                 >
-                  Yes, Freeze
+                  Yes
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setShowFreezeModal(false);
-                    setSelectedTaskId("");
-                  }}
-                  className="flex-1"
+                  onClick={() => handleFreezeTask(false)}
+                  className="w-full"
                 >
-                  Cancel
+                  No
                 </Button>
+
               </div>
             </CardContent>
           </Card>
@@ -656,6 +698,95 @@ const TasksPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+      {/* Questions Modal */}
+      {showQuestionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-black rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark: border">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Employee Task Question
+              </h2>
+              <div className="flex-1 flex justify-end items-center">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-primary dark:text-primary">
+                    {completedQuestionCount} / {totalQuestionCount}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Questions
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setShowQuestionsModal(false);
+                  setSelectedTaskQuestions([]);
+                  setSelectedEmployeeName("");
+                }}
+                className="rounded-lg ml-4"
+              >
+                <X size={16} />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {selectedTaskQuestions.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No questions found for this employee.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {selectedTaskQuestions.map((question, index) => (
+                    <div
+                      key={question.id || index}
+                      className="border border-gray-200 dark: rounded-lg p-4 bg-white dark:bg-black"
+                    >
+                      <div className="mb-3">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Question {index + 1}:
+                        </h3>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          {question.question || "No question text available"}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Response:
+                        </h4>
+                        <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
+                          <p className="text-gray-800 dark:text-gray-200">
+                            {question.response || "No response provided"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {/* <div className="flex justify-end p-6 border-t border-gray-200 dark:border-t">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setShowQuestionsModal(false);
+            setSelectedTaskQuestions([]);
+            setSelectedEmployeeName("");
+          }}
+        >
+          Close
+        </Button>
+      </div> */}
+          </div>
         </div>
       )}
     </div>

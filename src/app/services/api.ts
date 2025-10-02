@@ -743,6 +743,14 @@ export const EQuestions = {
     );
     return response.data;
   },
+
+  
+  getEmployeesArchWithQuestions: async (): Promise<number[]> => {
+    const response = await api.get<number[]>(
+      `/eQuestions/employeesArchWithQuestions`
+    );
+    return response.data;
+  },
 };
 
 export const auditService = {
