@@ -74,11 +74,8 @@ const ArchivedEmployeesPage: React.FC = () => {
             setDateFormat(formatResponse);
 
             try {
-                const employeesWithQuestionsArray = await EQuestions.getEmployeesWithQuestions();
-                // console.log("🔍 Raw API Response:", employeesWithQuestionsArray);
-                // console.log("🔍 Type of response:", typeof employeesWithQuestionsArray);
-                // console.log("🔍 Is Array?", Array.isArray(employeesWithQuestionsArray));
-
+                const employeesWithQuestionsArray = await EQuestions.getEmployeesArchWithQuestions();
+                console.log("🔍 Raw API Response:", employeesWithQuestionsArray);
                 const employeeIdsSet = new Set(employeesWithQuestionsArray);
                 // console.log("🔍 Set created:", employeeIdsSet);
                 // console.log("🔍 Set size:", employeeIdsSet.size);
