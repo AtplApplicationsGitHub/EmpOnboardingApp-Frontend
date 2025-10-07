@@ -21,6 +21,8 @@ import {
   HelpCircle,
   Copy,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+
 
 const PAGE_SIZE = 10;
 
@@ -212,6 +214,7 @@ const GroupsPage: React.FC = () => {
     try {
       await adminService.cloneGroup(group);
       await fetchPage(0);
+      toast.success('Cloned successfully');
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to clone group");
     }
@@ -300,6 +303,7 @@ const GroupsPage: React.FC = () => {
                   <button
                     onClick={() => clone(group)}
                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                    //  title="clone"
                   >
                     <Copy size={16} />
                   </button>
