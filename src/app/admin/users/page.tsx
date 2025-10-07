@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
-import { User,DropDownDTO } from "../../types";
+import { User, DropDownDTO } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -25,6 +25,7 @@ import {
   ChevronsRight,
   Search,
   Pencil,
+  X
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -43,7 +44,11 @@ const UsersPage: React.FC = () => {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-    const [roles, setRoles] = useState<DropDownDTO[]>([]);
+  const [roles, setRoles] = useState<DropDownDTO[]>([]);
+  const [showLdapModal, setShowLdapModal] = useState(false);
+  const [ldapUsers, setLdapUsers] = useState<string[]>([]);
+  const [ldapInputValue, setLdapInputValue] = useState("");
+  const [ldapLoading, setLdapLoading] = useState(false);
 
 
   const [formData, setFormData] = useState({
@@ -68,7 +73,7 @@ const UsersPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-     fetchRoles();
+    fetchRoles();
     if (showCreateModal && nameInputRef.current) {
       nameInputRef.current.focus();
     }
@@ -91,7 +96,7 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  
+
 
   // 1. CREATE
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -202,7 +207,7 @@ const UsersPage: React.FC = () => {
         name: user.name || "",
         email: user.email || "",
         password: "",
-        role: user.role as "admin" | "group_lead" ,
+        role: user.role as "admin" | "group_lead",
       });
       setEditMode(true);
       setSelectedUserId(userId);
@@ -211,6 +216,47 @@ const UsersPage: React.FC = () => {
       toast.error("Failed to load user");
     } finally {
       // setLoading(false);
+    }
+  };
+
+  //handle add ldap user
+  //handle add ldap user
+  const handleLdapKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && ldapInputValue.trim()) {
+      e.preventDefault();
+      const username = ldapInputValue.trim();
+      if (!ldapUsers.includes(username)) {
+        setLdapUsers([...ldapUsers, username]);
+      }
+      setLdapInputValue("");
+    }
+  };
+
+  const removeLdapUser = (username: string) => {
+    setLdapUsers(ldapUsers.filter(u => u !== username));
+  };
+
+  const handleLdapImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (ldapUsers.length === 0) {
+      toast.error("Please add at least one LDAP username");
+      return;
+    }
+
+    try {
+      setLdapLoading(true);
+      // Replace this with your actual API call
+      // await adminService.importLdapUsers(ldapUsers);
+      toast.success(`Successfully imported ${ldapUsers.length} LDAP user(s)`);
+      setShowLdapModal(false);
+      setLdapUsers([]);
+      setLdapInputValue("");
+      fetchUsers(); // Refresh the user list
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to import LDAP users");
+    } finally {
+      setLdapLoading(false);
     }
   };
 
@@ -262,23 +308,33 @@ const UsersPage: React.FC = () => {
             className="w-64"
           />
         </form>
-        <Button
-          onClick={() => {
-            setFormData({
-              name: "",
-              email: "",
-              password: "",
-              role: "group_lead",
-            });
-            setEditMode(false);
-            setSelectedUserId(null);
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add New User
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowLdapModal(true)}
+
+            className="flex items-center gap-2"
+          >
+            <Users size={16} />
+            Add LDAP User
+          </Button>
+          <Button
+            onClick={() => {
+              setFormData({
+                name: "",
+                email: "",
+                password: "",
+                role: "group_lead",
+              });
+              setEditMode(false);
+              setSelectedUserId(null);
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Add New User
+          </Button>
+        </div>
       </div>
 
       {/* Error Display */}
@@ -348,11 +404,10 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          user.role === "admin"
+                        className={`px-2 py-1 rounded text-xs font-medium ${user.role === "admin"
                             ? "bg-red-500/10 text-red-500 border border-red-500/20"
                             : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                        }`}
+                          }`}
                       >
                         {user.role === "admin" ? "Administrator" : "Group Lead"}
                       </span>
@@ -484,23 +539,23 @@ const UsersPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
-              <select
-    value={formData.role}
-    onChange={(e) => {
-        setFormData({
-            ...formData,
-            role: e.target.value as "admin" | "group_lead",
-        });
-    }}
-    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-    required
->
-    {roles.map((role) => (
-        <option key={role.id} value={role.key}>
-            {role.key}
-        </option>
-    ))}
-</select>
+                <select
+                  value={formData.role}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      role: e.target.value as "admin" | "group_lead",
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                >
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.key}>
+                      {role.key}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Password only for create */}
@@ -543,6 +598,80 @@ const UsersPage: React.FC = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/*ldap module*/}
+      {showLdapModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-4xl">
+            <h2 className="text-xl font-bold mb-4">Bulk Import LDAP User</h2>
+
+            <div className="space-y-4">
+              <div>
+                {/* Tags Display Area */}
+                <div className="w-full min-h-[100px] max-h-[800px] overflow-y-auto px-3 py-2 border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-primary">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {ldapUsers.map((user, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
+                      >
+                        {user}
+                        <button
+                          type="button"
+                          onClick={() => removeLdapUser(user)}
+                          className="hover:bg-primary/20 rounded-full p-0.5"
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Input Field */}
+                  <input
+                    type="text"
+                    value={ldapInputValue}
+                    onChange={(e) => setLdapInputValue(e.target.value)}
+                    onKeyDown={handleLdapKeyDown}
+                    placeholder={
+                      ldapUsers.length === 0
+                        ? "Type username and press Enter"
+                        : "Add another..."
+                    }
+                    autoFocus
+                    className="w-full bg-transparent outline-none text-sm"
+                  />
+                </div>
+
+                {/* <p className="text-xs text-muted-foreground mt-2">
+                  Type a username and press{" "}
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to add
+                </p> */}
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setShowLdapModal(false);
+              setLdapUsers([]);
+              setLdapInputValue("");
+            }}
+            disabled={ldapLoading}
+          >
+            Cancel
+          </Button>
+                <Button
+                  onClick={handleLdapImport}
+                  disabled={ldapLoading || ldapUsers.length === 0}
+                >
+                  {ldapLoading ? "Getting Users..." : "Get User"}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
