@@ -737,6 +737,13 @@ export const EQuestions = {
     return response.data;
   },
 
+  getQuestionsByTaskArchId: async (taskId: string): Promise<EmployeeQuestions[]> => {
+  const response = await api.get<EmployeeQuestions[]>(
+    `/eQuestions/getByTaskArchId/${taskId}`
+  );
+  return response.data;
+},
+
   getEmployeesWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(
       `/eQuestions/employeesWithQuestions`

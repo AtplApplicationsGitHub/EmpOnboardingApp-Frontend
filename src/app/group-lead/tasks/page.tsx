@@ -311,176 +311,177 @@ const GroupLeadTasksPage: React.FC = () => {
               {error}
             </div>
           )}
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Task ID</TableHead>
-                <TableHead>Employee Name</TableHead>
-                <TableHead>Group ID</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {allTasks.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">No tasks found</p>
-                    </div>
-                  </TableCell>
+                  <TableHead>Task ID</TableHead>
+                  <TableHead>Employee Name</TableHead>
+                  <TableHead>Group ID</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : (
-                (() => {
-                  const seenEmployees = new Set<string>();
-                  return allTasks.map((task) => {
-                    console.log('fetched task from be:', allTasks);
-                    console.log("Task Data:", task);
-                    const completed =
-                      (task as any).completedQuetions ??
-                      (task as any).completedQuestions ??
-                      0;
-                    const totalQ =
-                      (task as any).totalQuetions ??
-                      (task as any).totalQuestions ??
-                      0;
-                    const percent = totalQ
-                      ? Math.round((completed / totalQ) * 100)
-                      : 0;
+              </TableHeader>
 
-                    const employeeId = (task as any).employeeId;
-                    const employeeName = (task as any).employeeName;
-                    const taskId = String(task.id);
-                    const isFirstOccurrence = !seenEmployees.has(employeeId);
-                    const hasQuestions = employeesWithQuestions.has(
-                      parseInt(employeeId, 10)
-                    );
+              <TableBody>
+                {allTasks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2">
+                        <Users size={48} className="text-muted-foreground" />
+                        <p className="text-muted-foreground">No tasks found</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  (() => {
+                    const seenEmployees = new Set<string>();
+                    return allTasks.map((task) => {
+                      console.log('fetched task from be:', allTasks);
+                      console.log("Task Data:", task);
+                      const completed =
+                        (task as any).completedQuetions ??
+                        (task as any).completedQuestions ??
+                        0;
+                      const totalQ =
+                        (task as any).totalQuetions ??
+                        (task as any).totalQuestions ??
+                        0;
+                      const percent = totalQ
+                        ? Math.round((completed / totalQ) * 100)
+                        : 0;
 
-                    if (isFirstOccurrence) {
-                      seenEmployees.add(employeeId);
-                    }
+                      const employeeId = (task as any).employeeId;
+                      const employeeName = (task as any).employeeName;
+                      const taskId = String(task.id);
+                      const isFirstOccurrence = !seenEmployees.has(employeeId);
+                      const hasQuestions = employeesWithQuestions.has(
+                        parseInt(employeeId, 10)
+                      );
 
-                    return (
-                      <TableRow key={(task as any).id ?? (task as any).id}>
-                        <TableCell className="font-semibold">
-                          {(task as any).id}
-                        </TableCell>
-                        <TableCell>{(task as any).employeeName}</TableCell>
-                        <TableCell>{(task as any).groupName}</TableCell>
-                        <TableCell>{(task as any).level}</TableCell>
-                        <TableCell>{(task as any).role}</TableCell>
-                        <TableCell>{(task as any).department}</TableCell>
-                        <TableCell className="min-w-[145px]">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold">
-                                {completed}/{totalQ}
-                              </span>
-                              <span className="text-muted-foreground">
-                                {percent}%
-                              </span>
+                      if (isFirstOccurrence) {
+                        seenEmployees.add(employeeId);
+                      }
+
+                      return (
+                        <TableRow key={(task as any).id ?? (task as any).id}>
+                          <TableCell className="font-semibold">
+                            {(task as any).id}
+                          </TableCell>
+                          <TableCell>{(task as any).employeeName}</TableCell>
+                          <TableCell>{(task as any).groupName}</TableCell>
+                          <TableCell>{(task as any).level}</TableCell>
+                          <TableCell>{(task as any).role}</TableCell>
+                          <TableCell>{(task as any).department}</TableCell>
+                          <TableCell className="">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="font-semibold">
+                                  {completed}/{totalQ}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  {percent}%
+                                </span>
+                              </div>
+                              <ProgressBar value={percent} />
                             </div>
-                            <ProgressBar value={percent} />
-                          </div>
-                        </TableCell>
+                          </TableCell>
 
-                        {/* Status */}
-                        <TableCell >
-                          {(() => {
-                            const status = (task.status || "").toLowerCase();
-                            const base =
-                              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                          {/* Status */}
+                          <TableCell >
+                            {(() => {
+                              const status = (task.status || "").toLowerCase();
+                              const base =
+                                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ";
 
-                            if (status === "overdue") {
+                              if (status === "overdue") {
+                                return (
+                                  <span
+                                    className={`${base} bg-red-600/20 text-red-600`}
+                                  >
+                                    Overdue
+                                  </span>
+                                );
+                              }
+
+                              if (status === "completed") {
+                                return (
+                                  <span
+                                    className={`${base} bg-green-600/20 text-green-600`}
+                                  >
+                                    Completed
+                                  </span>
+                                );
+                              }
+
                               return (
                                 <span
-                                  className={`${base} bg-red-600/20 text-red-600`}
+                                  className={`${base} bg-amber-500/20 text-amber-600`}
                                 >
-                                  Overdue
+                                  In Progress
                                 </span>
                               );
-                            }
+                            })()}
+                          </TableCell>
 
-                            if (status === "completed") {
-                              return (
-                                <span
-                                  className={`${base} bg-green-600/20 text-green-600`}
+                          {/* Actions */}
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {/* View Answers button - only show for first occurrence of employees who have questions */}
+                              {isFirstOccurrence && hasQuestions && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="rounded-lg shrink-0"
+                                  onClick={() =>
+                                    handleViewQuestions(taskId, employeeName)
+                                  }
+                                  disabled={questionsLoading}
+                                  aria-label="View answers"
+                                  title="View Employee Answers"
                                 >
-                                  Completed
-                                </span>
-                              );
-                            }
+                                  <TicketCheck size={16} />
+                                </Button>
+                              )}
 
-                            return (
-                              <span
-                                className={`${base} bg-amber-500/20 text-amber-600`}
-                              >
-                                In Progress
-                              </span>
-                            );
-                          })()}
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {/* View Answers button - only show for first occurrence of employees who have questions */}
-                            {isFirstOccurrence && hasQuestions && (
                               <Button
                                 variant="outline"
                                 size="icon"
                                 className="rounded-lg"
                                 onClick={() =>
-                                  handleViewQuestions(taskId, employeeName)
+                                  router.push(`/group-lead/tasks/${task.id}`)
                                 }
-                                disabled={questionsLoading}
-                                aria-label="View answers"
-                                title="View Employee Answers"
+                                aria-label="View details"
                               >
-                                <TicketCheck size={16} />
+                                <Eye size={16} />
                               </Button>
-                            )}
 
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg"
-                              onClick={() =>
-                                router.push(`/group-lead/tasks/${task.id}`)
-                              }
-                              aria-label="View details"
-                            >
-                              <Eye size={16} />
-                            </Button>
-
-                            { !task.lab && isFirstOccurrence && (
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-lg"
-                                onClick={() => handleOpenLabChangeModal(task)}
-                                aria-label="Change lab"
-                                title="Change Lab"
-                              >
-                                <FlaskConical size={16} />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  });
-                })()
-              )}
-            </TableBody>
-          </Table>
+                              {!task.lab && isFirstOccurrence && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="rounded-lg"
+                                  onClick={() => handleOpenLabChangeModal(task)}
+                                  aria-label="Change lab"
+                                  title="Change Lab"
+                                >
+                                  <FlaskConical size={16} />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -650,81 +651,81 @@ const GroupLeadTasksPage: React.FC = () => {
         </div>
       )}
 
-   {/* Questions Modal */}
-{showQuestionsModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white dark:bg-black rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark: border">
-      {/* Modal Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          Employee Questions - {selectedEmployeeName}
-        </h2>
-        <div className="flex-1 flex justify-end items-center">
-          <div className="text-center">
-            <div className="text-xl font-bold text-primary dark:text-primary">
-              {completedQuestionCount} / {totalQuestionCount}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Questions
-            </div>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => {
-            setShowQuestionsModal(false);
-            setSelectedTaskQuestions([]);
-            setSelectedEmployeeName("");
-          }}
-          className="rounded-lg ml-4"
-        >
-          <X size={16} />
-        </Button>
-      </div>
-
-      {/* Modal Content */}
-      <div className="p-6 overflow-y-auto max-h-[70vh]">
-        {selectedTaskQuestions.length === 0 ? (
-          <div className="text-center py-8">
-            <Users size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">
-              No questions found for this employee.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {selectedTaskQuestions.map((question, index) => (
-              <div
-                key={question.id || index}
-                className="border border-gray-200 dark: rounded-lg p-4 bg-white dark:bg-black"
-              >
-                <div className="mb-3">
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Question {index + 1}:
-                  </h3>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {question.question || "No question text available"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Response:
-                  </h4>
-                  <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
-                    <p className="text-gray-800 dark:text-gray-200">
-                      {question.response || "No response provided"}
-                    </p>
+      {/* Questions Modal */}
+      {showQuestionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-black rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark: border">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Employee Questions - {selectedEmployeeName}
+              </h2>
+              <div className="flex-1 flex justify-end items-center">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-primary dark:text-primary">
+                    {completedQuestionCount} / {totalQuestionCount}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Questions
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setShowQuestionsModal(false);
+                  setSelectedTaskQuestions([]);
+                  setSelectedEmployeeName("");
+                }}
+                className="rounded-lg ml-4"
+              >
+                <X size={16} />
+              </Button>
+            </div>
 
-      {/* Modal Footer */}
-      {/* <div className="flex justify-end p-6 border-t border-gray-200 dark:border-t">
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {selectedTaskQuestions.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No questions found for this employee.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {selectedTaskQuestions.map((question, index) => (
+                    <div
+                      key={question.id || index}
+                      className="border border-gray-200 dark: rounded-lg p-4 bg-white dark:bg-black"
+                    >
+                      <div className="mb-3">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Question {index + 1}:
+                        </h3>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          {question.question || "No question text available"}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Response:
+                        </h4>
+                        <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
+                          <p className="text-gray-800 dark:text-gray-200">
+                            {question.response || "No response provided"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {/* <div className="flex justify-end p-6 border-t border-gray-200 dark:border-t">
         <Button
           variant="outline"
           onClick={() => {
@@ -736,9 +737,9 @@ const GroupLeadTasksPage: React.FC = () => {
           Close
         </Button>
       </div> */}
-    </div>
-  </div>
-)}
+          </div>
+        </div>
+      )}
 
     </div>
   );

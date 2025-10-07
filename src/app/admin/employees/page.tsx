@@ -443,7 +443,7 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-    const archiveEmployee = async (id:number) => {
+  const archiveEmployee = async (id: number) => {
     try {
       console.log("Archiving employee with id:", id); // Debug log
       await adminService.achiveEmployees(id);
@@ -648,7 +648,7 @@ const EmployeesPage: React.FC = () => {
                 <TableCell className="w-28"></TableCell>
                 <TableCell className="w-40">Name</TableCell>
                 <TableCell className="w-44">Email</TableCell>
-                <TableCell className="w-24">DOJ</TableCell>
+                <TableCell className="w-22">DOJ</TableCell>
                 <TableCell>Department</TableCell>
                 <TableCell>Lab</TableCell>
                 <TableCell>Level</TableCell>
@@ -671,34 +671,40 @@ const EmployeesPage: React.FC = () => {
               ) : (
                 employees.map((emp) => (
                   <TableRow key={emp.id}>
-                    <TableCell className="w-28 flex items-center justify-start gap-0.3">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditEmployee(emp.id)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!emp.archiveFlag}
-                        onClick={() => archiveEmployee(emp.id)}
-                      >
-                        <Archive size={14} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-500"
-                        // disabled={!emp.deleteFlag}
-                        onClick={() => {
-                          setEmployeeToDelete(emp);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
+                    <TableCell className="w-28 mr-24">
+                      <div className="flex items-center gap-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditEmployee(emp.id)}
+                          className="flex-shrink-0"
+                        >
+                          <Pencil size={14} />
+                        </Button>
+                        {emp.archiveFlag ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => archiveEmployee(emp.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Archive size={14} />
+                          </Button>
+                        ) : (
+                          <div className="w-10 flex-shrink-0" />
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 flex-shrink-0"
+                          onClick={() => {
+                            setEmployeeToDelete(emp);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
                       {emp.name}
@@ -847,6 +853,8 @@ const EmployeesPage: React.FC = () => {
                           setNewEmployee({ ...newEmployee, date: e.target.value })
                         }
                         className="w-full px-3 py-2 border rounded-md bg-background"
+                        max="9999-12-31"
+                        min="1900-01-01"
                       />
                     </div>
 
