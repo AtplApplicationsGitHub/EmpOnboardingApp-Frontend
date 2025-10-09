@@ -304,14 +304,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               );
             })
           ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              {searchTerm ? 'No group leaders found' : 'No group leaders available'}
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+              No options available
             </div>
           )}
 
           {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing {maxDisplayItems} of {options.length} group leaders. Type to filter more.
+              Showing {maxDisplayItems} of {options.length} items. Type to filter more.
             </div>
           )}
         </div>

@@ -292,7 +292,7 @@ const GroupLeadTasksPage: React.FC = () => {
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               placeholder="Search by employee, group, department, or role..."
-              className="w-96 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+              className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
               aria-label="Search tasks"
             />
           </div>
