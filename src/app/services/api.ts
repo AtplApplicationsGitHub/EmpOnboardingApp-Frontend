@@ -28,8 +28,9 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
-  baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  // baseURL: 'https://dev.goval.app:2083/api',
+  baseURL: "https://emp-onboard.sailife.com:8084/api",
+  // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
