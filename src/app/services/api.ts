@@ -159,7 +159,7 @@ export const authService = {
     email: string
   ): Promise<{ success: boolean; message: string }> => {
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = email.trim();
       const response = await api.get(`/auth/sendMailOTP/${normalizedEmail}`);
 
       if (response.data === true) {
@@ -180,7 +180,7 @@ export const authService = {
 
   verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = email.trim();
       const normalizedOtp = otp.trim();
 
       const requestBody = {
@@ -736,6 +736,13 @@ export const EQuestions = {
     );
     return response.data;
   },
+
+  getQuestionsByTaskArchId: async (taskId: string): Promise<EmployeeQuestions[]> => {
+  const response = await api.get<EmployeeQuestions[]>(
+    `/eQuestions/getByTaskArchId/${taskId}`
+  );
+  return response.data;
+},
 
   getEmployeesWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(

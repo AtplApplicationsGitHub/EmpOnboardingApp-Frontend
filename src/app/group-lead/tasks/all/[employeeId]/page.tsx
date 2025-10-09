@@ -153,7 +153,7 @@ const EmployeeTasksPage: React.FC = () => {
             <div className="p-8">
                 <div className="text-center py-12">
                     <div className="text-destructive">No tasks found for this employee</div>
-                    <Button  onClick={() => router.back()} className="mt-4">
+                    <Button onClick={() => router.back()} className="mt-4">
                         Go Back
                     </Button>
                 </div>
@@ -165,14 +165,14 @@ const EmployeeTasksPage: React.FC = () => {
         <div className="p-6 md:p-8 space-y-6">
 
             <div className="flex items-center gap-3">
-                <Button
+                {/* <Button
                     variant="outline"
                     onClick={() => router.push("/group-lead/tasks")}
                     className="flex items-center gap-2"
                 >
                     <ArrowLeft size={16} />
                     Back
-                </Button>
+                </Button> */}
                 <h3 className="text-xl font-semibold">
                     Tasks for {employeeName} {employeeLevel && `(${employeeLevel})`} — {tasks.length} task
                     {tasks.length === 1 ? "" : "s"}

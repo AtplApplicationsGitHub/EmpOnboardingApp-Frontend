@@ -238,6 +238,7 @@ const LoginPage: React.FC = () => {
                   label="Email address"
                   type="email"
                   required
+                   autoFocus
                   error={emailForm.formState.errors.email?.message}
                   {...emailForm.register('email', { 
                     required: 'Email is required',
@@ -274,6 +275,7 @@ const LoginPage: React.FC = () => {
                   label="Password"
                   type="password"
                   required
+                  autoFocus
                   error={passwordForm.formState.errors.password?.message}
                   {...passwordForm.register('password', { 
                     required: 'Password is required',
