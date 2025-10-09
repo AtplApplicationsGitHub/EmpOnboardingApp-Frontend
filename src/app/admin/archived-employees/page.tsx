@@ -75,14 +75,14 @@ const ArchivedEmployeesPage: React.FC = () => {
 
             try {
                 const employeesWithQuestionsArray = await EQuestions.getEmployeesArchWithQuestions();
-                console.log("🔍 Raw API Response:", employeesWithQuestionsArray);
+                console.log("Raw API Response:", employeesWithQuestionsArray);
                 const employeeIdsSet = new Set(employeesWithQuestionsArray);
-                // console.log("🔍 Set created:", employeeIdsSet);
-                // console.log("🔍 Set size:", employeeIdsSet.size);
+                // console.log(" Set created:", employeeIdsSet);
+                // console.log(" Set size:", employeeIdsSet.size);
 
                 setEmployeesWithQuestions(employeeIdsSet);
             } catch (error) {
-                // console.error("❌ Error fetching employees with questions:", error);
+                // console.error(" Error fetching employees with questions:", error);
                 setEmployeesWithQuestions(new Set());
             }
         } catch (err: any) {
@@ -100,9 +100,8 @@ const ArchivedEmployeesPage: React.FC = () => {
         try {
             setQuestionsLoading(true);
             setSelectedEmployeeName(employeeName);
-            const questions = await EQuestions.getQuestionsByTask(taskId);
-            // console.log("Fetched questions from BE:", questions);  // 👈 log full response
-
+            const questions = await EQuestions.getQuestionsByTaskArchId(taskId);
+            console.log("Fetched questions from BE:", questions);
 
             const completedQuestions = questions.filter(
                 (question) => question.completedFlag === true
@@ -119,7 +118,7 @@ const ArchivedEmployeesPage: React.FC = () => {
             setQuestionsLoading(false);
         }
     };
-   
+
 
     const ProgressBar: React.FC<{ value: number; color: string }> = ({
         value,
@@ -216,10 +215,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                             ) : (
                                 employees.map((employee) => {
                                     // console.log("Employee Data:", employee);
-                                    //                                     console.log("🔵 Current Employee ID:", employee.employeeId);
-                                    // console.log("🔵 Parsed ID:", parseInt(employee.employeeId, 10));
-                                    // console.log("🔵 Set contains:", Array.from(employeesWithQuestions));
-                                    // console.log("🔵 Does Set have this ID?", employeesWithQuestions.has(parseInt(employee.employeeId, 10)));
+                                    console.log(" Current Employee ID:", employee.employeeId);
 
                                     // compute progress values
                                     const completed =
@@ -441,19 +437,21 @@ const ArchivedEmployeesPage: React.FC = () => {
                 </Card>
             )}
             {showQuestionsModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+                    <div className="bg-white dark:bg-black rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark:border">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                Employee Task Questions - {selectedEmployeeName}
+                                Employee Task Question
                             </h2>
                             <div className="flex-1 flex justify-end items-center">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-primary dark:text-primary-foreground">
+                                    <div className="text-xl font-bold text-primary dark:text-primary">
                                         {completedQuestionCount} / {totalQuestionCount}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">Questions</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        Questions
+                                    </div>
                                 </div>
                             </div>
                             <Button
@@ -464,9 +462,9 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     setSelectedTaskQuestions([]);
                                     setSelectedEmployeeName("");
                                 }}
-                                className="rounded-lg ml-4"
+                                className="rounded-lg ml-4 dark:border dark:border-gray-700 dark:bg-black dark:hover:bg-gray-900"
                             >
-                                <X size={16} />
+                                <X size={16} className="dark:text-gray-100" />
                             </Button>
                         </div>
 
@@ -484,7 +482,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     {selectedTaskQuestions.map((question, index) => (
                                         <div
                                             key={question.id || index}
-                                            className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                                            className="border border-gray-200  rounded-lg p-4 bg-white dark:bg-black"
                                         >
                                             <div className="mb-3">
                                                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -498,7 +496,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                 <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
                                                     Response:
                                                 </h4>
-                                                <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                                                <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
                                                     <p className="text-gray-800 dark:text-gray-200">
                                                         {question.response || "No response provided"}
                                                     </p>
@@ -509,23 +507,10 @@ const ArchivedEmployeesPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
-
-                        {/* Modal Footer */}
-                        <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setShowQuestionsModal(false);
-                                    setSelectedTaskQuestions([]);
-                                    setSelectedEmployeeName("");
-                                }}
-                            >
-                                Close
-                            </Button>
-                        </div>
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
