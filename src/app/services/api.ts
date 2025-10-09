@@ -657,6 +657,21 @@ export const adminService = {
     );
     return response.data;
   },
+    // ldap users
+getLdapUsers: async (emails: string[]): Promise<User[]> => { 
+  const response = await api.post<User[]>(
+    "/ldap/loadUsersFromAD",
+    emails 
+  );
+  return response.data;
+},
+  saveLdapUsers: async (users: User[]): Promise<boolean> => {
+  const response = await api.post<boolean>(
+    "/user/saveUserList",
+    users
+  );
+  return response.data;
+},
 };
 
 // Lab Services

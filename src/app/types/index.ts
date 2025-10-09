@@ -5,8 +5,8 @@ export interface User {
   name: string;
   email: string;
   role: "admin" | "group_lead" | "employee";
-  createdTime: string;
-  updatedTime: string;
+  createdTime?: string;
+  updatedTime?: string;
 }
 
 export interface DropDownDTO {
