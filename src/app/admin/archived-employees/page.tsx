@@ -172,7 +172,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                 setCurrentPage(0);
                             }}
                             placeholder="Search…"
-                            className="w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+                            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
                             aria-label="Search archived employees"
                         />
                     </div>

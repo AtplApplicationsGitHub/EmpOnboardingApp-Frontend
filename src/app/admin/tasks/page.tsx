@@ -235,14 +235,12 @@ const TasksPage: React.FC = () => {
 
     try {
       if (shouldArchive) {
-        // Call both APIs when "Yes" is clicked
         await Promise.all([
           taskService.freezeTask(selectedTaskId),
           adminService.achiveEmployees(selectedEmployeeId)
         ]);
         toast.success("Employee archived and tasks frozen successfully");
       } else {
-        // Call only freeze API when "No" is clicked
         await taskService.freezeTask(selectedTaskId);
         toast.success("Tasks frozen successfully");
       }
@@ -285,7 +283,7 @@ const TasksPage: React.FC = () => {
                 setCurrentPage(0);
               }}
               placeholder="Search…"
-              className="w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+              className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
               aria-label="Search tasks"
             />
           </div>
@@ -773,19 +771,7 @@ const TasksPage: React.FC = () => {
               )}
             </div>
 
-            {/* Modal Footer */}
-            {/* <div className="flex justify-end p-6 border-t border-gray-200 dark:border-t">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setShowQuestionsModal(false);
-            setSelectedTaskQuestions([]);
-            setSelectedEmployeeName("");
-          }}
-        >
-          Close
-        </Button>
-      </div> */}
+           
           </div>
         </div>
       )}
