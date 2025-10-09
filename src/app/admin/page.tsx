@@ -22,8 +22,8 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalUsers: 0,
-    totalTasks: 0,
-    totalQuestions: 0
+    totalQuestions: 0,
+    tasks: 0
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,8 +32,8 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Reassignment modal state
-  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
-  const [selectedTasksForReassign, setSelectedTasksForReassign] = useState<any[]>([]);
+  // const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  // const [selectedTasksForReassign, setSelectedTasksForReassign] = useState<any[]>([]);
 
   const isVisible = useAnimation();
 
@@ -45,27 +45,13 @@ const AdminDashboard: React.FC = () => {
         const totalGroups = await adminService.getGroupsCount();
         const totalQuestions = await adminService.getQuestionsCount();
         const totalUsers = await adminService.getUserCount();
-        
-        // Fetch tasks count and recent tasks
-        const tasks = await adminService.getTasks();
-        const totalTasks = tasks.length;
-        
-        // Sort tasks by created_at and updated_at to get recent actions
-        const sortedTasks = tasks.sort((a, b) => {
-          const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-          const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-          return bTime - aTime;
-        });
-        
-        // Get all recent actions (don't limit to 10 here since we'll paginate)
-        const recentActions = sortedTasks;
-        setRecentTasks(recentActions);
-        
-        setStats({
+        const tasks = await adminService.getTaskCount();
+
+         setStats({
           totalGroups,
           totalUsers,
-          totalTasks,
-          totalQuestions
+          totalQuestions,
+          tasks
         });
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load dashboard data');
@@ -75,20 +61,11 @@ const AdminDashboard: React.FC = () => {
       }
     };
 
-    // Initial fetch
-    fetchStats();
+   // Initial fetch
+   fetchStats();
+   }, []);
 
-    // Set up auto-refresh every 30 seconds
-    const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing admin dashboard data...');
-      fetchStats();
-    }, 30000);
-
-    // Cleanup interval on component unmount
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, []);
+    
 
   // Pagination logic
   const totalPages = Math.ceil(recentTasks.length / tasksPerPage);
@@ -100,65 +77,66 @@ const AdminDashboard: React.FC = () => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  const handleManualRefresh = async () => {
-    try {
-      setLoading(true);
+  //unused refreshhhh
+  // const handleManualRefresh = async () => {
+  //   try {
+  //     setLoading(true);
       
-      const totalGroups = await adminService.getGroupsCount();
-      const totalQuestions = await adminService.getQuestionsCount();
-      const totalUsers = await adminService.getUserCount();
+  //     const totalGroups = await adminService.getGroupsCount();
+  //     const totalQuestions = await adminService.getQuestionsCount();
+  //     const totalUsers = await adminService.getUserCount();
       
-      // Fetch tasks count and recent tasks
-      const tasks = await adminService.getTasks();
-      const totalTasks = tasks.length;
+  //     // Fetch tasks count and recent tasks
+  //     const tasks = await adminService.getTasks();
+  //     const totalTasks = tasks.length;
       
-      // Sort tasks by created_at and updated_at to get recent actions
-      const sortedTasks = tasks.sort((a, b) => {
-        const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-        const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-        return bTime - aTime;
-      });
+  //     // Sort tasks by created_at and updated_at to get recent actions
+  //     const sortedTasks = tasks.sort((a, b) => {
+  //       const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
+  //       const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
+  //       return bTime - aTime;
+  //     });
       
-      // Get all recent actions (don't limit to 10 here since we'll paginate)
-      const recentActions = sortedTasks;
-      setRecentTasks(recentActions);
+  //     // Get all recent actions (don't limit to 10 here since we'll paginate)
+  //     const recentActions = sortedTasks;
+  //     setRecentTasks(recentActions);
       
-      setStats({
-        totalGroups,
-        totalUsers,
-        totalTasks,
-        totalQuestions
-      });
+  //     setStats({
+  //       totalGroups,
+  //       totalUsers,
+  //       totalTasks,
+  //       totalQuestions
+  //     });
       
-      console.log('Manual refresh completed successfully');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to refresh dashboard data');
-      console.error('Manual refresh error', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed successfully');
+  //   } catch (err: any) {
+  //     setError(err.response?.data?.message || 'Failed to refresh dashboard data');
+  //     console.error('Manual refresh error', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // Reassignment handlers
-  const handleReassignTask = (task: any) => {
-    // Only allow reassignment of pending tasks
-    if (task.status !== 'pending') {
-      return;
-    }
+  // const handleReassignTask = (task: any) => {
+  //   // Only allow reassignment of pending tasks
+  //   if (task.status !== 'pending') {
+  //     return;
+  //   }
     
-    setSelectedTasksForReassign([task]);
-    setIsReassignModalOpen(true);
-  };
+  //   setSelectedTasksForReassign([task]);
+  //   setIsReassignModalOpen(true);
+  // };
 
-  const handleReassignSuccess = async () => {
-    // Refresh the tasks data after successful reassignment
-    await handleManualRefresh();
-  };
+  // const handleReassignSuccess = async () => {
+  //   // Refresh the tasks data after successful reassignment
+  //   await handleManualRefresh();
+  // };
 
-  const handleCloseReassignModal = () => {
-    setIsReassignModalOpen(false);
-    setSelectedTasksForReassign([]);
-  };
+  // const handleCloseReassignModal = () => {
+  //   setIsReassignModalOpen(false);
+  //   setSelectedTasksForReassign([]);
+  // };
 
   if (loading) {
     return (
@@ -175,56 +153,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className={`p-8 space-y-8 ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
-      {/* Header */}
-      <div className={`flex justify-between items-start ${isVisible ? animationClasses.slideInDown : 'opacity-0'}`}>
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your onboarding system and track overall progress
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleManualRefresh}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <svg
-              className={`w-4 h-4 ${loading ? animationClasses.spin : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Auto-refresh: 30s
-          </span>
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className={`bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg ${animationClasses.slideInUp}`}>
-          {error}
-          <button 
-            onClick={() => setError(null)}
-            className="ml-4 text-destructive/70 hover:text-destructive"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Groups - Clickable */}
@@ -287,7 +215,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                <p className="text-2xl font-bold">{stats.totalTasks}</p>
+                <p className="text-2xl font-bold">{stats.tasks}</p>
               </div>
               <div className="p-3 bg-orange-500/10 rounded-full">
                 <Clock size={20} className="text-orange-500" />
@@ -297,206 +225,17 @@ const AdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Recent Actions */}
-      <Card className={`${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[4]}` : 'opacity-0'}`}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Actions
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Show:</span>
-              <select
-                value={tasksPerPage}
-                onChange={(e) => {
-                  setTasksPerPage(Number(e.target.value));
-                  setCurrentPage(1); // Reset to first page when changing page size
-                }}
-                className="text-sm border border-border rounded px-2 py-1 bg-background text-foreground"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="text-sm text-muted-foreground">tasks</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recentTasks.length > 0 ? (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="py-2">Employee</TableHead>
-                      <TableHead className="py-2">Level</TableHead>
-                      <TableHead className="py-2">Question</TableHead>
-                      <TableHead className="py-2">Assignee</TableHead>
-                      <TableHead className="py-2">Status</TableHead>
-                      <TableHead className="py-2">Date</TableHead>
-                      <TableHead className="py-2">Response</TableHead>
-                      <TableHead className="py-2">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentTasks.map((task, index) => (
-                      <TableRow 
-                        key={task.id}
-                        className={`${animationClasses.fadeIn} hover:bg-muted/50`}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <TableCell className="py-2">
-                          <div className="font-medium text-sm">{task.mock_employee_name}</div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.mock_employee_level === 'L1'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : task.mock_employee_level === 'L2'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : task.mock_employee_level === 'L3'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            }`}
-                          >
-                            {task.mock_employee_level}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="max-w-xs truncate text-sm" title={task.question}>
-                            {task.question}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2 text-sm">{task.assignee_name}</TableCell>
-                        <TableCell className="py-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.status === 'completed'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : task.status === 'reassigned'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                            }`}
-                          >
-                            {task.status === 'completed' ? 'Completed' : 
-                             task.status === 'reassigned' ? 'Reassigned' : 'Pending'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="text-xs text-muted-foreground">
-                            {formatDateTime(task.completed_at || task.updated_at || task.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          {task.response ? (
-                            <div className="max-w-xs truncate text-sm" title={task.response}>
-                              {task.response}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-2">
-                          {task.status === 'pending' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleReassignTask(task)}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <ArrowRight size={12} className="mr-1" />
-                              Reassign
-                            </Button>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1} to {Math.min(endIndex, recentTasks.length)} of {recentTasks.length} actions
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNumber;
-                        if (totalPages <= 5) {
-                          pageNumber = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNumber = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNumber = totalPages - 4 + i;
-                        } else {
-                          pageNumber = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNumber}
-                            variant={currentPage === pageNumber ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => goToPage(pageNumber)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {pageNumber}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent actions found</p>
-              <p className="text-sm">Tasks will appear here as they are assigned or completed</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      
 
       {/* Reassignment Modal */}
-      <TaskReassignModal
+      {/* <TaskReassignModal
         isOpen={isReassignModalOpen}
         onClose={handleCloseReassignModal}
         onReassignSuccess={handleReassignSuccess}
         selectedTasks={selectedTasksForReassign}
         mode={selectedTasksForReassign.length === 1 ? 'single' : 'bulk'}
         userType="admin"
-      />
+      /> */}
     </div>
   );
 };

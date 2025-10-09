@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
-import { User } from "../../types";
+import { User, DropDownDTO } from "../../types";
 import { Card, CardContent } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -25,8 +25,11 @@ import {
   ChevronsRight,
   Search,
   Pencil,
+  X
 } from "lucide-react";
 import toast from "react-hot-toast";
+import SearchableDropdown from "../../components/SearchableDropdown";
+
 
 const PAGE_SIZE = 10;
 
@@ -43,8 +46,15 @@ const UsersPage: React.FC = () => {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [roles, setRoles] = useState<DropDownDTO[]>([]);
+  const [showLdapModal, setShowLdapModal] = useState(false);
+  const [ldapUsers, setLdapUsers] = useState<string[]>([]);
+  const [ldapInputValue, setLdapInputValue] = useState("");
+  const [ldapLoading, setLdapLoading] = useState(false);
+  const [fetchedLdapUsers, setFetchedLdapUsers] = useState<User[]>([]);
+  const [showLdapUsersTable, setShowLdapUsersTable] = useState(false);
 
-  // Modal state for create/update
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,8 +64,46 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
+  interface MockLdapResponse {
+    successUserInfoList: Array<{
+      name: string;
+      email: string;
+
+    }>;
+    failedUserList: string[];
+  }
+  const mockLdapData: MockLdapResponse = {
+    successUserInfoList: [
+      {
+        name: "Alice Johnson",
+        email: "alice.j@corp.com",
+      },
+      {
+        name: "Bob Smith",
+        email: "bob.s@corp.com",
+      },
+      {
+        name: "Charlie Brown",
+        email: "charlie.b@corp.com",
+      },
+    ],
+    failedUserList: [],
+  };
+
+  // Fetch roles for dropdown
+  const fetchRoles = async () => {
+    try {
+      const rolesData = await adminService.getLookupItems("Role");
+      console.log("Roles fetched:", rolesData);
+      setRoles(rolesData);
+    } catch (error) {
+      toast.error("Failed to load user roles.");
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
     if (showCreateModal && nameInputRef.current) {
       nameInputRef.current.focus();
     }
@@ -70,7 +118,6 @@ const UsersPage: React.FC = () => {
       }
       const response = await adminService.getUsers(params);
       setUsers(response.commonListDto || []);
-      console.log("Users fetched:", response.commonListDto);
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
@@ -78,6 +125,8 @@ const UsersPage: React.FC = () => {
       // setLoading(false);
     }
   };
+
+
 
   // 1. CREATE
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -91,6 +140,7 @@ const UsersPage: React.FC = () => {
       return;
     }
     try {
+      console.log("Creating user with data:", formData);
       await adminService.createUser(formData);
       setFormData({ name: "", email: "", password: "", role: "group_lead" });
       setShowCreateModal(false);
@@ -199,6 +249,112 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const handleLdapKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && ldapInputValue.trim()) {
+      e.preventDefault();
+      const username = ldapInputValue.trim();
+      if (!ldapUsers.includes(username)) {
+        setLdapUsers([...ldapUsers, username]);
+      }
+      setLdapInputValue("");
+    }
+  };
+
+  const removeLdapUser = (username: string) => {
+    setLdapUsers(ldapUsers.filter(u => u !== username));
+  };
+
+  // Handle Add LDAP User
+  // const handleGetLdapUsers = async () => {
+  //   if (ldapUsers.length === 0) {
+  //     toast.error("Please add at least one LDAP username");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLdapLoading(true);
+
+  //     const response: any = await adminService.getLdapUsers(ldapUsers);
+
+  //     const usersArray: User[] = response.successUserInfoList || [];
+
+  //     const initializedUsers: User[] = usersArray.map((user, index) => ({
+  //   id: index + 1, 
+  //   name: user.name,
+  //   email: user.email,
+  //   role: "group_lead",
+
+  // }));
+
+  //     setFetchedLdapUsers(initializedUsers);
+  //     setShowLdapUsersTable(true);
+
+  //     toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
+  //   } catch (err: any) {
+  //     toast.error(err.response?.data?.message || "Failed to fetch LDAP users");
+  //   } finally {
+  //     setLdapLoading(false);
+  //   }
+  // };
+  const handleGetLdapUsers = async () => {
+    if (ldapUsers.length === 0) {
+      toast.error("Please add at least one LDAP username");
+      return;
+    }
+
+    try {
+      setLdapLoading(true);
+
+      const response: MockLdapResponse = mockLdapData;
+
+      const usersArray = response.successUserInfoList || [];
+
+      const initializedUsers: User[] = usersArray.map((user, index) => ({
+        id: index + 1,
+        name: user.name,
+        email: user.email,
+        role: "group_lead",
+        createdTime: new Date().toISOString(),
+        updatedTime: new Date().toISOString(),
+      }));
+
+      setFetchedLdapUsers(initializedUsers);
+      setShowLdapUsersTable(true);
+
+      toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
+    } catch (err: any) {
+      toast.error("MOCK ERROR: Failed to fetch LDAP users");
+    } finally {
+      setLdapLoading(false);
+    }
+  };
+
+
+  //save ldap user
+  const handleSaveLdapUsers = async () => {
+    if (fetchedLdapUsers.length === 0) {
+      toast.error("No users to save");
+      return;
+    }
+
+    try {
+      setLdapLoading(true);
+      console.log(fetchedLdapUsers)
+      await adminService.saveLdapUsers(fetchedLdapUsers);
+      toast.success(`Successfully saved ${fetchedLdapUsers.length} LDAP user(s)`);
+      setShowLdapModal(false);
+      setLdapUsers([]);
+      setLdapInputValue("");
+      setFetchedLdapUsers([]);
+      setShowLdapUsersTable(false);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to save LDAP users");
+    } finally {
+      setLdapLoading(false);
+    }
+  };
+
   // Pagination
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const handlePageChange = (page: number) => {
@@ -247,23 +403,33 @@ const UsersPage: React.FC = () => {
             className="w-64"
           />
         </form>
-        <Button
-          onClick={() => {
-            setFormData({
-              name: "",
-              email: "",
-              password: "",
-              role: "group_lead",
-            });
-            setEditMode(false);
-            setSelectedUserId(null);
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add New User
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowLdapModal(true)}
+
+            className="flex items-center gap-2"
+          >
+            <Users size={16} />
+            Add LDAP User
+          </Button>
+          <Button
+            onClick={() => {
+              setFormData({
+                name: "",
+                email: "",
+                password: "",
+                role: "group_lead",
+              });
+              setEditMode(false);
+              setSelectedUserId(null);
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Add New User
+          </Button>
+        </div>
       </div>
 
       {/* Error Display */}
@@ -333,11 +499,10 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          user.role === "admin"
-                            ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                            : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                        }`}
+                        className={`px-2 py-1 rounded text-xs font-medium ${user.role === "admin"
+                          ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                          : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                          }`}
                       >
                         {user.role === "admin" ? "Administrator" : "Group Lead"}
                       </span>
@@ -471,17 +636,20 @@ const UsersPage: React.FC = () => {
                 <label className="block text-sm font-medium mb-2">Role</label>
                 <select
                   value={formData.role}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormData({
                       ...formData,
                       role: e.target.value as "admin" | "group_lead",
-                    })
-                  }
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 >
-                  <option value="group_lead">Group Lead</option>
-                  <option value="admin">Administrator</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.key}>
+                      {role.key}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -528,6 +696,145 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/*ldap module*/}
+      {showLdapModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Bulk Import LDAP Users</h2>
+              <X
+                size={24}
+                className="text-foreground  cursor-pointer transition-colors"
+                onClick={() => {
+                  setShowLdapModal(false);
+                  setLdapUsers([]);
+                  setLdapInputValue("");
+                  setFetchedLdapUsers([]);
+                  setShowLdapUsersTable(false);
+                }}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <div
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-primary transition-all"
+                    style={{
+                      minHeight: '42px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      {ldapUsers.map((user, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
+                        >
+                          {user}
+                          <button
+                            type="button"
+                            onClick={() => removeLdapUser(user)}
+                            className="hover:bg-primary/20 rounded-full p-0.5"
+                            disabled={ldapLoading}
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+
+                      <input
+                        type="text"
+                        value={ldapInputValue}
+                        onChange={(e) => setLdapInputValue(e.target.value)}
+                        onKeyDown={handleLdapKeyDown}
+                        placeholder={ldapUsers.length === 0 ? "Type username and press Enter" : ""}
+                        autoFocus
+                        disabled={ldapLoading || showLdapUsersTable}
+                        className="flex-1 min-w-[120px] bg-transparent outline-none text-sm disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleGetLdapUsers}
+                  disabled={ldapLoading || ldapUsers.length === 0 || showLdapUsersTable}
+                  className="whitespace-nowrap h-[42px]"
+                >
+                  {ldapLoading ? "Getting Users..." : "Get Users"}
+                </Button>
+              </div>
+
+              {/* Fetched Users Table */}
+              {showLdapUsersTable && fetchedLdapUsers.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold">
+                      Fetched Users ({fetchedLdapUsers.length})
+                    </h3>
+                  </div>
+
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fetchedLdapUsers.map((user, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                            <TableCell>
+                              <SearchableDropdown
+                                options={roles}
+                                value={roles.find((r) => r.key === user.role)?.id}
+                                onChange={(selectedId) => {
+                                  const selectedRole = roles.find((r) => r.id === selectedId);
+                                  if (selectedRole) {
+                                    const updatedUsers = [...fetchedLdapUsers];
+                                    updatedUsers[index].role = selectedRole.key as "admin" | "group_lead";
+                                    setFetchedLdapUsers(updatedUsers);
+                                  }
+                                }}
+                                placeholder="Select role"
+                                isMultiSelect={false}
+                                className="w-full"
+                                isEmployeePage={true}
+                                displayFullValue={false}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4">
+                {showLdapUsersTable && (
+                  <Button
+                    onClick={handleSaveLdapUsers}
+                    disabled={ldapLoading || fetchedLdapUsers.length === 0}
+                  >
+                    {ldapLoading
+                      ? "Saving..."
+                      : `Save ${fetchedLdapUsers.length} User${fetchedLdapUsers.length !== 1 ? 's' : ''}`}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

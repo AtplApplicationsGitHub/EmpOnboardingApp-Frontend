@@ -13,6 +13,10 @@ import {
   UserPlus,
   Settings,
   ClipboardListIcon,
+  ScrollText,
+  MapPin,
+  FlaskConical,
+Archive
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -75,6 +79,18 @@ const Navbar: React.FC = () => {
                   <span>Manage Groups</span>
                 </Link>{" "}
                 <Link
+                  href="/admin/labs"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/labs"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  <span>Manage Departments</span>
+                </Link>
+                <Link
                   href="/admin/employees"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -85,6 +101,18 @@ const Navbar: React.FC = () => {
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Process Employees</span>
+                </Link>
+                  <Link
+                  href="/admin/archived-employees"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/archived-employees"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Archive className="h-4 w-4" />
+                  <span>Archived Employees</span>
                 </Link>
                 <Link
                   href="/admin/tasks"
@@ -98,7 +126,7 @@ const Navbar: React.FC = () => {
                   <ClipboardListIcon className="h-4 w-4" />
                   <span>Manage Tasks</span>
                 </Link>
-                 <Link
+                <Link
                   href="/admin/users"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -109,6 +137,18 @@ const Navbar: React.FC = () => {
                 >
                   <Settings className="h-4 w-4" />
                   <span>Manage Users</span>
+                </Link>
+               <Link
+                  href="/admin/audit-trail"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/audit-trail"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ScrollText className="h-4 w-4" />
+                  <span>Audit Trail</span>
                 </Link>
               </>
             )}
@@ -140,6 +180,35 @@ const Navbar: React.FC = () => {
                 </Link>
               </>
             )}
+            {user.role === "employee" && (
+              <>
+                <Link
+                  href="/employee"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/employee"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  href="/employee/my-tasks"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/employee/my-tasks"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ClipboardListIcon className="h-4 w-4" />
+                  <span>Onboarding Checklist</span>
+                </Link>
+               
+              </>
+            )}
           </div>
         </nav>
 
@@ -151,7 +220,11 @@ const Navbar: React.FC = () => {
                 {user.name}
               </span>
               <span className="text-xs text-muted-foreground">
-                {user.role === "admin" ? "Administrator" : "Group Lead"}
+                {user.role === "admin"
+                  ? "Administrator"
+                  : user.role === "group_lead"
+                  ? "Group Lead"
+                  : "Employee"}
               </span>
             </div>
             <ThemeToggle />

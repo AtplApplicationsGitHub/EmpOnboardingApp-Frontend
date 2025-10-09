@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Task } from '../types';
-import { groupLeadService, adminService } from '../services/api';
+import {  adminService } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import Button from './ui/button';
 import { ArrowRight, X, CheckCircle, FileText, User as UserIcon } from 'lucide-react';

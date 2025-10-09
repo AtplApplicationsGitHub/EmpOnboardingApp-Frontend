@@ -4,9 +4,9 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: "admin" | "group_lead";
-  createdTime: string;
-  updatedTime: string;
+  role: "admin" | "group_lead" | "employee";
+  createdTime?: string;
+  updatedTime?: string;
 }
 
 export interface DropDownDTO {
@@ -24,6 +24,7 @@ export interface Group {
   updatedTime: string;
   quesCount?: number;
   deleteFlag?: boolean;
+   autoAssign?: string;
 }
 
 export interface Employee {
@@ -41,12 +42,22 @@ export interface Employee {
   createdTime: string;
   updatedTime: string;
   deleteFlag?: boolean;
+  group?: string;
+  archiveFlag?: boolean;
 }
 
 export interface EmployeeImportResult {
   successCount: number;
   errorCount: number;
   errors?: Array<string | { row?: number; message?: string }>;
+}
+
+export interface Lab {
+  id: string;
+  location: string;
+  lab: string[];
+  createdTime: string;
+  updatedTime: string;
 }
 // export interface Group {
 //   id: number;
@@ -60,16 +71,34 @@ export interface EmployeeImportResult {
 //   updated_at: string;
 // }
 
+export interface EmployeeFeedback {
+  id: string;
+  feedback: string;
+  star: number;
+  taskId: string;
+  completed: boolean;
+}
+
 export interface Question {
   id: number;
   text: string;
   response: "yes_no" | "text";
   complainceDay: string;
   questionLevel: string[];
+  questionDepartment: string[];
   period: string;
   groupId: number;
   createdTime: string;
   updatedTime: string;
+  defaultFlag?: "yes" | "no";
+  deleteFlag?: boolean;
+}
+
+export interface GLDashboard {
+  totalEmployees: number;
+  totalPendingTasks: number;
+  totalCompletedTasks: number;
+  overdueTasks: number;
 }
 
 export interface Task {
@@ -91,18 +120,27 @@ export interface Task {
   status: string;
   doj: string;
   freezeTask: string;
-  freezeButton: boolean;
   questionList: TaskQuestions[];
   questionText?: string;
   response?: string;
+  efstar?: string;
+  feedback?: string;
   createdTime: string;
   updatedTime: string;
-  
+
   // Additional fields that might come from API
   mock_employee_id?: string;
   mock_employee_name?: string;
   mock_employee_level?: string;
   completed_at?: string;
+}
+
+export interface EmployeeQuestions {
+  id: number;
+  question: string;
+  responseType: string;
+  response: string;
+  completedFlag: boolean;
 }
 
 export interface TaskQuestions {
@@ -126,7 +164,9 @@ export interface TaskProjection {
   completedQuetions: number;
   pendingQuetions: number;
   status: string;
-  freeze:string
+  freeze: string;
+  doj: string;
+  lab: string;
 }
 
 export interface AuthResponse {
@@ -217,4 +257,53 @@ export interface EmployeeImportResponse {
 
 export interface ApiError {
   message: string;
+}
+
+// Filter interfaces for employee task filtering
+export interface EmployeeTaskFilter {
+  status?: string;
+  department?: string;
+  role?: string;
+  lab?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  groupId?: number;
+}
+
+export interface EmployeeTaskResponse {
+  commonListDto: {
+    content: TaskProjection[];
+  };
+  totalElements: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface MultiSelectDropDownDTO {
+  id: number;
+  itemName: string;
+}
+
+export interface AuditSearchRequest {
+  fromDate: string;
+  toDate: string;
+  selectedEvent: string[];
+  selectedModule: string[];
+  selectedUser: string[];
+  userId: number;
+}
+
+export interface AuditRecord {
+  loginUserId: number;
+  loginUserName: string;
+  event: string;
+  ipAddress: string;
+  createdTime: string;
+  fromDate: string;
+  toDate: string;
+  systemRemarks: string;
+  userRemarks: string;
+  module: string;
+  moduleId: string;
 }

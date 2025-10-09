@@ -26,10 +26,11 @@ import {
   ChevronsRight,
   Trash2,
   Clock,
+  Archive,
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
-import { Employee } from "../../types";
+import { Employee, DropDownDTO } from "../../types";
 import { adminService } from "../../services/api";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -37,30 +38,19 @@ import { toast } from "react-hot-toast";
 const PAGE_SIZE = 10;
 
 const formatDateForInput = (dateString: string | undefined | null) => {
-  // If the date is null, undefined, or an empty string, return an empty string.
   if (!dateString) {
     return "";
   }
-
-  // If the date is already in YYYY-MM-DD format, return it directly
   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return dateString;
   }
-
-  // Try to create a Date object
   const date = new Date(dateString);
-
-  // Check if the date object is valid. isNaN() is the standard way to check for a valid date.
   if (isNaN(date.getTime())) {
-    return ""; // Return an empty string if the date is invalid
+    return "";
   }
-
-  // Get the year, month, and day as separate values
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-indexed, so add 1
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-
-  // Return the new date in YYYY-MM-DD format
   return `${year}-${month}-${day}`;
 };
 
@@ -85,7 +75,15 @@ const EmployeesPage: React.FC = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
     null
   );
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [groupOptions, setGroupOptions] = useState<DropDownDTO[]>([]);
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
+  const [groupChanged, setGroupChanged] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
@@ -97,23 +95,82 @@ const EmployeesPage: React.FC = () => {
     labAllocation: "",
     complianceDay: "",
     email: "",
+    group: '',
   });
 
-  //Arrays for dropdown
-  const levelOptions = [
-    { id: 1, key: "L1", value: "L1" },
-    { id: 2, key: "L2", value: "L2" },
-    { id: 3, key: "L3", value: "L3" },
-    { id: 4, key: "L4", value: "L4" },
-  ];
+  // Fetch lookup data for Levels Labs and Departments
+  const fetchLookupData = async () => {
+    try {
+      const levels = await adminService.getLookupItems("Level");
+      setLevelOptions(levels);
 
-  const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+      const departments = await adminService.getLookupItems("Department");
+      setDepartmentOptions(departments);
+    } catch (error) {
+      // console.error("Failed to fetch lookup items:", error);
+      toast.error("Failed to load dropdown options.");
+    }
+  };
+
+  // Fetch labs based on selected department
+  const fetchLabsByDepartment = async (departmentValue: string) => {
+    if (!departmentValue) {
+      setLabOptions([]);
+      return;
+    }
+
+    try {
+      const labs = await adminService.getLab(departmentValue);
+      console.log("Fetched labs ", labs); // Debug log
+      const labDropdownOptions: DropDownDTO[] = labs.map((lab, index) => ({
+        id: index + 1,
+        value: lab as string,
+        key: lab as string
+      }));
+      setLabOptions(labDropdownOptions);
+    } catch (error) {
+      toast.error("Failed to load lab options for selected department.");
+      setLabOptions([]);
+    }
+  };
+
+  // Fetch groups based on selected level and employee id
+  const fetchEmployeeGroups = async (level: string, employeeId: number) => {
+    if (!level || !employeeId) {
+      setGroupOptions([]);
+      return;
+    }
+
+    try {
+      const groups = await adminService.getEmployeeGroup(level, employeeId);
+      // console.log("Fetched groups:", groups); // Debug log
+
+
+      // Transform the response into DropDownDTO format
+      const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
+        id: group.id || index + 1,
+        value: group.name || group.key || group.value || "Unknown",
+        key: group.key || group.name || group.value || `group-${index}`
+      }));
+
+
+      setGroupOptions(groupDropdownOptions);
+      // console.log("DEBUG - Group options set to:", groupDropdownOptions);
+    } catch (error) {
+      console.error("Failed to fetch employee groups:", error);
+      toast.error("Failed to load group options.");
+      setGroupOptions([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchLookupData();
+  }, []);
+
   useEffect(() => {
     fetchEmployees();
   }, [searchFilter, page]);
+
 
   const fetchEmployees = async () => {
     try {
@@ -123,7 +180,7 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
-      console.log("Fetched employees after update:", data.commonListDto);
+      console.log("Fetched employees:", data); // Debug log
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -145,11 +202,6 @@ const EmployeesPage: React.FC = () => {
       toast.error("Please fill in Candidate Name");
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
 
     try {
       await adminService.createEmployee({
@@ -160,7 +212,7 @@ const EmployeesPage: React.FC = () => {
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
         totalExperience: newEmployee.totalExperience || "0",
         pastOrganization: newEmployee.pastOrganization || "N/A",
-        labAllocation: newEmployee.labAllocation || "N/A",
+        labAllocation: newEmployee.labAllocation || "",
         complianceDay: newEmployee.complianceDay || "",
         email: newEmployee.email || "N/A",
       });
@@ -179,8 +231,13 @@ const EmployeesPage: React.FC = () => {
         labAllocation: "",
         complianceDay: "",
         email: "",
+        group: "",
       });
       setShowAddModal(false);
+      setEmailExists(false);
+      setCheckingEmail(false);
+      setLabOptions([]);
+      setGroupOptions([]);
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
@@ -193,12 +250,12 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-      console.log("Received from backend:", emp);
+      console.log("Fetched employee:", emp); // Debug log
 
-      // const formattedDate = new Date(emp.date).toISOString().split('T')[0];
       const formattedDate = formatDateForInput(emp.date);
-      console.log("Formatted date:", formattedDate);
 
+      setOriginalGroupValue(emp.group || "");
+      setGroupChanged(false);
       // Prefill the modal form with fetched employee data
       setNewEmployee({
         name: emp.name,
@@ -211,11 +268,24 @@ const EmployeesPage: React.FC = () => {
         labAllocation: emp.labAllocation,
         complianceDay: emp.complianceDay,
         email: emp.email,
+        group: emp.group || "",
       });
+
+
+      if (emp.department) {
+        await fetchLabsByDepartment(emp.department);
+      }
+
+      // Fetch groups for the employee's level and ID
+      if (emp.level && employeeId) {
+        await fetchEmployeeGroups(emp.level, employeeId);
+      }
 
       setEditMode(true);
       setSelectedEmployeeId(employeeId);
       setShowAddModal(true);
+      setEmailExists(false);
+      setCheckingEmail(false);
     } catch (err: any) {
       toast.error("Failed to load employee data");
     }
@@ -229,11 +299,6 @@ const EmployeesPage: React.FC = () => {
 
     if (!newEmployee.name?.trim()) {
       toast.error("Candidate Name is required.");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newEmployee.email && !emailRegex.test(newEmployee.email)) {
-      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -250,12 +315,41 @@ const EmployeesPage: React.FC = () => {
         labAllocation: newEmployee.labAllocation,
         complianceDay: newEmployee.complianceDay,
         email: newEmployee.email,
+        group: newEmployee.group,
       };
 
-      console.log("Sending to backend:", updatePayload);
       await adminService.updateEmployee(updatePayload as Employee);
 
-      toast.success("Employee updated successfully!");
+      if (groupChanged && newEmployee.group && newEmployee.group !== originalGroupValue) {
+        try {
+          // Find the group ID from the selected group value
+          const selectedGroupOption = groupOptions.find(
+            option => option.value === newEmployee.group
+          );
+
+          //  console.log("DEBUG - All available group options:", groupOptions);
+          //     console.log("DEBUG - Looking for group:", newEmployee.group);
+          //     console.log("DEBUG - Selected Group Option:", selectedGroupOption);
+          //   console.log("empid", Number(selectedEmployeeId)) // Debug log
+
+
+          if (selectedGroupOption) {
+            await adminService.assignGroupsToEmployee({
+              groupId: [selectedGroupOption.id],
+              employeeId: Number(selectedEmployeeId)
+            });
+            toast.success("Employee updated and group assigned successfully!");
+          } else {
+            toast.success("Employee updated successfully!");
+            toast.error("Group assignment failed - group not found.");
+          }
+        } catch (groupError: any) {
+          console.error("Group assignment failed:", groupError);
+          console.log("DEBUG - Full error details:", groupError.response?.data);
+          toast.success("Employee updated successfully!");
+        }
+      }
+
 
       // Reset state and close the modal
       setNewEmployee({
@@ -269,14 +363,69 @@ const EmployeesPage: React.FC = () => {
         labAllocation: "",
         complianceDay: "",
         email: "",
+        group: "",
       });
       setShowAddModal(false);
       setEditMode(false);
       setSelectedEmployeeId(null);
+      setEmailExists(false);
+      setCheckingEmail(false);
+      setLabOptions([]);
+      setGroupOptions([]);
+      setOriginalGroupValue("");
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update employee.");
     }
+  };
+
+  const handleEmailChange = async (value: string) => {
+    setNewEmployee({ ...newEmployee, email: value });
+    if (!value || editMode) return;
+
+    setCheckingEmail(true);
+    try {
+      const res = await adminService.isEmployeeEmailExists(value);
+      setEmailExists(res);
+    } catch (error) {
+      setEmailExists(false);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const handleDepartmentChange = (value: number | number[] | undefined) => {
+    const departmentId = Array.isArray(value) ? value[0] : value;
+
+    const selectedDept = departmentOptions.find(
+      (option) => option.id === departmentId
+    );
+
+    setNewEmployee({
+      ...newEmployee,
+      department: selectedDept?.value || "",
+      labAllocation: "", // Reset lab allocation when department changes
+    });
+
+    if (selectedDept?.value) {
+      fetchLabsByDepartment(selectedDept.value);
+    } else {
+      setLabOptions([]); // Reset lab options
+    }
+  };
+
+  // Handle group change
+  const handleGroupChange = (id: number | number[] | undefined) => {
+    const selectedGroup = groupOptions.find(option => option.id === id);
+    const newGroupValue = selectedGroup?.value || "";
+
+    setNewEmployee({
+      ...newEmployee,
+      group: newGroupValue
+    });
+
+    // Track if group was actually changed from original value
+    setGroupChanged(newGroupValue !== originalGroupValue && newGroupValue !== "");
   };
 
   //delete
@@ -291,6 +440,17 @@ const EmployeesPage: React.FC = () => {
       setEmployeeToDelete(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to delete employee.");
+    }
+  };
+
+  const archiveEmployee = async (id: number) => {
+    try {
+      console.log("Archiving employee with id:", id); // Debug log
+      await adminService.achiveEmployees(id);
+      toast.success("Employee Archival successfully!");
+      fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to archive employee.");
     }
   };
 
@@ -328,17 +488,16 @@ const EmployeesPage: React.FC = () => {
       const rawErrors = result.errors ?? [];
       const normalizedErrors: string[] = Array.isArray(rawErrors)
         ? rawErrors.map((e: any) =>
-            typeof e === "string"
-              ? e
-              : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
-          )
+          typeof e === "string"
+            ? e
+            : `Row ${e?.row ?? "?"}: ${e?.message ?? "Unknown error"}`
+        )
         : [];
       if (errorCount > 0) {
         setImportErrors(normalizedErrors);
         const preview = normalizedErrors.slice(0, 3).join("; ");
         toast.error(
-          `Import reported ${errorCount} error(s). ${preview}${
-            normalizedErrors.length > 3 ? "..." : ""
+          `Import reported ${errorCount} error(s). ${preview}${normalizedErrors.length > 3 ? "..." : ""
           }`
         );
       }
@@ -360,8 +519,7 @@ const EmployeesPage: React.FC = () => {
       const base64: string = data.pdf;
       if (!base64) throw new Error("No base64 file content in response.");
 
-      const fileName: string =
-        data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
+      const fileName: string = data.fileName ?? `AddEmployee_${Date.now()}.xlsx`;
       const blob = base64ToBlob(
         base64,
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -411,7 +569,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-9xl mx-auto space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between w-full">
@@ -427,7 +585,7 @@ const EmployeesPage: React.FC = () => {
               </form>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0">
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap flex-shrink-0"
@@ -436,7 +594,7 @@ const EmployeesPage: React.FC = () => {
                 <Download size={14} className="mr-1" />
                 <span className="hidden sm:inline">Download Template</span>
                 <span className="sm:hidden">Download</span>
-              </Button>
+              </Button> */}
               <Button
                 onClick={() => setShowImportModal(true)}
                 disabled={processing}
@@ -455,6 +613,12 @@ const EmployeesPage: React.FC = () => {
                   setShowAddModal(true);
                   setEditMode(false);
                   setSelectedEmployeeId(null);
+                  setEmailExists(false);
+                  setCheckingEmail(false);
+                  setLabOptions([]);
+                  setGroupOptions([]);
+                  setOriginalGroupValue("");
+                  setGroupChanged(false);
                   setNewEmployee({
                     name: "",
                     date: "",
@@ -465,6 +629,8 @@ const EmployeesPage: React.FC = () => {
                     pastOrganization: "",
                     labAllocation: "",
                     complianceDay: "",
+                    email: "",
+                    group: "",
                   });
                 }}
               >
@@ -479,14 +645,14 @@ const EmployeesPage: React.FC = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableCell></TableCell>
-                <TableCell className="w-44">Name</TableCell>
-                <TableCell className="w-40">Email</TableCell>
-                <TableCell className="w-24">DOJ</TableCell>
+                <TableCell className="w-28"></TableCell>
+                <TableCell className="w-40">Name</TableCell>
+                <TableCell className="w-44">Email</TableCell>
+                <TableCell className="w-22">DOJ</TableCell>
                 <TableCell>Department</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Level</TableCell>
                 <TableCell>Lab</TableCell>
+                <TableCell>Level</TableCell>
+                <TableCell>Role</TableCell>
                 <TableCell>Compliance Day</TableCell>
               </TableRow>
             </TableHeader>
@@ -505,31 +671,45 @@ const EmployeesPage: React.FC = () => {
               ) : (
                 employees.map((emp) => (
                   <TableRow key={emp.id}>
-                    <TableCell className="flex gap-0.5">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditEmployee(emp.id)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-500"
-                        disabled={!emp.deleteFlag}
-                        onClick={() => {
-                          setEmployeeToDelete(emp);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
+                    <TableCell className="w-28 mr-24">
+                      <div className="flex items-center gap-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditEmployee(emp.id)}
+                          className="flex-shrink-0"
+                        >
+                          <Pencil size={14} />
+                        </Button>
+                        {emp.archiveFlag ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => archiveEmployee(emp.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Archive size={14} />
+                          </Button>
+                        ) : (
+                          <div className="w-10 flex-shrink-0" />
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 flex-shrink-0"
+                          onClick={() => {
+                            setEmployeeToDelete(emp);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-44">
+                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
                       {emp.name}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis">
+                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
                       {emp.email}
                     </TableCell>
 
@@ -537,25 +717,25 @@ const EmployeesPage: React.FC = () => {
                       {emp.date}
                     </TableCell>
                     <TableCell>{emp.department || "N/A"}</TableCell>
-                    <TableCell>{emp.role || "N/A"}</TableCell>
+                    <TableCell>{emp.labAllocation || ""}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          emp.level === "L1"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            : emp.level === "L2"
+                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : emp.level === "L2"
                             ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                             : emp.level === "L3"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          }`}
                       >
                         {emp.level || "L1"}
                       </span>
                     </TableCell>
-                    <TableCell>{emp.labAllocation || "N/A"}</TableCell>
-                    <TableCell className="w-20">
-                    {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
+                    <TableCell>{emp.role || "N/A"}</TableCell>
+
+                    <TableCell>
+                      {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </TableCell>
                   </TableRow>
                 ))
@@ -631,197 +811,274 @@ const EmployeesPage: React.FC = () => {
         </Card>
       )}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                {editMode ? "Edit User" : "Create New User"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Candidate Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={(newEmployee.name as string) ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Joining
-                  </label>
-                  <input
-                    type="date"
-                    value={newEmployee.date ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, date: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    value={newEmployee.department ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        department: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Engineering, HR, Sales"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Role</label>
-                  <input
-                    type="text"
-                    value={newEmployee.role ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, role: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., Software Engineer, Manager"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Level *
-                  </label>
-                  <SearchableDropdown
-                    options={levelOptions}
-                    value={
-                      levelOptions.find(
-                        (option) => option.value === newEmployee.level
-                      )?.id
-                    }
-                    onChange={(id) => {
-                      const selectedLevel = levelOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        level: selectedLevel as "L1" | "L2" | "L3" | "L4",
-                      });
-                    }}
-                    displayFullValue={false}
-                    isEmployeePage={true}
-                    disabled={editMode}  
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Total Experience (years)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={newEmployee.totalExperience ?? "0"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        totalExperience: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="e.g., 3"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Past Organization
-                  </label>
-                  <input
-                    type="text"
-                    value={newEmployee.pastOrganization ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        pastOrganization: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Previous company name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Lab Allocation
-                  </label>
-                  <SearchableDropdown
-                    options={labOptions}
-                    value={
-                      labOptions.find(
-                        (option) => option.value === newEmployee.labAllocation
-                      )?.id
-                    }
-                    onChange={(id) => {
-                      const selectedLab = labOptions.find(
-                        (option) => option.id === id
-                      )?.value;
-                      setNewEmployee({
-                        ...newEmployee,
-                        labAllocation: selectedLab as "Lab1" | "Lab2",
-                      });
-                    }}
-                    placeholder="Select Lab"
-                    displayFullValue={false}
-                    isEmployeePage={true}
-                  />
-                </div>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
+            <Card className="flex flex-col h-full bg-background">
+              {/* Fixed Header */}
+              <CardHeader className="flex-shrink-0 border-b p-5">
+                <CardTitle className="text-2xl">
+                  {editMode ? "Edit User" : "Create User"}
+                </CardTitle>
+              </CardHeader>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Compliance Day
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={newEmployee.complianceDay ?? "3"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        complianceDay: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    placeholder="Number of compliance days"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email *
-                  </label>
-                   <Input
-    type="email"
-    value={newEmployee.email ?? ""}
-    onChange={(e) =>
-      setNewEmployee({ ...newEmployee, email: e.target.value })
-    }
-    className="w-full px-3 py-2 border rounded-md bg-background"
-    placeholder="Enter email address"
-    disabled={editMode}
-  />
-                </div>
+              {/* Form Content */}
+              <div className={`flex-1 ${editMode ? "overflow-y-auto" : ""}`}>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 mt-3 md:grid-cols-2 gap-4">
+                    {/* Candidate Name */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1 ">
+                        Candidate Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={(newEmployee.name as string) ?? ""}
+                        onChange={(e) =>
+                          setNewEmployee({ ...newEmployee, name: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="Enter full name"
+                      />
+                    </div>
+
+                    {/* Date of Joining */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Date of Joining
+                      </label>
+                      <input
+                        type="date"
+                        value={newEmployee.date ?? ""}
+                        onChange={(e) =>
+                          setNewEmployee({ ...newEmployee, date: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        max="9999-12-31"
+                        min="1900-01-01"
+                      />
+                    </div>
+
+                    {/* Department */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Department *
+                      </label>
+                      <SearchableDropdown
+                        options={departmentOptions}
+                        value={
+                          departmentOptions.find(
+                            (option) => option.value === newEmployee.department
+                          )?.id
+                        }
+                        onChange={handleDepartmentChange}
+                        placeholder="Select Department"
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                        disabled={editMode}
+                      />
+                    </div>
+
+                    {/* Lab Allocation */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Lab Allocation
+                      </label>
+                      <SearchableDropdown
+                        options={labOptions}
+                        value={
+                          labOptions.find(
+                            (option) => option.value === newEmployee.labAllocation
+                          )?.id
+                        }
+                        onChange={(id) => {
+                          const selectedLab = labOptions.find(
+                            (option) => option.id === id
+                          )?.value;
+                          setNewEmployee({
+                            ...newEmployee,
+                            labAllocation: selectedLab || "",
+                          });
+                        }}
+                        placeholder={
+                          !newEmployee.department
+                            ? "Select Department First"
+                            : labOptions.length === 0
+                              ? "No labs available"
+                              : "Select Lab"
+                        }
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                        disabled={!newEmployee.department || labOptions.length === 0}
+                      />
+                    </div>
+
+                    {/* Level */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Level *
+                      </label>
+                      <SearchableDropdown
+                        options={levelOptions}
+                        value={
+                          levelOptions.find(
+                            (option) => option.value === newEmployee.level
+                          )?.id
+                        }
+                        onChange={(id) => {
+                          const selectedLevel = levelOptions.find(
+                            (option) => option.id === id
+                          )?.value;
+                          setNewEmployee({
+                            ...newEmployee,
+                            level: selectedLevel as "L1" | "L2" | "L3" | "L4",
+                          });
+                        }}
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                        disabled={editMode}
+                      />
+                    </div>
+
+                    {/* Total Experience */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Total Experience (years)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={newEmployee.totalExperience ?? "0"}
+                        onChange={(e) =>
+                          setNewEmployee({
+                            ...newEmployee,
+                            totalExperience: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="e.g., 3"
+                      />
+                    </div>
+
+                    {/* Past Organization */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Past Organization
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.pastOrganization ?? ""}
+                        onChange={(e) =>
+                          setNewEmployee({
+                            ...newEmployee,
+                            pastOrganization: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="Previous company name"
+                      />
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Role</label>
+                      <input
+                        type="text"
+                        value={newEmployee.role ?? ""}
+                        onChange={(e) =>
+                          setNewEmployee({ ...newEmployee, role: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="e.g., Software Engineer, Manager"
+                      />
+                    </div>
+
+                    {/* Compliance Day */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Compliance Day
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={newEmployee.complianceDay ?? "3"}
+                        onChange={(e) =>
+                          setNewEmployee({
+                            ...newEmployee,
+                            complianceDay: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="Number of compliance days"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Email *</label>
+                      <Input
+                        type="email"
+                        value={newEmployee.email ?? ""}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-md bg-background"
+                        placeholder="Enter email address"
+                        disabled={editMode}
+                      />
+                      {!editMode && emailExists && (
+                        <p className="text-red-500 text-sm mt-1">
+                          Email already exists
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Group - only for edit mode */}
+                    {editMode && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Select Group
+                        </label>
+                        <SearchableDropdown
+                          options={groupOptions}
+                          value={
+                            groupOptions.find(
+                              (option) => option.value === newEmployee.group
+                            )?.id
+                          }
+                          onChange={handleGroupChange}
+                          placeholder={
+                            !newEmployee.level || !selectedEmployeeId
+                              ? "Level and Employee ID required"
+                              : groupOptions.length === 0
+                                ? "No groups available"
+                                : "Select Group"
+                          }
+                          displayFullValue={false}
+                          isEmployeePage={true}
+                          disabled={
+                            !newEmployee.level ||
+                            !selectedEmployeeId ||
+                            groupOptions.length === 0
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Sticky Footer */}
+              <div className="flex-shrink-0 border-t bg-background p-6 flex gap-3">
                 <Button
                   onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
                   className="flex-1"
-                  disabled={!newEmployee.name || !newEmployee.email || !newEmployee.level}
+                  disabled={
+                    !newEmployee.name ||
+                    !newEmployee.name.trim() ||
+                    !newEmployee.level ||
+                    !newEmployee.department ||
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
+                    emailExists ||
+                    checkingEmail
+                  }
                 >
                   {editMode ? "Update User" : "Create User"}
                 </Button>
@@ -829,6 +1086,8 @@ const EmployeesPage: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     setShowAddModal(false);
+                    setEmailExists(false);
+                    setCheckingEmail(false);
                     setNewEmployee({
                       name: "",
                       date: "",
@@ -840,19 +1099,23 @@ const EmployeesPage: React.FC = () => {
                       labAllocation: "",
                       complianceDay: "3",
                       email: "",
+                      group: "",
                     });
                     setSelectedEmployeeId(null);
                     setEditMode(false);
+                    setGroupOptions([]);
                   }}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
       )}
+
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && employeeToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -890,7 +1153,7 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-            {/* Import Modal */}
+      {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -914,17 +1177,6 @@ const EmployeesPage: React.FC = () => {
                     Selected: {importFile.name}
                   </p>
                 )}
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  Expected Format:
-                </h4>
-                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• Sr No, Candidate Name, DOJ, Department</li>
-                  <li>• Role, Level, Total Experience, Past Organization</li>
-                  <li>• Lab Allocation, Compliance Day</li>
-                </ul>
               </div>
             </CardContent>
 

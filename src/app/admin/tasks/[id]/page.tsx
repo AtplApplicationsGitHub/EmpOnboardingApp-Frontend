@@ -30,6 +30,8 @@ import {
   CheckCircle2,
   RefreshCw,
   Users,
+  Star,
+  Trash2,
 } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { set } from "react-hook-form";
@@ -65,10 +67,16 @@ const TaskDetailsPage: React.FC = () => {
   const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
     undefined
   );
-  const labOptions = [
-    { id: 101, key: "Lab1", value: "Lab1" },
-    { id: 102, key: "Lab2", value: "Lab2" },
-  ];
+  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
+    null
+  );
+  const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<number | undefined>(
+    undefined
+  );
+  const [deleteReason, setDeleteReason] = useState("");
+
 
   useEffect(() => {
     fetchTasks();
@@ -98,6 +106,50 @@ const TaskDetailsPage: React.FC = () => {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
   }, []);
+
+  // const fetchLabs = useCallback(async () => {
+  //   try {
+  //     const labs = await adminService.getLookupItems("Lab");
+  //     setLabOptions(labs);
+  //   } catch (error) {
+  //     toast.error("Failed to load lab options.");
+  //   }
+  // }, []);
+
+  const fetchLabsByDepartment = useCallback(
+    async (department?: string, currentLab?: string) => {
+      if (!department) {
+        setLabOptions([]);
+        return;
+      }
+      try {
+        const labs = await adminService.getLab(department);
+        console.log("Fetched labs:", labs); // Debug log
+        const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
+          id: index + 1,
+          value: lab as string,
+          key: lab as string,
+        }));
+
+        setLabOptions(labOptionsFormatted);
+
+        if (currentLab) {
+          const matchingLab = labOptionsFormatted.find(
+            (lab) => lab.value === currentLab
+          );
+          if (matchingLab) {
+            setSelectedLabId(matchingLab.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching labs:", error);
+        setLabOptions([]);
+        toast.error("Failed to fetch labs for this department");
+      }
+    },
+    []
+  );
+
 
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
@@ -139,14 +191,15 @@ const TaskDetailsPage: React.FC = () => {
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
-
+ 
   useEffect(() => {
-    const id = labOptions.find((opt) => opt.value === lab)?.id;
-    setSelectedLabId(id);
-  }, [lab]);
+    if (department) {
+      fetchLabsByDepartment(department, lab);
+    }
+  }, [department, lab, fetchLabsByDepartment]);
 
+  // lab change handler
   const handleSaveLab = async (id?: number) => {
-    console.log("handleSaveLab called with id:", id);
     setSelectedLabId(id);
     const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
     if (!selectedLabValue) {
@@ -173,6 +226,35 @@ const TaskDetailsPage: React.FC = () => {
       setSelectedLabId(prevId);
     }
   };
+
+  const handleDeleteQuestion = async () => {
+    try {
+      if (!questionToDelete) {
+        toast.error("No question selected to delete.");
+        return;
+      }
+      await taskService.deleteQuestion(questionToDelete, deleteReason);
+      toast.success("Question deleted");
+      setShowDeleteModal(false);
+      setQuestionToDelete(undefined);
+      setDeleteReason("");
+      await fetchTasks();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Failed to delete question");
+    }
+  };
+
+  const handleLabChange = useCallback(
+    (value: number | number[] | undefined): void => {
+      const id = Array.isArray(value) ? value[0] : value;
+      void handleSaveLab(id);
+    },
+    [handleSaveLab]
+  );
+
+  const toggleFeedbackTooltip = useCallback((taskId: string) => {
+    setOpenFeedbackTaskId((prev) => (prev === taskId ? null : taskId));
+  }, []);
 
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
@@ -268,8 +350,8 @@ const TaskDetailsPage: React.FC = () => {
               <SearchableDropdown
                 options={labOptions}
                 value={selectedLabId}
-                disabled={freezeTask === "Y"} 
-                onChange={(id) => handleSaveLab(id)}
+                disabled={freezeTask === "Y"}
+                onChange={handleLabChange}
                 placeholder="Select Lab"
                 displayFullValue={false}
                 isEmployeePage={true}
@@ -309,19 +391,77 @@ const TaskDetailsPage: React.FC = () => {
                       </span>
                     </CardTitle>
                   </div>
+                  <div>
+                    <div className="relative" data-fb-trigger>
+                      <button
+                        type="button"
+                        onClick={() => toggleFeedbackTooltip(String(t.id))}
+                        className="flex items-center gap-1 focus:outline-none"
+                        aria-label="Show feedback"
+                        title="Show feedback"
+                      >
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= Number(t?.efstar ?? 0)
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </button>
+
+                      {/* Tooltip */}
+                      {openFeedbackTaskId === String(t.id) && (
+                        <div
+                          data-fb-tooltip
+                          className="absolute z-50 top-full mt-2 left-0 w-72 rounded-lg border border-border bg-card shadow-lg p-3"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold">
+                              Feedback
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground hover:underline"
+                              onClick={() => setOpenFeedbackTaskId(null)}
+                            >
+                              Close
+                            </button>
+                          </div>
+
+                          {/* Feedback text (from t.feedback) */}
+                          <div className="text-sm whitespace-pre-wrap">
+                            {t?.feedback &&
+                            String(t.feedback).trim().length > 0 ? (
+                              String(t.feedback)
+                            ) : (
+                              <span className="text-muted-foreground">
+                                No comments.
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold">{totalTasks}</div>
+                    <div className="text-3xl font-bold">
+                      {completed}/{totalTasks}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Questions
                     </div>
                   </div>
+
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={freezeTask === "Y"} 
+                    disabled={freezeTask === "Y"}
                     onClick={() => {
                       setShowReassignModal(true);
                       setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
@@ -343,6 +483,7 @@ const TaskDetailsPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
+                    <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -380,6 +521,21 @@ const TaskDetailsPage: React.FC = () => {
                             ? q.response
                             : "No response yet"}
                         </TableCell>
+
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500"
+                            disabled={freezeTask === "Y"}
+                            onClick={() => {
+                              setQuestionToDelete(q.id);
+                              setShowDeleteModal(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -389,6 +545,54 @@ const TaskDetailsPage: React.FC = () => {
           </Card>
         );
       })}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && questionToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Question</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete the Question This action cannot
+                be undone.
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Reason for deletion
+                </label>
+                <input
+                  type="text"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  placeholder="Enter reason"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {showReassignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -402,7 +606,10 @@ const TaskDetailsPage: React.FC = () => {
               <SearchableDropdown
                 options={groupLeads}
                 value={primaryGroupLeadId}
-                onChange={(value) => setPrimaryGroupLeadId(value)}
+                onChange={(value) => {
+                  const id = Array.isArray(value) ? value[0] : value;
+                  setPrimaryGroupLeadId(id);
+                }}
                 placeholder="Select a group lead"
                 required
                 maxDisplayItems={4}

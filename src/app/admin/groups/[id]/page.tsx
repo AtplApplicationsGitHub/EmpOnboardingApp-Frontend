@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminService } from "../../../services/api";
-import { Group, Question } from "../../../types";
+import { Group, Question, DropDownDTO } from "../../../types";
 import {
   Card,
   CardHeader,
@@ -13,6 +13,7 @@ import {
 import Button from "../../../components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
+import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 10;
 
@@ -32,15 +33,14 @@ const GroupDetailsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [isFormValid, setIsFormValid] = useState(false);
 
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
-
-  const periodOptions = [
-    { id: 101, key: "after", value: "after" },
-    { id: 102, key: "before", value: "before" },
-  ];
 
   // Form states
   const [formData, setFormData] = useState({
@@ -50,10 +50,58 @@ const GroupDetailsPage: React.FC = () => {
     period: "after",
     complainceDay: "1",
     questionLevel: [] as string[],
+    questionDepartment: [] as string[],
     groupId: groupId.toString(),
+    defaultflag: "no" as "yes" | "no",
   });
 
-  const levels = ["L1", "L2", "L3", "L4"];
+  // Validate form data
+  const validateForm = () => {
+    if (!formData.text.trim()) return false;
+    if (!formData.response) return false;
+    if (formData.response === "yes_no" && !formData.defaultflag) return false;
+    if (!formData.period) return false;
+    if (!formData.complainceDay || parseInt(formData.complainceDay) < 1)
+      return false;
+    if (formData.questionDepartment.length === 0) return false;
+    if (formData.questionLevel.length === 0) return false;
+    return true;
+  };
+  useEffect(() => {
+    setIsFormValid(validateForm());
+  }, [formData]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showCreateModal || showEditModal || showDeleteModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showCreateModal, showEditModal, showDeleteModal]);
+
+  //fetch dropdown options
+  useEffect(() => {
+    const fetchLookupData = async () => {
+      try {
+        const periods = await adminService.getLookupItems("Period");
+        setPeriodOptions(periods);
+
+        const levels = await adminService.getLookupItems("Level");
+        setLevelOptions(levels);
+        const departments = await adminService.getLookupItems("Department");
+        setDepartmentOptions(departments);
+      } catch (error) {
+        toast.error("Failed to load dropdown options.");
+      }
+    };
+    fetchLookupData();
+  }, []);
 
   useEffect(() => {
     if (groupId) {
@@ -62,15 +110,28 @@ const GroupDetailsPage: React.FC = () => {
     // eslint-disable-next-line
   }, [groupId, questionPage]);
 
+  const valuesToIds = (values: string[], options: DropDownDTO[]) =>
+    options.filter((o) => values.includes(o.value)).map((o) => o.id);
+
+  const idsToValues = (
+    ids: number | number[] | undefined,
+    options: DropDownDTO[]
+  ) => {
+    if (ids == null) return [];
+    const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
+    return options.filter((o) => idSet.has(o.id)).map((o) => o.value);
+  };
+
   const fetchGroupData = async () => {
     try {
       setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
-      // Get paginated questions
       const questionRes = await adminService.getQuestions(
         groupId,
         questionPage
       );
+      console.log("Fetched questions:", questionRes);
+
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
 
@@ -85,12 +146,20 @@ const GroupDetailsPage: React.FC = () => {
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
-
     try {
-      await adminService.createQuestion(formData);
+      // Destructure to exclude defaultflag temporarily
+      const { defaultflag, ...rest } = formData;
+      // Include defaultflag only if response is yes_no
+      const dataToSend = {
+        ...rest,
+        ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
+      };
+
+      console.log("Payload being sent:", dataToSend); // debug log
+
+      await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
-      // Refetch to get the latest questions (could land on new last page, but keeping at current page for now)
       fetchGroupData();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create question");
@@ -107,8 +176,16 @@ const GroupDetailsPage: React.FC = () => {
       return;
 
     try {
-      formData.id = editingQuestion.id;
-      await adminService.updateQuestion(formData);
+      const { defaultflag, ...rest } = formData;
+      // Include defaultFlag only if response is yes_no
+      const dataToSend = {
+        ...rest,
+        // id: editingQuestion.id,
+        ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
+      };
+      console.log("Sending to backend (Edit):", dataToSend); // debug log
+
+      await adminService.updateQuestion(dataToSend);
       setShowEditModal(false);
       setEditingQuestion(null);
       resetForm();
@@ -143,8 +220,10 @@ const GroupDetailsPage: React.FC = () => {
       response: question.response,
       period: question.period,
       complainceDay: question.complainceDay || "1",
+      questionDepartment: question.questionDepartment,
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
+      defaultflag: question.defaultFlag || "no",
     });
     setShowEditModal(true);
   };
@@ -156,8 +235,10 @@ const GroupDetailsPage: React.FC = () => {
       response: "yes_no",
       period: "after",
       complainceDay: "1",
+      questionDepartment: [],
       questionLevel: [],
       groupId: groupId.toString(),
+      defaultflag: "no",
     });
   };
 
@@ -255,6 +336,8 @@ const GroupDetailsPage: React.FC = () => {
                         : "Text Response"}
                     </span>
                     <span>Due: Day {question.complainceDay}</span>
+                    <span>Period: {question.period}</span>
+
                     <div className="flex items-center gap-1">
                       <span>Levels:</span>
                       {question.questionLevel.map((questionLevel) => (
@@ -263,6 +346,18 @@ const GroupDetailsPage: React.FC = () => {
                           className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
                         >
                           {questionLevel}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <span>Departments:</span>
+                      {question.questionDepartment.map((questionDepartment) => (
+                        <span
+                          key={questionDepartment}
+                          className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
+                        >
+                          {questionDepartment}
                         </span>
                       ))}
                     </div>
@@ -275,15 +370,18 @@ const GroupDetailsPage: React.FC = () => {
                   >
                     <Edit size={16} />
                   </button>
-                  <button
-                    onClick={() => {
-                      setQuestionToDelete(question);
-                      setShowDeleteModal(true);
-                    }}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                 {question.deleteFlag && questions.length > 1 && (
+    <button
+      onClick={() => {
+        setQuestionToDelete(question);
+        setShowDeleteModal(true);
+      }}
+      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+    >
+      <Trash2 size={16} />
+    </button>
+  )}
+
                 </div>
               </div>
             </CardHeader>
@@ -351,166 +449,267 @@ const GroupDetailsPage: React.FC = () => {
 
       {/* Create/Edit Question Modal */}
       {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                {showCreateModal ? "Create New Question" : "Edit Question"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={
-                  showCreateModal ? handleCreateQuestion : handleEditQuestion
-                }
-                className="space-y-6"
-              >
-                {/* Question Text */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Question Text *
-                  </label>
-                  <textarea
-                    value={formData.text}
-                    autoFocus
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        text: e.target.value,
-                      }))
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
+            <Card className="flex flex-col h-full bg-background">
+              {/* Fixed Header */}
+              <CardHeader className="flex-shrink-0 border-b">
+                <CardTitle className="text-xl">
+                  {showCreateModal ? "Create New Question" : "Edit Question"}
+                </CardTitle>
+              </CardHeader>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto">
+                <CardContent className="p-6">
+                  <form
+                    onSubmit={
+                      showCreateModal
+                        ? handleCreateQuestion
+                        : handleEditQuestion
                     }
-                    placeholder="Enter the onboarding question..."
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
-                    required
-                  />
-                </div>
-
-                {/* Response Type */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Response Type *
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="yes_no"
-                        checked={formData.response === "yes_no"}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            response: e.target.value as "yes_no",
-                          }))
-                        }
-                        className="text-primary"
-                      />
-                      Yes/No/N/A Question
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="text"
-                        checked={formData.response === "text"}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            response: e.target.value as "text",
-                          }))
-                        }
-                        className="text-primary"
-                      />
-                      Text Response
-                    </label>
-                  </div>
-                </div>
-
-                {/* Period */}
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Period *
-                  </label>
-                  <div className="flex gap-4">
-                    <SearchableDropdown
-                    className="w-full"
-                      options={periodOptions}
-                      value={
-                        periodOptions.find(
-                          (opt) => opt.value === formData.period
-                        )?.id
-                      }
-                      onChange={(id) => {
-                        const selectedValue =
-                          periodOptions.find((opt) => opt.id === id)?.value ??
-                          "";
-                        setFormData((prev) => ({
-                          ...prev,
-                          period: selectedValue as typeof prev.period,
-                        }));
-                      }}
-                      placeholder="Select period"
-                      displayFullValue={false}
-                      isEmployeePage={true}
-                    />
-                  </div>
-                </div>
-
-                {/* Compliance Day */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Compliance Day * (Number of days)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={parseInt(formData.complainceDay)}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        complainceDay: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter number of days"
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Number of days from the employee's start date when this task
-                    should be completed
-                  </p>
-                </div>
-
-                {/* Employee Levels */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Employee Levels * (Select at least one)
-                  </label>
-                  <div className="flex gap-3">
-                    {levels.map((level) => (
-                      <label
-                        key={level}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${
-                          formData.questionLevel.includes(level)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-input hover:border-primary/50"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.questionLevel.includes(level)}
-                          onChange={() => handleLevelToggle(level)}
-                          className="sr-only"
-                        />
-                        {level}
+                    className="space-y-6"
+                    id="question-form"
+                  >
+                    {/* Question Text */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Question Text *
                       </label>
-                    ))}
-                  </div>
-                </div>
+                      <textarea
+                        value={formData.text}
+                        autoFocus
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            text: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter the onboarding question..."
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
+                        required
+                      />
+                    </div>
 
-                {/* Form Actions */}
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1">
+                    {/* Response Type & Default Value */}
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Response Type */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Response Type *
+                        </label>
+                        <div className="flex gap-4 items-center">
+                          <label className="flex items-center gap-2 whitespace-nowrap">
+                            <input
+                              type="radio"
+                              value="yes_no"
+                              checked={formData.response === "yes_no"}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  response: e.target.value as "yes_no",
+                                }))
+                              }
+                              className="text-primary"
+                            />
+                            Yes/No/N/A Question
+                          </label>
+                          <label className="flex items-center gap-2 whitespace-nowrap">
+                            <input
+                              type="radio"
+                              value="text"
+                              checked={formData.response === "text"}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  response: e.target.value as "text",
+                                }))
+                              }
+                              className="text-primary"
+                            />
+                            Text Response
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Default Value - Conditionally rendered */}
+                      {formData.response === "yes_no" && (
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium mb-2">
+                            Default Value *
+                          </label>
+                          <div className="flex gap-4 items-center">
+                            <label className="flex items-center gap-2 whitespace-nowrap">
+                              <input
+                                type="radio"
+                                value="yes"
+                                checked={formData.defaultflag === "yes"}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    defaultflag: e.target.value as "yes" | "no",
+                                  }))
+                                }
+                                className="text-primary"
+                              />
+                              Yes
+                            </label>
+                            <label className="flex items-center gap-2 whitespace-nowrap">
+                              <input
+                                type="radio"
+                                value="no"
+                                checked={formData.defaultflag === "no"}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    defaultflag: e.target.value as "yes" | "no",
+                                  }))
+                                }
+                                className="text-primary"
+                              />
+                              No
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Period */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Period *
+                        </label>
+                        <div className="relative z-[10000]">
+                          <SearchableDropdown
+                            className="w-full"
+                            options={periodOptions}
+                            value={
+                              periodOptions.find(
+                                (opt) => opt.value === formData.period
+                              )?.id
+                            }
+                            onChange={(id) => {
+                              const selectedValue =
+                                periodOptions.find((opt) => opt.id === id)
+                                  ?.value ?? "";
+                              setFormData((prev) => ({
+                                ...prev,
+                                period: selectedValue as typeof prev.period,
+                              }));
+                            }}
+                            placeholder="Select period"
+                            displayFullValue={false}
+                            isEmployeePage={true}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Compliance Day */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Compliance Day * (Number of days)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={
+                            formData.complainceDay === ""
+                              ? ""
+                              : formData.complainceDay
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              complainceDay: value,
+                            }));
+                          }}
+                          placeholder="Enter number of days"
+                          className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Departments */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Departments *
+                        </label>
+                        <div className="relative z-[9999]">
+                          <SearchableDropdown
+                            options={departmentOptions}
+                            value={valuesToIds(
+                              formData.questionDepartment,
+                              departmentOptions
+                            )}
+                            isMultiSelect={true}
+                            onChange={(selectedIds) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                questionDepartment: idsToValues(
+                                  selectedIds,
+                                  departmentOptions
+                                ),
+                              }));
+                            }}
+                            placeholder="Select departments"
+                            disabled={showEditModal}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Employee Levels */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Employee Levels * (Select at least one)
+                        </label>
+                        <div className="flex gap-3 flex-wrap">
+                          {levelOptions.map((levelOption) => (
+                            <label
+                              key={levelOption.value}
+                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
+                                levelOption.value
+                              )
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-input hover:border-primary/50"
+                                }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.questionLevel.includes(
+                                  levelOption.value
+                                )}
+                                onChange={() =>
+                                  handleLevelToggle(levelOption.value)
+                                }
+                                className="sr-only"
+                                disabled={showEditModal}
+                              />
+                              {levelOption.value}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pb-4"></div>
+                  </form>
+                </CardContent>
+              </div>
+
+              {/* Sticky Footer with Buttons */}
+              <div className="flex-shrink-0 border-t bg-background p-6">
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    form="question-form"
+                    disabled={!isFormValid}
+                    className="flex-1"
+                  >
                     {showCreateModal ? "Create Question" : "Update Question"}
                   </Button>
                   <Button
@@ -527,26 +726,26 @@ const GroupDetailsPage: React.FC = () => {
                     Cancel
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && questionToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
           <Card className="w-full max-w-sm mx-4">
             <CardHeader>
-              <CardTitle>Delete Group</CardTitle>
+              <CardTitle>Delete Question</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Are you sure you want to delete the Question{" "}
-                <span className="font-semibold">{questionToDelete.text}</span>?
-                This action cannot be undone.
+                Are you sure you want to delete the question{" "}
+                <span className="font-semibold">"{questionToDelete.text}"</span>
+                ? This action cannot be undone.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button
                   variant="destructive"
                   onClick={handleDeleteQuestion}
@@ -558,6 +757,7 @@ const GroupDetailsPage: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     setShowDeleteModal(false);
+                    setQuestionToDelete(null);
                   }}
                   className="flex-1"
                 >

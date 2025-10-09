@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthContext';
 import Navbar from '../components/Navbar';
 
-const GroupLeadLayout = ({ children }: { children: React.ReactNode }) => {
+const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect if not authenticated or not a group lead
+  // Redirect if not authenticated or not an employee
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'group_lead')) {
+    if (!isLoading && (!user || user.role !== 'employee')) {
       router.push('/auth/login');
     }
   }, [user, isLoading, router]);
@@ -24,15 +24,15 @@ const GroupLeadLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Don't render anything if not authenticated or not a group lead
-  if (!user || user.role !== 'group_lead') {
+  // Don't render anything if not authenticated or not an employee
+  if (!user || user.role !== 'employee') {
     return null;
   }
 
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <div className="flex-1 ml-48">
+      <div className="flex-1 ml-64">
         <main className="p-6">
           {children}
         </main>
@@ -41,4 +41,4 @@ const GroupLeadLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default GroupLeadLayout;
+export default EmployeeLayout;
