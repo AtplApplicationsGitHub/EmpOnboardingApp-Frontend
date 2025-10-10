@@ -72,23 +72,7 @@ const UsersPage: React.FC = () => {
     }>;
     failedUserList: string[];
   }
-  const mockLdapData: MockLdapResponse = {
-    successUserInfoList: [
-      {
-        name: "Alice Johnson",
-        email: "alice.j@corp.com",
-      },
-      {
-        name: "Bob Smith",
-        email: "bob.s@corp.com",
-      },
-      {
-        name: "Charlie Brown",
-        email: "charlie.b@corp.com",
-      },
-    ],
-    failedUserList: [],
-  };
+
 
   // Fetch roles for dropdown
   const fetchRoles = async () => {
@@ -265,37 +249,6 @@ const UsersPage: React.FC = () => {
   };
 
   // Handle Add LDAP User
-  // const handleGetLdapUsers = async () => {
-  //   if (ldapUsers.length === 0) {
-  //     toast.error("Please add at least one LDAP username");
-  //     return;
-  //   }
-
-  //   try {
-  //     setLdapLoading(true);
-
-  //     const response: any = await adminService.getLdapUsers(ldapUsers);
-
-  //     const usersArray: User[] = response.successUserInfoList || [];
-
-  //     const initializedUsers: User[] = usersArray.map((user, index) => ({
-  //   id: index + 1, 
-  //   name: user.name,
-  //   email: user.email,
-  //   role: "group_lead",
-
-  // }));
-
-  //     setFetchedLdapUsers(initializedUsers);
-  //     setShowLdapUsersTable(true);
-
-  //     toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
-  //   } catch (err: any) {
-  //     toast.error(err.response?.data?.message || "Failed to fetch LDAP users");
-  //   } finally {
-  //     setLdapLoading(false);
-  //   }
-  // };
   const handleGetLdapUsers = async () => {
     if (ldapUsers.length === 0) {
       toast.error("Please add at least one LDAP username");
@@ -305,17 +258,16 @@ const UsersPage: React.FC = () => {
     try {
       setLdapLoading(true);
 
-      const response: MockLdapResponse = mockLdapData;
+      const response: any = await adminService.getLdapUsers(ldapUsers);
 
-      const usersArray = response.successUserInfoList || [];
+      const usersArray: User[] = response.successUserInfoList || [];
 
       const initializedUsers: User[] = usersArray.map((user, index) => ({
         id: index + 1,
         name: user.name,
         email: user.email,
         role: "group_lead",
-        createdTime: new Date().toISOString(),
-        updatedTime: new Date().toISOString(),
+
       }));
 
       setFetchedLdapUsers(initializedUsers);
@@ -323,12 +275,12 @@ const UsersPage: React.FC = () => {
 
       toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
     } catch (err: any) {
-      toast.error("MOCK ERROR: Failed to fetch LDAP users");
+      toast.error(err.response?.data?.message || "Failed to fetch LDAP users");
     } finally {
       setLdapLoading(false);
     }
   };
-
+ 
 
   //save ldap user
   const handleSaveLdapUsers = async () => {
@@ -819,10 +771,10 @@ const UsersPage: React.FC = () => {
               )}
 
               <div className="flex justify-end gap-2 pt-4">
-                {showLdapUsersTable && (
+                {showLdapUsersTable && fetchedLdapUsers.length > 0 && (
                   <Button
                     onClick={handleSaveLdapUsers}
-                    disabled={ldapLoading || fetchedLdapUsers.length === 0}
+                    disabled={ldapLoading}
                   >
                     {ldapLoading
                       ? "Saving..."
