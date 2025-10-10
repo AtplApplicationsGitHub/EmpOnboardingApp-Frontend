@@ -20,7 +20,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://employee.onboarding.goval.app:8084/api/:path*',
+        destination: 'https://emp-onboard.goval.app:8084/api/:path*',
       },
     ]
   },
