@@ -259,8 +259,10 @@ const UsersPage: React.FC = () => {
       setLdapLoading(true);
 
       const response: any = await adminService.getLdapUsers(ldapUsers);
+      console.log("LDAP Response:", response);
 
       const usersArray: User[] = response.successUserInfoList || [];
+      console.log("Parsed LDAP Users:", usersArray);
 
       const initializedUsers: User[] = usersArray.map((user, index) => ({
         id: index + 1,
