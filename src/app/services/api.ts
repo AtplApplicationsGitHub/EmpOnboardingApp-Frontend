@@ -20,6 +20,7 @@ import {
   AuditRecord,
   Lab,
   GLDashboard,
+  LdapResponse,
 } from "../types";
 import { group } from "console";
 
@@ -129,7 +130,7 @@ export const authService = {
     exists: boolean;
   }> => {
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = email.trim();
       const response = await api.get(
         `/auth/checkEmpOrAdmin/${normalizedEmail}`
       );
@@ -658,21 +659,21 @@ export const adminService = {
     );
     return response.data;
   },
-    // ldap users
-getLdapUsers: async (emails: string[]): Promise<User[]> => { 
-  const response = await api.post<User[]>(
-    "/ldap/loadUsersFromAD",
-    emails 
-  );
-  return response.data;
-},
+  // ldap users
+  getLdapUsers: async (emails: string[]): Promise<LdapResponse> => {
+    const response = await api.post<LdapResponse>(
+      "/ldap/loadUsersFromAD",
+      emails
+    );
+    return response.data;
+  },
   saveLdapUsers: async (users: User[]): Promise<boolean> => {
-  const response = await api.post<boolean>(
-    "/user/saveUserList",
-    users
-  );
-  return response.data;
-},
+    const response = await api.post<boolean>(
+      "/user/saveUserList",
+      users
+    );
+    return response.data;
+  },
 };
 
 // Lab Services
@@ -754,11 +755,11 @@ export const EQuestions = {
   },
 
   getQuestionsByTaskArchId: async (taskId: string): Promise<EmployeeQuestions[]> => {
-  const response = await api.get<EmployeeQuestions[]>(
-    `/eQuestions/getByTaskArchId/${taskId}`
-  );
-  return response.data;
-},
+    const response = await api.get<EmployeeQuestions[]>(
+      `/eQuestions/getByTaskArchId/${taskId}`
+    );
+    return response.data;
+  },
 
   getEmployeesWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(
@@ -767,7 +768,7 @@ export const EQuestions = {
     return response.data;
   },
 
-  
+
   getEmployeesArchWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(
       `/eQuestions/employeesArchWithQuestions`
