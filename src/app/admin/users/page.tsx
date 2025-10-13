@@ -25,7 +25,8 @@ import {
   ChevronsRight,
   Search,
   Pencil,
-  X
+  X,
+  Trash,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SearchableDropdown from "../../components/SearchableDropdown";
@@ -51,7 +52,7 @@ const UsersPage: React.FC = () => {
   const [ldapUsers, setLdapUsers] = useState<string[]>([]);
   const [ldapInputValue, setLdapInputValue] = useState("");
   const [ldapLoading, setLdapLoading] = useState(false);
-  const [fetchedLdapUsers, setFetchedLdapUsers] = useState<User[]>([]);
+  const [fetchedLdapUsers, setFetchedLdapUsers] = useState<(User & { emailError?: string })[]>([]);
   const [showLdapUsersTable, setShowLdapUsersTable] = useState(false);
 
 
@@ -216,7 +217,7 @@ const UsersPage: React.FC = () => {
   const handleEditUser = async (userId: number) => {
     try {
       // setLoading(true);
-      const user = await adminService.findById(userId); // should return user object
+      const user = await adminService.findById(userId);
       setFormData({
         name: user.name || "",
         email: user.email || "",
@@ -258,29 +259,50 @@ const UsersPage: React.FC = () => {
     try {
       setLdapLoading(true);
 
-      const response: any = await adminService.getLdapUsers(ldapUsers);
+      const response = await adminService.getLdapUsers(ldapUsers);
 
-      const usersArray: User[] = response.successUserInfoList || [];
+      // console.log("LDAP API Response:", response);
 
-      const initializedUsers: User[] = usersArray.map((user, index) => ({
+      const usersArray = response.successUsers || [];
+
+      // console.log("Users Array:", usersArray);
+      // console.log("Array Length:", usersArray.length);
+
+      if (!Array.isArray(usersArray) || usersArray.length === 0) {
+        toast.error("No users found in LDAP");
+        setShowLdapUsersTable(false);
+        setFetchedLdapUsers([]);
+        return;
+      }
+
+      const initializedUsers = usersArray.map((user, index) => ({
         id: index + 1,
         name: user.name,
         email: user.email,
-        role: "group_lead",
-
+        role: "group_lead" as "admin" | "group_lead",
       }));
+
+      // console.log("Initialized Users:", initializedUsers);
 
       setFetchedLdapUsers(initializedUsers);
       setShowLdapUsersTable(true);
 
-      toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
+      // console.log("State Updated Successfully");
+      // console.log("Show Table:", true);
+      // console.log("Fetched Users Count:", initializedUsers.length);
+
+      if (initializedUsers.length > 0) {
+        toast.success(`Successfully fetched ${initializedUsers.length} LDAP user(s)`);
+      }
     } catch (err: any) {
+      console.error("LDAP Fetch Error:", err);
       toast.error(err.response?.data?.message || "Failed to fetch LDAP users");
+      setShowLdapUsersTable(false);
+      setFetchedLdapUsers([]);
     } finally {
       setLdapLoading(false);
     }
   };
- 
 
   //save ldap user
   const handleSaveLdapUsers = async () => {
@@ -291,9 +313,35 @@ const UsersPage: React.FC = () => {
 
     try {
       setLdapLoading(true);
-      console.log(fetchedLdapUsers)
+
+      // Check emails individually
+      const emailValidationPromises = fetchedLdapUsers.map(user =>
+        adminService.isEmailExists(user.email)
+      );
+
+      const emailExistsResults = await Promise.all(emailValidationPromises);
+
+      // Map users with per-user email error
+      const updatedUsers = fetchedLdapUsers.map((user, index) => ({
+        ...user,
+        emailError: emailExistsResults[index] ? "Email already exists" : undefined,
+      }));
+
+      setFetchedLdapUsers(updatedUsers);
+
+      // Stop saving if any email exists
+      if (emailExistsResults.some(exists => exists)) {
+        // toast.error("Please fix the errors before saving.");
+        setLdapLoading(false);
+        return;
+      }
+
+      // Save users if no errors
       await adminService.saveLdapUsers(fetchedLdapUsers);
+
       toast.success(`Successfully saved ${fetchedLdapUsers.length} LDAP user(s)`);
+
+      // Reset modal state
       setShowLdapModal(false);
       setLdapUsers([]);
       setLdapInputValue("");
@@ -306,6 +354,7 @@ const UsersPage: React.FC = () => {
       setLdapLoading(false);
     }
   };
+
 
   // Pagination
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -704,7 +753,7 @@ const UsersPage: React.FC = () => {
                         onKeyDown={handleLdapKeyDown}
                         placeholder={ldapUsers.length === 0 ? "Type username and press Enter" : ""}
                         autoFocus
-                        disabled={ldapLoading || showLdapUsersTable}
+                        disabled={ldapLoading}
                         className="flex-1 min-w-[120px] bg-transparent outline-none text-sm disabled:opacity-50"
                       />
                     </div>
@@ -713,7 +762,7 @@ const UsersPage: React.FC = () => {
 
                 <Button
                   onClick={handleGetLdapUsers}
-                  disabled={ldapLoading || ldapUsers.length === 0 || showLdapUsersTable}
+                  disabled={ldapLoading || ldapUsers.length === 0}
                   className="whitespace-nowrap h-[42px]"
                 >
                   {ldapLoading ? "Getting Users..." : "Get Users"}
@@ -733,6 +782,7 @@ const UsersPage: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead></TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
@@ -741,8 +791,32 @@ const UsersPage: React.FC = () => {
                       <TableBody>
                         {fetchedLdapUsers.map((user, index) => (
                           <TableRow key={index}>
+                            <TableCell className="w-8">
+                              {user.emailError && (
+                                <button
+                                  onClick={() => {
+                                    const updatedUsers = [...fetchedLdapUsers];
+                                    updatedUsers.splice(index, 1);
+                                    setFetchedLdapUsers(updatedUsers);
+                                  }}
+                                  className="text-red-500 hover:text-red-700"
+                                  title="Delete user"
+                                >
+                                  <Trash size={16} />
+                                </button>
+                              )}
+                            </TableCell>
+
+
                             <TableCell className="font-medium">{user.name}</TableCell>
-                            <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              <div className="flex flex-col">
+                                {user.email}
+                                {user.emailError && (
+                                  <span className="text-red-500 text-xs mt-1">{user.emailError}</span>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <SearchableDropdown
                                 options={roles}
@@ -774,8 +848,7 @@ const UsersPage: React.FC = () => {
                 {showLdapUsersTable && fetchedLdapUsers.length > 0 && (
                   <Button
                     onClick={handleSaveLdapUsers}
-                    disabled={ldapLoading}
-                  >
+                    disabled={ldapLoading || fetchedLdapUsers.some(u => u.emailError)}                  >
                     {ldapLoading
                       ? "Saving..."
                       : `Save ${fetchedLdapUsers.length} User${fetchedLdapUsers.length !== 1 ? 's' : ''}`}
