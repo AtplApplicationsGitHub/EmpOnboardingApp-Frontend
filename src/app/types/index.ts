@@ -307,3 +307,8 @@ export interface AuditRecord {
   module: string;
   moduleId: string;
 }
+
+export interface LdapResponse {
+  successUsers: User[]; 
+  message?: string;
+}
