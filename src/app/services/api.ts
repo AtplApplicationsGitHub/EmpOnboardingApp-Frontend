@@ -128,7 +128,7 @@ export const authService = {
     exists: boolean;
   }> => {
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = email.trim();
       const response = await api.get(
         `/auth/checkEmpOrAdmin/${normalizedEmail}`
       );
