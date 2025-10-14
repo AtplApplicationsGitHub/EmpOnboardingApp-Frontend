@@ -75,7 +75,6 @@ const [existingLabCount, setExistingLabCount] = useState(0);
       setLabs(result.commonListDto || []);
       setTotal(result.totalElements || 0);
     } catch (err: any) {
-      console.error("Failed to fetch labs:", err);
       if (
         err?.message?.includes("Network Error") ||
         err?.message?.includes("CORS")
@@ -145,9 +144,6 @@ const openEditModal = async (labId: string) => {
       ? lab.lab 
       : [""];
     
-    console.log("Lab data from API:", lab);
-    console.log("Location from API:", lab.location);
-    console.log("Available location options:", locationOptions);
     
     // Find matching location from dropdown options
     const matchingLocation = locationOptions.find(
@@ -155,7 +151,6 @@ const openEditModal = async (labId: string) => {
              opt.value?.toLowerCase() === lab.location?.toLowerCase()
     );
     
-    console.log("Matching location found:", matchingLocation);
     
     setForm({
       location: matchingLocation?.value || lab.location || "",
@@ -174,7 +169,6 @@ const openEditModal = async (labId: string) => {
       firstLabInput?.focus();
     }, 100);
   } catch (error) {
-    console.error("Failed to load lab details:", error);
     toast.error("Failed to load lab details");
   }
 };
@@ -254,7 +248,6 @@ const openEditModal = async (labId: string) => {
     return;
   }
 
-  console.log("Sending to API:", { id: selectedLabId, lab });
 
   try {
     await labService.updateLab({ lab, id: selectedLabId });
@@ -262,7 +255,6 @@ const openEditModal = async (labId: string) => {
     closeModal();
     fetchLabs();
   } catch (err: any) {
-    console.error("Update error:", err);
     toast.error(err?.response?.data?.message || "Failed to update lab");
   }
 };

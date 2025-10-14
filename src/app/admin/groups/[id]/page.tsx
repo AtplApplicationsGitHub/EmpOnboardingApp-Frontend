@@ -130,7 +130,6 @@ const GroupDetailsPage: React.FC = () => {
         groupId,
         questionPage
       );
-      console.log("Fetched questions:", questionRes);
 
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
@@ -154,8 +153,6 @@ const GroupDetailsPage: React.FC = () => {
         ...rest,
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-
-      console.log("Payload being sent:", dataToSend); // debug log
 
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
@@ -183,7 +180,6 @@ const GroupDetailsPage: React.FC = () => {
         // id: editingQuestion.id,
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-      console.log("Sending to backend (Edit):", dataToSend); // debug log
 
       await adminService.updateQuestion(dataToSend);
       setShowEditModal(false);
@@ -212,7 +208,6 @@ const GroupDetailsPage: React.FC = () => {
   };
 
   const openEditModal = (question: Question) => {
-    console.log("Editing question:", question);
     setEditingQuestion(question);
     setFormData({
       id: question.id,

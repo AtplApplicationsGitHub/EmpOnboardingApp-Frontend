@@ -122,7 +122,6 @@ const LoginPage: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Role check error:', error);
       setLoginError(error.message || 'Failed to verify email');
     }
     finally {
@@ -134,7 +133,7 @@ const LoginPage: React.FC = () => {
   const onPasswordSubmit = async (data: PasswordFormInputs) => {
     try {
       setLoginError(null);
-      
+       
       // Basic client-side validation
       if (!data.password || data.password.trim().length < 1) {
         setLoginError('Password is required');

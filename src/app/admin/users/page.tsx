@@ -792,19 +792,17 @@ const UsersPage: React.FC = () => {
                         {fetchedLdapUsers.map((user, index) => (
                           <TableRow key={index}>
                             <TableCell className="w-8">
-                              {user.emailError && (
-                                <button
-                                  onClick={() => {
-                                    const updatedUsers = [...fetchedLdapUsers];
-                                    updatedUsers.splice(index, 1);
-                                    setFetchedLdapUsers(updatedUsers);
-                                  }}
-                                  className="text-red-500 hover:text-red-700"
-                                  title="Delete user"
-                                >
-                                  <Trash size={16} />
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  const updatedUsers = [...fetchedLdapUsers];
+                                  updatedUsers.splice(index, 1);
+                                  setFetchedLdapUsers(updatedUsers);
+                                }}
+                                className="text-red-500 hover:text-red-700 transition-colors"
+                                title="Delete user"
+                              >
+                                <Trash size={16} />
+                              </button>
                             </TableCell>
 
 

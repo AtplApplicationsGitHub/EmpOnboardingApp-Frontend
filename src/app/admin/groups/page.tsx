@@ -132,8 +132,6 @@ const GroupsPage: React.FC = () => {
       autoAssign: newAutoAssign,
     };
 
-    console.log(" [Create] Payload sent to backend:", payload);
-
     try {
       await adminService.createGroup(payload);
       setShowCreateModal(false);
@@ -168,7 +166,6 @@ const GroupsPage: React.FC = () => {
       autoAssign: editAutoAssign,
     };
 
-    console.log(" [Update] Payload sent to backend:", payload);
 
     try {
       await adminService.updateGroup(payload);
@@ -200,7 +197,6 @@ const GroupsPage: React.FC = () => {
 
   // Open Edit Modal
   const openEditModal = (group: Group) => {
-    console.log("[Prefill] Group data from backend:", group);
     setEditingGroup(group);
     setEditGroupName(group.name);
     setEditPrimaryGroupLeadId(getLeadIdByName(group.pgLead));

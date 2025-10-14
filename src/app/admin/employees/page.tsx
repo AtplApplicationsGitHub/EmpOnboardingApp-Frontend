@@ -107,7 +107,6 @@ const EmployeesPage: React.FC = () => {
       const departments = await adminService.getLookupItems("Department");
       setDepartmentOptions(departments);
     } catch (error) {
-      // console.error("Failed to fetch lookup items:", error);
       toast.error("Failed to load dropdown options.");
     }
   };
@@ -121,7 +120,6 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const labs = await adminService.getLab(departmentValue);
-      console.log("Fetched labs ", labs); // Debug log
       const labDropdownOptions: DropDownDTO[] = labs.map((lab, index) => ({
         id: index + 1,
         value: lab as string,
@@ -143,8 +141,6 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const groups = await adminService.getEmployeeGroup(level, employeeId);
-      // console.log("Fetched groups:", groups); // Debug log
-
 
       // Transform the response into DropDownDTO format
       const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
@@ -155,9 +151,7 @@ const EmployeesPage: React.FC = () => {
 
 
       setGroupOptions(groupDropdownOptions);
-      // console.log("DEBUG - Group options set to:", groupDropdownOptions);
     } catch (error) {
-      console.error("Failed to fetch employee groups:", error);
       toast.error("Failed to load group options.");
       setGroupOptions([]);
     }
@@ -180,7 +174,6 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
-      console.log("Fetched employees:", data); // Debug log
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -250,7 +243,6 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-      console.log("Fetched employee:", emp); // Debug log
 
       const formattedDate = formatDateForInput(emp.date);
 
@@ -327,12 +319,6 @@ const EmployeesPage: React.FC = () => {
             option => option.value === newEmployee.group
           );
 
-          //  console.log("DEBUG - All available group options:", groupOptions);
-          //     console.log("DEBUG - Looking for group:", newEmployee.group);
-          //     console.log("DEBUG - Selected Group Option:", selectedGroupOption);
-          //   console.log("empid", Number(selectedEmployeeId)) // Debug log
-
-
           if (selectedGroupOption) {
             await adminService.assignGroupsToEmployee({
               groupId: [selectedGroupOption.id],
@@ -344,8 +330,6 @@ const EmployeesPage: React.FC = () => {
             toast.error("Group assignment failed - group not found.");
           }
         } catch (groupError: any) {
-          console.error("Group assignment failed:", groupError);
-          console.log("DEBUG - Full error details:", groupError.response?.data);
           toast.success("Employee updated successfully!");
         }
       }
@@ -445,7 +429,6 @@ const EmployeesPage: React.FC = () => {
 
   const archiveEmployee = async (id: number) => {
     try {
-      console.log("Archiving employee with id:", id); // Debug log
       await adminService.achiveEmployees(id);
       toast.success("Employee Archival successfully!");
       fetchEmployees();
@@ -505,7 +488,6 @@ const EmployeesPage: React.FC = () => {
       setImportFile(null);
       setShowImportModal(false);
     } catch (err: any) {
-      console.error(err);
       toast.error(err.message ?? "Failed to import employees");
     } finally {
       setImportLoading(false);
@@ -536,7 +518,6 @@ const EmployeesPage: React.FC = () => {
 
       toast.success("Excel downloaded successfully!");
     } catch (err: any) {
-      console.error(err);
       toast.error(err.response?.data?.message ?? "Failed to download file");
     } finally {
       setProcessing(false);
@@ -645,7 +626,7 @@ const EmployeesPage: React.FC = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableCell className="w-28"></TableCell>
+                <TableCell className="w-32"></TableCell>
                 <TableCell className="w-40">Name</TableCell>
                 <TableCell className="w-44">Email</TableCell>
                 <TableCell className="w-22">DOJ</TableCell>
@@ -662,7 +643,7 @@ const EmployeesPage: React.FC = () => {
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">
+                      <p className="text-muted-foreground"> 
                         No employees found
                       </p>
                     </div>
@@ -671,41 +652,41 @@ const EmployeesPage: React.FC = () => {
               ) : (
                 employees.map((emp) => (
                   <TableRow key={emp.id}>
-                    <TableCell className="w-28 mr-24">
-                      <div className="flex items-center gap-0">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditEmployee(emp.id)}
-                          className="flex-shrink-0"
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        {emp.archiveFlag ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => archiveEmployee(emp.id)}
-                            className="flex-shrink-0"
-                          >
-                            <Archive size={14} />
-                          </Button>
-                        ) : (
-                          <div className="w-10 flex-shrink-0" />
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-500 flex-shrink-0"
-                          onClick={() => {
-                            setEmployeeToDelete(emp);
-                            setShowDeleteModal(true);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
+                  <TableCell className="w-32">
+  <div className="flex items-center gap-1 w-32">
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => handleEditEmployee(emp.id)}
+      className="flex-shrink-0"
+    >
+      <Pencil size={14} />
+    </Button>
+
+    {emp.archiveFlag && (
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => archiveEmployee(emp.id)}
+        className="flex-shrink-0"
+      >
+        <Archive size={14} />
+      </Button>
+    )}
+
+    <Button
+      size="sm"
+      variant="ghost"
+      className="text-red-500 flex-shrink-0"
+      onClick={() => {
+        setEmployeeToDelete(emp);
+        setShowDeleteModal(true);
+      }}
+    >
+      <Trash2 size={14} />
+    </Button>
+  </div>
+</TableCell>
                     <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
                       {emp.name}
                     </TableCell>
