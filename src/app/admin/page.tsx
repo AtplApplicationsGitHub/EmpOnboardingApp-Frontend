@@ -55,7 +55,6 @@ const AdminDashboard: React.FC = () => {
         });
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load dashboard data');
-        console.error('Dashboard fetch error', err);
       } finally {
         setLoading(false);
       }

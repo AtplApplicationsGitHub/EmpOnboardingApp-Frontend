@@ -93,7 +93,6 @@ const TasksPage: React.FC = () => {
           await EQuestions.getEmployeesWithQuestions();
         setEmployeesWithQuestions(new Set(employeesWithQuestionsArray));
       } catch (error) {
-        console.error("Error fetching employees with questions:", error);
         setEmployeesWithQuestions(new Set());
       }
 
@@ -143,7 +142,6 @@ const TasksPage: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error("Error fetching labs:", error);
       setLabOptions([]);
       setError("Failed to fetch labs for this department");
     }
@@ -163,7 +161,6 @@ const TasksPage: React.FC = () => {
       setTotalQuestionCount(totalQuestions);
       setShowQuestionsModal(true);
     } catch (error) {
-      console.error("Error fetching task questions:", error);
       toast.error("Failed to load questions");
     } finally {
       setQuestionsLoading(false);
@@ -325,9 +322,6 @@ const TasksPage: React.FC = () => {
                 </TableRow>
               ) : (
                 tasks.map((task) => {
-                  console.log('task:', tasks);
-
-                  console.log("Task Data:", task);
                   const completed =
                     (task as any).completedQuetions ??
                     (task as any).completedQuestions ??

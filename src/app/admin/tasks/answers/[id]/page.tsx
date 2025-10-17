@@ -46,10 +46,8 @@ const TaskAnswersPage: React.FC = () => {
         }
 
         const response = await EQuestions.getQuestionsByTask(taskId);
-        console.log("Fetched questions:", response); // Debug log
         setQuestions(response);
       } catch (err: any) {
-        console.error("Error fetching task answers:", err);
         setError(err.message || "Failed to load task answers");
       } finally {
         setLoading(false);
