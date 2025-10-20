@@ -23,6 +23,7 @@ import {
   LdapResponse,
 } from "../types";
 import { group } from "console";
+import AcknowledgementPage from "../admin/acknowledgement/page";
 
 // Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -329,6 +330,21 @@ export const adminService = {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
+
+   acknowledgementQuestion: async (params?: {
+    page?: number;
+  }): Promise<{
+    commonListDto: Question[];
+    totalElements: number;
+  }> => {
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Question[];
+      totalElements: number;
+    }>(`/question/getQuestionsByAcknowledge/Y/${page}`);
+    return response.data;
+  },
+
 
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);

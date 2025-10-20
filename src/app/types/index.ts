@@ -92,6 +92,8 @@ export interface Question {
   updatedTime: string;
   defaultFlag?: "yes" | "no";
   deleteFlag?: boolean;
+  comments?: string;
+  verifiedBy?: string;
 }
 
 export interface GLDashboard {
@@ -183,7 +185,7 @@ export interface Employee {
   employee_id: string;
   employee_name: string;
   employee_level: "L1" | "L2" | "L3" | "L4";
-  group_id?: number; // Optional since employees are assigned to all groups
+  group_id?: number;
 }
 
 export interface QueueEmployee {
