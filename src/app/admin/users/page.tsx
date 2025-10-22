@@ -261,11 +261,11 @@ const UsersPage: React.FC = () => {
 
       const response = await adminService.getLdapUsers(ldapUsers);
 
-      // console.log("LDAP API Response:", response);
+      console.log("LDAP API Response:", response);
 
       const usersArray = response.successUsers || [];
 
-      // console.log("Users Array:", usersArray);
+      console.log("Users Array:", usersArray);
       // console.log("Array Length:", usersArray.length);
 
       if (!Array.isArray(usersArray) || usersArray.length === 0) {

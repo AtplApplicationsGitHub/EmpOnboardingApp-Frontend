@@ -21,16 +21,19 @@ import {
   Lab,
   GLDashboard,
   LdapResponse,
+  TaskQuestions,
 } from "../types";
 import { group } from "console";
+import AcknowledgementPage from "../admin/acknowledgement/page";
 
 // Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: "http://localhost:8084/api", // DIRECT - May have CORS issues in development
-  baseURL: "https://emp-onboard.goval.app:8084/api", // DIRECT - May have CORS issues in development
+  // baseURL: 'https://dev.goval.app:2083/api',
+  baseURL: "https://emp-onboard.goval.app:8084/api",
+  // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -129,7 +132,7 @@ export const authService = {
     exists: boolean;
   }> => {
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = email.trim();
       const response = await api.get(
         `/auth/checkEmpOrAdmin/${normalizedEmail}`
       );
@@ -328,6 +331,21 @@ export const adminService = {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
+
+   acknowledgementQuestion: async (params?: {
+    page?: number;
+  }): Promise<{
+    commonListDto: TaskQuestions[];
+    totalElements: number;
+  }> => {
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: TaskQuestions[];
+      totalElements: number;
+    }>(`/task/getQuestionsByAcknowledge/Y/${page}`);
+    return response.data;
+  },
+
 
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
