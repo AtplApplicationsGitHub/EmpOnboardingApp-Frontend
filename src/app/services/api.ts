@@ -21,6 +21,7 @@ import {
   Lab,
   GLDashboard,
   LdapResponse,
+  TaskQuestions,
 } from "../types";
 import { group } from "console";
 import AcknowledgementPage from "../admin/acknowledgement/page";
@@ -334,14 +335,14 @@ export const adminService = {
    acknowledgementQuestion: async (params?: {
     page?: number;
   }): Promise<{
-    commonListDto: Question[];
+    commonListDto: TaskQuestions[];
     totalElements: number;
   }> => {
     const page = params?.page ?? 0;
     const response = await api.post<{
-      commonListDto: Question[];
+      commonListDto: TaskQuestions[];
       totalElements: number;
-    }>(`/question/getQuestionsByAcknowledge/Y/${page}`);
+    }>(`/task/getQuestionsByAcknowledge/Y/${page}`);
     return response.data;
   },
 

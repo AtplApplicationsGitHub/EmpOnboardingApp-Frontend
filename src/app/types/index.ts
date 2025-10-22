@@ -92,7 +92,6 @@ export interface Question {
   updatedTime: string;
   defaultFlag?: "yes" | "no";
   deleteFlag?: boolean;
-  comments?: string;
   verifiedBy?: string;
 }
 
@@ -153,6 +152,8 @@ export interface TaskQuestions {
   status: string;
   complianceDay: string;
   overDueFlag: boolean;
+  comments: string;
+  groupName: string;
 }
 
 export interface TaskProjection {

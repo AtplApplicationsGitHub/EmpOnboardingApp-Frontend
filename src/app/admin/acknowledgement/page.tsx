@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
-import { Employee, Question } from "../../types";
+import { Employee, Question, TaskQuestions } from "../../types";
 import { adminService } from "../../services/api";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -30,7 +30,7 @@ import { toast } from "react-hot-toast";
 const PAGE_SIZE = 10;
 
 const AcknowledgementPage: React.FC = () => {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<TaskQuestions[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [page, setPage] = useState(0);
@@ -90,6 +90,7 @@ const AcknowledgementPage: React.FC = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
+                <TableCell className="w-40">Group Name</TableCell>
                 <TableCell className="w-40">Question</TableCell>
                 <TableCell className="w-44">Response</TableCell>
                 <TableCell className="w-22">Comments</TableCell>
@@ -110,8 +111,11 @@ const AcknowledgementPage: React.FC = () => {
               ) : (
                 questions.map((ques) => (
                   <TableRow key={ques.id}>
+                     <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
+                      {ques.groupName}
+                    </TableCell>
                     <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
-                      {ques.text}
+                      {ques.questionId}
                     </TableCell>
                     <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
                       {ques.response}
