@@ -24,7 +24,7 @@ export interface Group {
   updatedTime: string;
   quesCount?: number;
   deleteFlag?: boolean;
-   autoAssign?: string;
+  autoAssign?: string;
 }
 
 export interface Employee {
@@ -312,6 +312,19 @@ export interface AuditRecord {
 }
 
 export interface LdapResponse {
-  successUsers: User[]; 
+  successUsers: User[];
   message?: string;
+}
+
+export interface OnboardingPipelineDTO {
+  id: number;
+  employeeName: string;
+  employeeEmail: string;
+  department: string;
+  level: string;
+  currentStage: string;
+  groupsPending: string;
+  nextSLADue: string;
+  overallStatus: string;
+  owner: string;
 }
