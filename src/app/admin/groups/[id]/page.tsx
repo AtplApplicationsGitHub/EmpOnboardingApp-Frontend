@@ -36,6 +36,7 @@ const GroupDetailsPage: React.FC = () => {
   const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [verifiedByOptions, setVerifiedByOptions] = useState<DropDownDTO[]>([]);
   const [isFormValid, setIsFormValid] = useState(false);
 
   // Pagination state
@@ -53,6 +54,7 @@ const GroupDetailsPage: React.FC = () => {
     questionDepartment: [] as string[],
     groupId: groupId.toString(),
     defaultflag: "no" as "yes" | "no",
+    verifiedBy: "",
   });
 
   // Validate form data
@@ -65,6 +67,7 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
+    if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -96,6 +99,8 @@ const GroupDetailsPage: React.FC = () => {
         setLevelOptions(levels);
         const departments = await adminService.getLookupItems("Department");
         setDepartmentOptions(departments);
+       const groupLeads = await adminService.getAllGroupLeads();
+        setVerifiedByOptions(groupLeads);
       } catch (error) {
         toast.error("Failed to load dropdown options.");
       }
@@ -130,6 +135,11 @@ const GroupDetailsPage: React.FC = () => {
         groupId,
         questionPage
       );
+      //debug logs
+        console.log("📊 Question Response:", questionRes); // 👈 DEBUG
+    console.log("📝 Questions:", questionRes.commonListDto); // 👈 DEBUG
+    console.log("🔢 Total:", questionRes.totalElements); // 👈 DEBUG
+    console.log("📄 Current Page:", questionPage); // 👈 DEBUG
 
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
@@ -156,6 +166,7 @@ const GroupDetailsPage: React.FC = () => {
 
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
+      // setQuestionPage(0); 
       resetForm();
       fetchGroupData();
     } catch (err: any) {
@@ -219,6 +230,7 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
       defaultflag: question.defaultFlag || "no",
+      verifiedBy: question.verifiedBy || "",
     });
     setShowEditModal(true);
   };
@@ -234,6 +246,7 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: [],
       groupId: groupId.toString(),
       defaultflag: "no",
+      verifiedBy: "",
     });
   };
 
@@ -356,6 +369,12 @@ const GroupDetailsPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
+
+                    {question.verifiedBy && (
+                      <span className="-ml-2 px-2 py-1 rounded">
+                        Verified by: {question.verifiedBy}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -365,17 +384,17 @@ const GroupDetailsPage: React.FC = () => {
                   >
                     <Edit size={16} />
                   </button>
-                 {question.deleteFlag && questions.length > 1 && (
-    <button
-      onClick={() => {
-        setQuestionToDelete(question);
-        setShowDeleteModal(true);
-      }}
-      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-    >
-      <Trash2 size={16} />
-    </button>
-  )}
+                  {question.deleteFlag && questions.length > 1 && (
+                    <button
+                      onClick={() => {
+                        setQuestionToDelete(question);
+                        setShowDeleteModal(true);
+                      }}
+                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
 
                 </div>
               </div>
@@ -669,8 +688,8 @@ const GroupDetailsPage: React.FC = () => {
                               className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
                                 levelOption.value
                               )
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-input hover:border-primary/50"
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-input hover:border-primary/50"
                                 }`}
                             >
                               <input
@@ -690,6 +709,42 @@ const GroupDetailsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium mb-2">
+                          Verified By *
+                        </label>
+                        <div className="relative">
+                          <SearchableDropdown
+                            className="w-full"
+                            options={verifiedByOptions}
+                            value={
+                              verifiedByOptions.find(
+                                (opt) => opt.value === formData.verifiedBy
+                              )?.id
+                            }
+                            onChange={(id) => {
+                              const selectedValue =
+                                verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
+                              setFormData((prev) => ({
+                                ...prev,
+                                verifiedBy: selectedValue,
+                              }));
+                            }}
+                            placeholder="Select who will verify"
+                            displayFullValue={false}
+                            // isEmployeePage={true}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 "/>
+                    </div>
+
+                    <div className="pb-4"></div>
+
+
+
 
                     <div className="pb-4"></div>
                   </form>

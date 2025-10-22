@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Table,
+  TableHead,
   TableHeader,
   TableBody,
   TableRow,
@@ -19,15 +20,17 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  CheckCircle,
 } from "lucide-react";
 import Button from "../../components/ui/button";
-import Input from "../../components/Input";
-import { Employee, Question, TaskQuestions } from "../../types";
+import { TaskQuestions } from "../../types";
 import { adminService } from "../../services/api";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 10;
+
+
 
 const AcknowledgementPage: React.FC = () => {
   const [questions, setQuestions] = useState<TaskQuestions[]>([]);
@@ -36,6 +39,8 @@ const AcknowledgementPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<Record<number, string>>({});
+
 
 
 
@@ -53,6 +58,43 @@ const AcknowledgementPage: React.FC = () => {
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load employees");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle comment input change
+const handleCommentChange = (id: number, value: string) => {
+    setComments((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
+  // Handle verify action
+ const handleVerify = async (id: number) => {
+    try {
+      const comment = comments[id];
+      if (!comment || comment.trim() === "") {
+        toast.error("Please enter a comment before verifying");
+        return;
+      }
+
+      setLoading(true);
+      await adminService.saveVerificationComment(id, comment);
+      
+      toast.success("Question verified successfully");
+      
+      // Clear the comment after successful verification
+      setComments((prev) => ({
+        ...prev,
+        [id]: "",
+      }));
+      
+      // Optionally refresh the data
+      fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to verify question");
     } finally {
       setLoading(false);
     }
@@ -85,15 +127,17 @@ const AcknowledgementPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-9xl mx-auto space-y-6">
+      {/* Questions Table */}
       <Card>
-        <CardContent className="p-0 space-y-4 ">
-          <Table className="table-fixed">
+        <CardContent className="p-0">
+          <Table>
             <TableHeader>
               <TableRow>
-                <TableCell className="w-40">Group Name</TableCell>
-                <TableCell className="w-40">Question</TableCell>
-                <TableCell className="w-44">Response</TableCell>
-                <TableCell className="w-22">Comments</TableCell>
+                <TableHead>Group Name</TableHead>
+                <TableHead>Question</TableHead>
+                <TableHead>Response</TableHead>
+                <TableHead>Comments</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,7 +146,7 @@ const AcknowledgementPage: React.FC = () => {
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground"> 
+                      <p className="text-muted-foreground">
                         No Questions found
                       </p>
                     </div>
@@ -111,19 +155,40 @@ const AcknowledgementPage: React.FC = () => {
               ) : (
                 questions.map((ques) => (
                   <TableRow key={ques.id}>
-                     <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
+                    <TableCell className="min-w-[140px]">
                       {ques.groupName}
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
+                    <TableCell className="font-medium min-w-[140px]">
                       {ques.questionId}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
+                    <TableCell className="min-w-[140px]">
                       {ques.response}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap w-24">
-                      {ques.comments}
+                   <TableCell className="min-w-[200px]">
+                      <input
+                        type="text"
+                        value={comments[ques.id] || ""}
+                        onChange={(e) =>
+                          handleCommentChange(ques.id, e.target.value)
+                        }
+                        placeholder="Enter comments..."
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
                     </TableCell>
- 
+                     <TableCell>
+                      {comments[ques.id] && comments[ques.id].trim() !== "" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerify(ques.id)}
+                          className="rounded-lg"
+                          aria-label="Verify question"
+                        >
+                          <CheckCircle size={16} className="mr-1" />
+                          Verify
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -131,6 +196,7 @@ const AcknowledgementPage: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+      {/* Pagination */}
       {totalPages > 1 && (
         <Card>
           <CardContent className="p-4">
