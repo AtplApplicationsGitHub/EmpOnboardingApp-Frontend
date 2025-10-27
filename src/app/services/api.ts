@@ -21,8 +21,10 @@ import {
   Lab,
   GLDashboard,
   LdapResponse,
+  TaskQuestions,
 } from "../types";
 import { group } from "console";
+import AcknowledgementPage from "../admin/acknowledgement/page";
 
 // Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -312,6 +314,7 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
+    verifiedBy?: string;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -324,11 +327,39 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
+    verifiedBy?: string;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
+
+  acknowledgementQuestion: async (params?: {
+    page?: number;
+  }): Promise<{
+    commonListDto: TaskQuestions[];
+    totalElements: number;
+  }> => {
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: TaskQuestions[];
+      totalElements: number;
+    }>(`/task/getQuestionsByAcknowledge/Y/${page}`);
+    return response.data;
+  },
+
+  saveVerificationComment: async (id: number, comment: string): Promise<boolean> => {
+  const response = await api.post<boolean>(
+    `/task/saveVerificationComment/${id}`,
+    comment,
+    {
+      headers: {
+        'Content-Type': 'text/plain'  
+      }
+    }
+  );
+  return response.data;
+},
 
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);

@@ -16,7 +16,9 @@ import {
   ScrollText,
   MapPin,
   FlaskConical,
-Archive
+  Archive,
+  FileBarChart,
+  FileCheck
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import {
@@ -34,9 +36,8 @@ const Navbar: React.FC = () => {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-56 bg-card border-r border-border ${
-        isVisible ? animationClasses.slideInLeft : "opacity-0"
-      }`}
+      className={`fixed inset-y-0 left-0 z-50 w-56 bg-card border-r border-border ${isVisible ? animationClasses.slideInLeft : "opacity-0"
+        }`}
     >
       <div className="flex flex-col h-full">
         {/* Logo/Brand */}
@@ -102,7 +103,7 @@ const Navbar: React.FC = () => {
                   <UserPlus className="h-4 w-4" />
                   <span>Process Employees</span>
                 </Link>
-                  <Link
+                <Link
                   href="/admin/archived-employees"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -138,7 +139,7 @@ const Navbar: React.FC = () => {
                   <Settings className="h-4 w-4" />
                   <span>Manage Users</span>
                 </Link>
-               <Link
+                {/* <Link
                   href="/admin/audit-trail"
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -149,6 +150,30 @@ const Navbar: React.FC = () => {
                 >
                   <ScrollText className="h-4 w-4" />
                   <span>Audit Trail</span>
+                </Link> */}
+                {/* <Link
+                  href="/admin/onboardingstatus-report"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/onboardingstatus-report"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FileBarChart className="h-4 w-4" />
+                  <span>Status Report</span>
+                </Link> */}
+                <Link
+                  href="/admin/acknowledgement"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin/acknowledgement"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FileCheck className="h-4 w-4" />
+                  <span>Acknowledgement</span>
                 </Link>
               </>
             )}
@@ -206,7 +231,7 @@ const Navbar: React.FC = () => {
                   <ClipboardListIcon className="h-4 w-4" />
                   <span>Onboarding Checklist</span>
                 </Link>
-               
+
               </>
             )}
           </div>
@@ -223,8 +248,8 @@ const Navbar: React.FC = () => {
                 {user.role === "admin"
                   ? "Administrator"
                   : user.role === "group_lead"
-                  ? "Group Lead"
-                  : "Employee"}
+                    ? "Group Lead"
+                    : "Employee"}
               </span>
             </div>
             <ThemeToggle />

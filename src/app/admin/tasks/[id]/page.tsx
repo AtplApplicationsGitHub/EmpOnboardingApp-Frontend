@@ -88,7 +88,6 @@ const TaskDetailsPage: React.FC = () => {
       setError(null);
       const t = await taskService.getTaskById(taskId);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
-      console.log("Fetched tasks:", list);
       setTasks(list);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load task(s)");
@@ -124,7 +123,6 @@ const TaskDetailsPage: React.FC = () => {
       }
       try {
         const labs = await adminService.getLab(department);
-        console.log("Fetched labs:", labs); // Debug log
         const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
           id: index + 1,
           value: lab as string,
@@ -142,7 +140,6 @@ const TaskDetailsPage: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching labs:", error);
         setLabOptions([]);
         toast.error("Failed to fetch labs for this department");
       }

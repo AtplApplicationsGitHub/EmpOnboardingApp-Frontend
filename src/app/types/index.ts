@@ -24,7 +24,7 @@ export interface Group {
   updatedTime: string;
   quesCount?: number;
   deleteFlag?: boolean;
-   autoAssign?: string;
+  autoAssign?: string;
 }
 
 export interface Employee {
@@ -92,6 +92,7 @@ export interface Question {
   updatedTime: string;
   defaultFlag?: "yes" | "no";
   deleteFlag?: boolean;
+  verifiedBy?: string;
 }
 
 export interface GLDashboard {
@@ -151,6 +152,8 @@ export interface TaskQuestions {
   status: string;
   complianceDay: string;
   overDueFlag: boolean;
+  comments: string;
+  groupName: string;
 }
 
 export interface TaskProjection {
@@ -183,7 +186,7 @@ export interface Employee {
   employee_id: string;
   employee_name: string;
   employee_level: "L1" | "L2" | "L3" | "L4";
-  group_id?: number; // Optional since employees are assigned to all groups
+  group_id?: number;
 }
 
 export interface QueueEmployee {
@@ -309,6 +312,19 @@ export interface AuditRecord {
 }
 
 export interface LdapResponse {
-  successUsers: User[]; 
+  successUsers: User[];
   message?: string;
+}
+
+export interface OnboardingPipelineDTO {
+  id: number;
+  employeeName: string;
+  employeeEmail: string;
+  department: string;
+  level: string;
+  currentStage: string;
+  groupsPending: string;
+  nextSLADue: string;
+  overallStatus: string;
+  owner: string;
 }

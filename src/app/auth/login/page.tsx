@@ -122,7 +122,6 @@ const LoginPage: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Role check error:', error);
       setLoginError(error.message || 'Failed to verify email');
     }
     finally {
@@ -134,7 +133,7 @@ const LoginPage: React.FC = () => {
   const onPasswordSubmit = async (data: PasswordFormInputs) => {
     try {
       setLoginError(null);
-      
+       
       // Basic client-side validation
       if (!data.password || data.password.trim().length < 1) {
         setLoginError('Password is required');
@@ -236,7 +235,7 @@ const LoginPage: React.FC = () => {
                 <Input
                   id="email"
                   label="Email address"
-                  type="email"
+                  type="text"
                   required
                    autoFocus
                   error={emailForm.formState.errors.email?.message}
@@ -244,7 +243,7 @@ const LoginPage: React.FC = () => {
                     required: 'Email is required',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
+                      message: 'Invalid email address or username'
                     }
                   })}
                 />

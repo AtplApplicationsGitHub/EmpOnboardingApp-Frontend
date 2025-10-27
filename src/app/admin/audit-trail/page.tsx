@@ -131,12 +131,10 @@ const AuditTrailPage = () => {
             setIsLoadingAuditData(true);
             setAuditDataError(null);
 
-            // Added 1 day to end date 
             const adjustedEndDate = new Date(endDate);
             adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
             const formattedEndDate = adjustedEndDate.toISOString().split('T')[0];
 
-            // Get selected values as strings (convert IDs to corresponding names)
             const selectedModuleNames = selectedModuleIds.map(id => {
                 const module = moduleOptions.find(option => option.id === id);
                 return module ? module.value : '';
@@ -162,19 +160,13 @@ const AuditTrailPage = () => {
                 userId: 1
             };
 
-            console.log('Search request:', searchRequest); // Debug log
-
-            // Call the API
             const response = await auditService.findFilteredData(page, searchRequest);
-            console.log('Search response:', response); // Debug log
-
             setAuditTrailData(response.commonListDto || []);
             setTotalElements(response.totalElements || 0);
             setCurrentPage(page);
             setExpandedRowIndices([]);
 
         } catch (error) {
-            console.error('Search error:', error);
             setAuditDataError('Failed to fetch audit trail data. Please try again.');
             setAuditTrailData([]);
         } finally {
@@ -207,6 +199,7 @@ const AuditTrailPage = () => {
                         type="date"
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
+                        className="dark:[color-scheme:dark] dark:text-white dark:bg-black-200"
                     />
                 </div>
 
@@ -218,6 +211,8 @@ const AuditTrailPage = () => {
                         value={endDate}
                         min={fromDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                        className="dark:[color-scheme:dark] dark:text-white dark:bg-black-200"
+
                     />
                 </div>
 
