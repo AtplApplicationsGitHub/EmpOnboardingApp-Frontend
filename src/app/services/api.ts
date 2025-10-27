@@ -349,13 +349,17 @@ export const adminService = {
   },
 
   saveVerificationComment: async (id: number, comment: string): Promise<boolean> => {
-    const response = await api.post<boolean>(
-      `/task/saveVerificationComment/${id}`,
-      { comment }
-    );
-    return response.data;
-  },
-
+  const response = await api.post<boolean>(
+    `/task/saveVerificationComment/${id}`,
+    comment,
+    {
+      headers: {
+        'Content-Type': 'text/plain'  
+      }
+    }
+  );
+  return response.data;
+},
 
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);

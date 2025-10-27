@@ -235,7 +235,7 @@ const LoginPage: React.FC = () => {
                 <Input
                   id="email"
                   label="Email address"
-                  type="email"
+                  type="text"
                   required
                    autoFocus
                   error={emailForm.formState.errors.email?.message}
@@ -243,7 +243,7 @@ const LoginPage: React.FC = () => {
                     required: 'Email is required',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
+                      message: 'Invalid email address or username'
                     }
                   })}
                 />

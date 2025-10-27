@@ -20,6 +20,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Check,
   CheckCircle,
 } from "lucide-react";
 import Button from "../../components/ui/button";
@@ -30,8 +31,6 @@ import { toast } from "react-hot-toast";
 
 const PAGE_SIZE = 10;
 
-
-
 const AcknowledgementPage: React.FC = () => {
   const [questions, setQuestions] = useState<TaskQuestions[]>([]);
   const [searchInput, setSearchInput] = useState("");
@@ -40,8 +39,7 @@ const AcknowledgementPage: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState<Record<number, string>>({});
-
-
+  const [verifiedQuestions, setVerifiedQuestions] = useState<Set<number>>(new Set());
 
 
   useEffect(() => {
@@ -54,8 +52,22 @@ const AcknowledgementPage: React.FC = () => {
       setLoading(true);
       const params: any = { page };
       const data = await adminService.acknowledgementQuestion(params);
+      console.log("Fetched Questions:", data);
       setQuestions(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
+
+      const existingComments: Record<number, string> = {};
+      const alreadyVerified = new Set<number>();
+      
+      (data.commonListDto || []).forEach((ques: TaskQuestions) => {
+      if (ques.comments) {
+        existingComments[ques.id] = ques.comments;
+        alreadyVerified.add(ques.id);
+      }
+    });
+      // console.log("Processed Comments:", existingComments);
+      setComments(existingComments);
+      setVerifiedQuestions(alreadyVerified);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load employees");
     } finally {
@@ -64,7 +76,7 @@ const AcknowledgementPage: React.FC = () => {
   };
 
   // Handle comment input change
-const handleCommentChange = (id: number, value: string) => {
+  const handleCommentChange = (id: number, value: string) => {
     setComments((prev) => ({
       ...prev,
       [id]: value,
@@ -72,25 +84,23 @@ const handleCommentChange = (id: number, value: string) => {
   };
 
   // Handle verify action
- const handleVerify = async (id: number) => {
+  const handleVerify = async (id: number) => {
     try {
       const comment = comments[id];
       if (!comment || comment.trim() === "") {
         toast.error("Please enter a comment before verifying");
         return;
       }
+      console.log("Comment being sent to BE:", comment); // Debug log
+      console.log("Type of comment:", typeof comment); // Debug log
 
       setLoading(true);
       await adminService.saveVerificationComment(id, comment);
-      
+      setVerifiedQuestions(prev => new Set([...prev, id]));
+
+
       toast.success("Question verified successfully");
-      
-      // Clear the comment after successful verification
-      setComments((prev) => ({
-        ...prev,
-        [id]: "",
-      }));
-      
+
       // Optionally refresh the data
       fetchEmployees();
     } catch (err: any) {
@@ -164,28 +174,33 @@ const handleCommentChange = (id: number, value: string) => {
                     <TableCell className="min-w-[140px]">
                       {ques.response}
                     </TableCell>
-                   <TableCell className="min-w-[200px]">
+                    <TableCell className="min-w-[200px]">
                       <input
                         type="text"
                         value={comments[ques.id] || ""}
                         onChange={(e) =>
                           handleCommentChange(ques.id, e.target.value)
                         }
+                        disabled={verifiedQuestions.has(ques.id)}
                         placeholder="Enter comments..."
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(ques.id)
+                          ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
+                          : 'bg-background border-input'
+                          }`}
                       />
                     </TableCell>
-                     <TableCell>
+                    <TableCell>
                       {comments[ques.id] && comments[ques.id].trim() !== "" && (
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={() => handleVerify(ques.id)}
-                          className="rounded-lg"
+                          disabled={verifiedQuestions.has(ques.id)}  // disable if already verified
+                          className="rounded-lg bg-green-500 hover:bg-green-600 text-white"
                           aria-label="Verify question"
                         >
                           <CheckCircle size={16} className="mr-1" />
-                          Verify
+                          {verifiedQuestions.has(ques.id) ? "Verified" : "Verify"}
                         </Button>
                       )}
                     </TableCell>
