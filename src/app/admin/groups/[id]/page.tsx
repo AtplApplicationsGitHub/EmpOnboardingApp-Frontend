@@ -99,7 +99,7 @@ const GroupDetailsPage: React.FC = () => {
         setLevelOptions(levels);
         const departments = await adminService.getLookupItems("Department");
         setDepartmentOptions(departments);
-       const groupLeads = await adminService.getAllGroupLeads();
+        const groupLeads = await adminService.getAllGroupLeads();
         setVerifiedByOptions(groupLeads);
       } catch (error) {
         toast.error("Failed to load dropdown options.");
@@ -136,10 +136,10 @@ const GroupDetailsPage: React.FC = () => {
         questionPage
       );
       //debug logs
-        console.log("📊 Question Response:", questionRes); // 👈 DEBUG
-    console.log("📝 Questions:", questionRes.commonListDto); // 👈 DEBUG
-    console.log("🔢 Total:", questionRes.totalElements); // 👈 DEBUG
-    console.log("📄 Current Page:", questionPage); // 👈 DEBUG
+      // console.log(" Question Response:", questionRes); // DEBUG
+      // console.log("Questions:", questionRes.commonListDto); //  DEBUG
+      // console.log(" Total:", questionRes.totalElements); //  DEBUG
+      // console.log(" Current Page:", questionPage); //  DEBUG
 
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
@@ -152,43 +152,42 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
-  const handleCreateQuestion = async (e: React.FormEvent) => {
+ const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
     try {
-      // Destructure to exclude defaultflag temporarily
-      const { defaultflag, ...rest } = formData;
-      // Include defaultflag only if response is yes_no
+      const { defaultflag, verifiedBy, ...rest } = formData;
+
+      // ✅ CHANGED: Send email directly (verifiedBy already contains the email)
       const dataToSend = {
         ...rest,
+        verifiedBy: verifiedBy, // Send email like "senseq@corp.com"
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
 
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
-      // setQuestionPage(0); 
       resetForm();
       fetchGroupData();
+      toast.success("Question created successfully!");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create question");
+      toast.error("Failed to create question");
     }
   };
 
-  const handleEditQuestion = async (e: React.FormEvent) => {
+
+   const handleEditQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !editingQuestion ||
-      !formData.text.trim() ||
-      formData.questionLevel.length === 0
-    )
-      return;
+    if (!editingQuestion || !formData.text.trim() || formData.questionLevel.length === 0) return;
 
     try {
-      const { defaultflag, ...rest } = formData;
-      // Include defaultFlag only if response is yes_no
+      const { defaultflag, verifiedBy, ...rest } = formData;
+
+      // ✅ CHANGED: Send email directly (verifiedBy already contains the email)
       const dataToSend = {
         ...rest,
-        // id: editingQuestion.id,
+        verifiedBy: verifiedBy, // Send email like "senseq@corp.com"
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
 
@@ -196,12 +195,67 @@ const GroupDetailsPage: React.FC = () => {
       setShowEditModal(false);
       setEditingQuestion(null);
       resetForm();
-      fetchGroupData();
+      await fetchGroupData();
+      toast.success("Question updated successfully!");
     } catch (err: any) {
+      console.error("Error updating question:", err);
       setError(err.response?.data?.message || "Failed to update question");
+      toast.error("Failed to update question");
     }
   };
 
+  // const handleEditQuestion = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (
+  //     !editingQuestion ||
+  //     !formData.text.trim() ||
+  //     formData.questionLevel.length === 0
+  //   )
+  //     return;
+
+  //   try {
+  //     const { defaultflag, verifiedBy, ...rest } = formData;
+
+  //     console.log("=== EDIT QUESTION DEBUG ===");
+  //     // console.log(" Form verifiedBy VALUE:", verifiedBy);
+
+  //     const verifiedByKey = verifiedByOptions.find(opt => opt.value === verifiedBy)?.key || "";
+  //     // console.log(" Found verifiedByKey:", verifiedByKey);
+
+  //     const dataToSend = {
+  //       ...rest,
+  //       verifiedBy: verifiedByKey,
+  //       ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
+  //     };
+
+  //     console.log(" Data being sent to API:", dataToSend);
+
+  //     // Call update API
+  //     await adminService.updateQuestion(dataToSend);
+
+  //     // Close modal first for better UX
+  //     setShowEditModal(false);
+  //     setEditingQuestion(null);
+  //     resetForm();
+
+  //     // Fetch data from database
+  //     await fetchGroupData();
+
+  //     //debug logs
+  //     console.log(" Fresh questions from database:", questions);
+
+  //     // Find the specific question we just updated
+  //     const updatedQuestion = questions.find(q => q.id === editingQuestion.id);
+  //     // console.log("Updated question from DB:", updatedQuestion);
+  //     // console.log(" Updated question's verifiedBy from DB:", updatedQuestion?.verifiedBy);
+
+  //     // toast.success("Question updated successfully!");
+  //   } catch (err: any) {
+  //     console.error("Error updating question:", err);
+  //     setError(err.response?.data?.message || "Failed to update question");
+  //     toast.error("Failed to update question");
+  //   }
+  // };
   const handleDeleteQuestion = async () => {
     if (!questionToDelete) return;
     try {
@@ -220,6 +274,12 @@ const GroupDetailsPage: React.FC = () => {
 
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);
+    
+    // ✅ CHANGED: Match by VALUE (email) instead of KEY
+    const matchingOption = verifiedByOptions.find(
+      opt => opt.value === question.verifiedBy
+    );
+
     setFormData({
       id: question.id,
       text: question.text,
@@ -230,7 +290,7 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
       defaultflag: question.defaultFlag || "no",
-      verifiedBy: question.verifiedBy || "",
+      verifiedBy: matchingOption?.value || "", // Store email in formData
     });
     setShowEditModal(true);
   };
@@ -249,7 +309,6 @@ const GroupDetailsPage: React.FC = () => {
       verifiedBy: "",
     });
   };
-
   const handleLevelToggle = (level: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -369,10 +428,9 @@ const GroupDetailsPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
-
-                    {question.verifiedBy && (
+                  {question.verifiedBy && (
                       <span className="-ml-2 px-2 py-1 rounded">
-                        Verified by: {question.verifiedBy}
+                        Verified by: {verifiedByOptions.find(opt => opt.value === question.verifiedBy)?.key || question.verifiedBy}
                       </span>
                     )}
                   </div>
@@ -715,7 +773,7 @@ const GroupDetailsPage: React.FC = () => {
                           Verified By *
                         </label>
                         <div className="relative">
-                          <SearchableDropdown
+                          {/* <SearchableDropdown
                             className="w-full"
                             options={verifiedByOptions}
                             value={
@@ -733,12 +791,41 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
-                            // isEmployeePage={true}
+                          // isEmployeePage={true}
+                          /> */}
+
+                          <SearchableDropdown
+                            className="w-full"
+                            options={verifiedByOptions}
+                            value={
+                              verifiedByOptions.find(
+                                (opt) => opt.value === formData.verifiedBy
+                              )?.id
+                            }
+                            onChange={(id) => {
+                              console.log("=== DROPDOWN CHANGE ===");
+                              console.log("Selected ID:", id);
+                              const selectedOption = verifiedByOptions.find((opt) => opt.id === id);
+                              console.log("Selected Option:", selectedOption);
+                              console.log("Selected Value:", selectedOption?.value);
+
+                              const selectedValue = selectedOption?.value ?? "";
+                              setFormData((prev) => {
+                                console.log("Previous formData.verifiedBy:", prev.verifiedBy);
+                                console.log("New formData.verifiedBy:", selectedValue);
+                                return {
+                                  ...prev,
+                                  verifiedBy: selectedValue,
+                                };
+                              });
+                            }}
+                            placeholder="Select who will verify"
+                            displayFullValue={false}
                           />
                         </div>
                       </div>
 
-                      <div className="flex-1 "/>
+                      <div className="flex-1 " />
                     </div>
 
                     <div className="pb-4"></div>
