@@ -299,10 +299,11 @@ export const adminService = {
 
   getEmployeeGroup: async (
     level: string,
+    department: string,
     id: number
   ): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
-      `/question/getGroups/${level}/${id}`
+      `/question/getGroups/${level}/${department}/${id}`
     );
     return response.data;
   },

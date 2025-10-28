@@ -67,7 +67,7 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
-    if (!formData.verifiedBy) return false;
+    // if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -152,19 +152,18 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
- const handleCreateQuestion = async (e: React.FormEvent) => {
+  const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
     try {
       const { defaultflag, verifiedBy, ...rest } = formData;
 
-      // ✅ CHANGED: Send email directly (verifiedBy already contains the email)
       const dataToSend = {
         ...rest,
-        verifiedBy: verifiedBy, // Send email like "senseq@corp.com"
+        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-
+      console.log("Creating Question with data:", dataToSend.verifiedByEmail);
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
@@ -177,17 +176,16 @@ const GroupDetailsPage: React.FC = () => {
   };
 
 
-   const handleEditQuestion = async (e: React.FormEvent) => {
+  const handleEditQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingQuestion || !formData.text.trim() || formData.questionLevel.length === 0) return;
 
     try {
       const { defaultflag, verifiedBy, ...rest } = formData;
 
-      // ✅ CHANGED: Send email directly (verifiedBy already contains the email)
       const dataToSend = {
         ...rest,
-        verifiedBy: verifiedBy, // Send email like "senseq@corp.com"
+        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
 
@@ -274,10 +272,9 @@ const GroupDetailsPage: React.FC = () => {
 
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);
-    
-    // ✅ CHANGED: Match by VALUE (email) instead of KEY
+
     const matchingOption = verifiedByOptions.find(
-      opt => opt.value === question.verifiedBy
+      opt => opt.value === question.verifiedByEmail
     );
 
     setFormData({
@@ -290,7 +287,7 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
       defaultflag: question.defaultFlag || "no",
-      verifiedBy: matchingOption?.value || "", // Store email in formData
+      verifiedBy: matchingOption?.value || "",
     });
     setShowEditModal(true);
   };
@@ -428,7 +425,7 @@ const GroupDetailsPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
-                  {question.verifiedBy && (
+                    {question.verifiedBy && (
                       <span className="-ml-2 px-2 py-1 rounded">
                         Verified by: {verifiedByOptions.find(opt => opt.value === question.verifiedBy)?.key || question.verifiedBy}
                       </span>
@@ -770,7 +767,7 @@ const GroupDetailsPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
-                          Verified By *
+                          Verified By
                         </label>
                         <div className="relative">
                           {/* <SearchableDropdown

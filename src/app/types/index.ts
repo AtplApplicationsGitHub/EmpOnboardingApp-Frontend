@@ -93,6 +93,7 @@ export interface Question {
   defaultFlag?: "yes" | "no";
   deleteFlag?: boolean;
   verifiedBy?: string;
+  verifiedByEmail?: string;
 }
 
 export interface GLDashboard {

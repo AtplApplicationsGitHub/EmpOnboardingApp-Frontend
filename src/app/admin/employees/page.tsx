@@ -133,14 +133,14 @@ const EmployeesPage: React.FC = () => {
   };
 
   // Fetch groups based on selected level and employee id
-  const fetchEmployeeGroups = async (level: string, employeeId: number) => {
-    if (!level || !employeeId) {
+  const fetchEmployeeGroups = async (level: string, department: string, employeeId: number) => {
+    if (!level || !department || !employeeId) {
       setGroupOptions([]);
       return;
     }
 
     try {
-      const groups = await adminService.getEmployeeGroup(level, employeeId);
+      const groups = await adminService.getEmployeeGroup(level, department, employeeId);
 
       // Transform the response into DropDownDTO format
       const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
@@ -269,8 +269,8 @@ const EmployeesPage: React.FC = () => {
       }
 
       // Fetch groups for the employee's level and ID
-      if (emp.level && employeeId) {
-        await fetchEmployeeGroups(emp.level, employeeId);
+      if (emp.level && emp.department && employeeId) {
+        await fetchEmployeeGroups(emp.level, emp.department, employeeId);
       }
 
       setEditMode(true);
@@ -395,6 +395,12 @@ const EmployeesPage: React.FC = () => {
       fetchLabsByDepartment(selectedDept.value);
     } else {
       setLabOptions([]); // Reset lab options
+    }
+    if (editMode && selectedEmployeeId && newEmployee.level) {
+      setGroupOptions([]);
+      if (selectedDept?.value) {
+        fetchEmployeeGroups(newEmployee.level, selectedDept.value, selectedEmployeeId);
+      }
     }
   };
 
@@ -643,7 +649,7 @@ const EmployeesPage: React.FC = () => {
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground"> 
+                      <p className="text-muted-foreground">
                         No employees found
                       </p>
                     </div>
@@ -652,41 +658,41 @@ const EmployeesPage: React.FC = () => {
               ) : (
                 employees.map((emp) => (
                   <TableRow key={emp.id}>
-                  <TableCell className="w-32">
-  <div className="flex items-center gap-1 w-32">
-    <Button
-      size="sm"
-      variant="ghost"
-      onClick={() => handleEditEmployee(emp.id)}
-      className="flex-shrink-0"
-    >
-      <Pencil size={14} />
-    </Button>
+                    <TableCell className="w-32">
+                      <div className="flex items-center gap-1 w-32">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditEmployee(emp.id)}
+                          className="flex-shrink-0"
+                        >
+                          <Pencil size={14} />
+                        </Button>
 
-    {emp.archiveFlag && (
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => archiveEmployee(emp.id)}
-        className="flex-shrink-0"
-      >
-        <Archive size={14} />
-      </Button>
-    )}
+                        {emp.archiveFlag && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => archiveEmployee(emp.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Archive size={14} />
+                          </Button>
+                        )}
 
-    <Button
-      size="sm"
-      variant="ghost"
-      className="text-red-500 flex-shrink-0"
-      onClick={() => {
-        setEmployeeToDelete(emp);
-        setShowDeleteModal(true);
-      }}
-    >
-      <Trash2 size={14} />
-    </Button>
-  </div>
-</TableCell>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 flex-shrink-0"
+                          onClick={() => {
+                            setEmployeeToDelete(emp);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
                       {emp.name}
                     </TableCell>
@@ -1026,8 +1032,8 @@ const EmployeesPage: React.FC = () => {
                           }
                           onChange={handleGroupChange}
                           placeholder={
-                            !newEmployee.level || !selectedEmployeeId
-                              ? "Level and Employee ID required"
+                            !newEmployee.level || !newEmployee.department || !selectedEmployeeId
+                              ? "Level, Department and Employee ID required"
                               : groupOptions.length === 0
                                 ? "No groups available"
                                 : "Select Group"
