@@ -425,9 +425,9 @@ const GroupDetailsPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
-                    {question.verifiedByEmail && (
+                    {question.verifiedBy && (
                       <span className="-ml-2 px-2 py-1 rounded">
-                        Verified by: {verifiedByOptions.find(opt => opt.value === question.verifiedByEmail)?.key || question.verifiedByEmail}
+                        Verified by: {verifiedByOptions.find(opt => opt.value === question.verifiedBy)?.key || question.verifiedBy}
                       </span>
                     )}
                   </div>
