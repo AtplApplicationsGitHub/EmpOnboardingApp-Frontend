@@ -67,7 +67,7 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
-    if (!formData.verifiedBy) return false;
+    // if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -160,7 +160,7 @@ const GroupDetailsPage: React.FC = () => {
 
       const dataToSend = {
         ...rest,
-        verifiedByEmail: verifiedBy,
+        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
       console.log("Creating Question with data:", dataToSend.verifiedByEmail);
@@ -185,7 +185,7 @@ const GroupDetailsPage: React.FC = () => {
 
       const dataToSend = {
         ...rest,
-        verifiedByEmail: verifiedBy,
+        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
 
@@ -767,7 +767,7 @@ const GroupDetailsPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
-                          Verified By *
+                          Verified By
                         </label>
                         <div className="relative">
                           {/* <SearchableDropdown
