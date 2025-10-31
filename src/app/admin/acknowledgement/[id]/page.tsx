@@ -1,106 +1,141 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../../../components/ui/card";
-import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "../../../components/ui/table";
+import React, { useCallback, useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+
 import Button from "../../../components/ui/button";
 import {
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronLeft,
-  ChevronRight,
+  Card,
+  CardContent,
+} from "../../../components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../../components/ui/table";
+
+import { adminService, taskService } from "@/app/services/api";
+import { Task, TaskQuestions } from "@/app/types";
+
+import {
   ArrowLeft,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
   Users,
-  Check,
   CheckCircle,
 } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
-import { toast } from "react-hot-toast";
-import { Task } from "../../../types";
-import { adminService, taskService } from "../../../services/api";
+import toast from "react-hot-toast";
 
-const PAGE_SIZE = 10;
+const qKey = (
+  tId: string | number | undefined,
+  qId: string | number | undefined
+) => `${String(tId ?? "")}:${String(qId ?? "")}`;
+
+const getInitialResp = (q: TaskQuestions) =>
+  (q as any).answer ??
+  (q as any).responseValue ??
+  (q as any).userResponse ??
+  (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
+  "";
+
+const isTextType = (q: TaskQuestions) =>
+  String(q.responseType ?? "").toLowerCase() === "text";
 
 const EmployeeAcknowledgementDetail: React.FC = () => {
-  const router = useRouter();
   const params = useParams();
-  const employeeId = params.id as string;
+  const router = useRouter();
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [page, setPage] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [comments, setComments] = useState<Record<number, string>>({});
-  const [verifications, setVerifications] = useState<Record<number, "yes" | "no" | null>>({});
-  const [verifiedTasks, setVerifiedTasks] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const taskId = params.id as string;
 
+  const [comments, setComments] = useState<Record<string, string>>({});
+  const [verifications, setVerifications] = useState<Record<string, "yes" | "no" | null>>({});
+  const [verifiedQuestions, setVerifiedQuestions] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchEmployeeAcknowledgementTasks();
-  }, [employeeId, page]);
+  const [respValues, setRespValues] = useState<Record<string, string>>({});
+  const [respSaving, setRespSaving] = useState<Record<string, boolean>>({});
 
-  const fetchEmployeeAcknowledgementTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await taskService.getTaskById(employeeId);
-
-      //it should be list even for single employee
-      const list: Task[] = Array.isArray(response) ? response : response ? [response] : [];
-
-      // Update table data
+      setError(null);
+      const t = await taskService.getTaskById(taskId);
+      console.log('Fetched Task Data:', t);
+      const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
       setTasks(list);
-      setTotalElements(list.length);
 
-      // Handle existing comments and verified tasks
-      const existingComments: Record<number, string> = {};
-      const alreadyVerified = new Set<number>();
+
+      const existingComments: Record<string, string> = {};
+      const existingVerifications: Record<string, "yes" | "no"> = {};
+      const alreadyVerified = new Set<string>();
 
       list.forEach((task: any) => {
-        if (task.comments) {
-          existingComments[task.id] = task.comments;
-          alreadyVerified.add(task.id);
-        }
+        (task.questionList ?? []).forEach((q: any) => {
+          if (q.comments) {
+            existingComments[q.id] = q.comments;
+            alreadyVerified.add(q.id);
+
+            if (q.answer) {
+              existingVerifications[q.id] = q.answer.toLowerCase() === "yes" ? "yes" : "no";
+            }
+          }
+
+        });
       });
 
       setComments(existingComments);
-      setVerifiedTasks(alreadyVerified);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load employee tasks");
+      setVerifications(existingVerifications);
+      setVerifiedQuestions(alreadyVerified);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
       setTasks([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
 
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
-  // Handle comment input change
-  const handleCommentChange = (taskId: number, value: string) => {
+  const freezeTask = tasks[0]?.freezeTask;
+
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    tasks.forEach((task) => {
+      (task.questionList ?? []).forEach((q) => {
+        map[qKey(task.id, q.id)] = getInitialResp(q);
+      });
+    });
+    setRespValues(map);
+    setRespSaving({});
+  }, [tasks]);
+
+  const handleCommentChange = (questionId: string, value: string) => {
     setComments((prev) => ({
       ...prev,
-      [taskId]: value,
+      [questionId]: value,
     }));
   };
 
-  // Handle verification change (Yes/No buttons)
-  const handleVerificationChange = (taskId: number, value: "yes" | "no") => {
+  const handleVerificationChange = (questionId: string, value: "yes" | "no") => {
     setVerifications((prev) => ({
       ...prev,
-      [taskId]: value,
+      [questionId]: value,
     }));
   };
 
-
-  // Handle verify action
-  const handleVerify = async (taskId: number) => {
+  const handleVerify = async (questionId: string) => {
     try {
-      const comment = comments[taskId];
-      const verification = verifications[taskId];
+      const comment = comments[questionId];
+      const verification = verifications[questionId];
 
       if (!comment || comment.trim() === "") {
         toast.error("Please enter a comment before verifying");
@@ -112,279 +147,232 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
         return;
       }
 
-      console.log("Comment being sent to BE:", comment); // Debug log
-      console.log("Verification being sent to BE:", verification); // Debug log
-      console.log("Type of comment:", typeof comment); // Debug log
 
       setLoading(true);
 
-      //answer is either "yes" or "no"
-      const answer = verifications[taskId] as string;
-      await adminService.saveVerificationComment(answer, taskId, comment);
-      setVerifiedTasks(prev => new Set([...prev, taskId]));
-      toast.success("Task verified successfully");
+      const answer = verification.toUpperCase();
+      // Debug logs
+      console.log("Question ID being sent:", questionId);
+      console.log("Comment being sent to BE:", comment);
+      console.log("Verification being sent to BE:", answer);
 
-      // Optionally refresh the data
-      fetchEmployeeAcknowledgementTasks();
+      await adminService.saveVerificationComment(answer, Number(questionId), comment);
+
+      setVerifiedQuestions(prev => new Set([...prev, questionId]));
+      toast.success("Question verified successfully");
+
+      fetchTasks();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to verify task");
+      toast.error(err.response?.data?.message || "Failed to verify question");
     } finally {
       setLoading(false);
     }
   };
 
-  const totalPages = Math.ceil(totalElements / PAGE_SIZE);
+  const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
+    const status = (q.status || "Pending").toLowerCase();
+    const overdue = q.overDueFlag;
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && newPage < totalPages) setPage(newPage);
+    const base =
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
+    const pending = "bg-muted/40 text-foreground/80 border border-border";
+    const done = "bg-green-500/15 text-green-500 border border-green-500/20";
+    const late = "bg-red-500/15 text-red-500 border border-red-500/20";
+
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`${base} ${status === "completed" ? done : pending}`}>
+          {status === "completed" ? (
+            <CheckCircle2 size={12} />
+          ) : (
+            <Clock size={12} />
+          )}
+          {status === "completed" ? "Completed" : "Pending"}
+        </span>
+        {overdue === true && (
+          <span className={`${base} ${late}`}>
+            <AlertCircle size={12} />
+            Overdue
+          </span>
+        )}
+      </div>
+    );
   };
 
-  const generatePageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 0; i < totalPages; i++) pages.push(i);
-    } else {
-      if (page > 3) pages.push(0, "...");
-      for (
-        let i = Math.max(1, page - 2);
-        i <= Math.min(totalPages - 2, page + 2);
-        i++
-      )
-        pages.push(i);
-      if (page < totalPages - 4) pages.push("...", totalPages - 1);
-      else if (page < totalPages - 3) pages.push(totalPages - 1);
-    }
-    return pages;
-  };
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12 text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <div className="text-destructive mb-4">{error}</div>
+          <Button onClick={() => router.push("/admin/acknowledgement")}>
+            Back to Tasks
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tasks.length) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <div className="text-destructive">Task not found</div>
+          <Button
+            onClick={() => router.push("/admin/acknowledgement")}
+            className="mt-4"
+          >
+            Back to Tasks
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6 max-w-full mx-auto">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
+    <div className="p-6 md:p-8 space-y-6">
+      <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          size="sm"
           onClick={() => router.push("/admin/acknowledgement")}
-          className="rounded-lg"
+          className="flex items-center gap-2"
         >
-          <ArrowLeft size={16} className="mr-2" />
-          Back
+          <ArrowLeft size={16} />
+          Back to Tasks
         </Button>
       </div>
 
-      {/* Tasks Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task ID</TableHead>
-                  <TableHead>Group Name</TableHead>
-                  <TableHead>Group ID</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="min-w-[150px]">Verification</TableHead>
-                  <TableHead className="min-w-[250px]">Comments</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+      {tasks.map((t) => {
+        console.log('Task Item:', t);
+        const qList = t.questionList ?? [];
 
-              <TableBody>
-                {loading ? (
+        return (
+          <Card key={t.id}>
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <p>Loading...</p>
-                      </div>
-                    </TableCell>
+                    <TableHead>Question</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Compliance Day</TableHead>
+                    <TableHead>Response</TableHead>
+                    <TableHead className="min-w-[150px]">Verification</TableHead>
+                    <TableHead className="min-w-[250px]">Comments</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : tasks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Users size={48} className="text-muted-foreground" />
-                        <p>No tasks found</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  tasks.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell>{task.id}</TableCell>
-                      <TableCell>{task.groupName}</TableCell>
-                      <TableCell>{task.groupId}</TableCell>
-                      <TableCell>{task.level}</TableCell>
-                      <TableCell>{task.role}</TableCell>
-                      <TableCell>{task.department}</TableCell>
-
-                      {/* Progress Section */}
-                      <TableCell>
-                        {(() => {
-                          const completed = task.completedQuestions ?? 0;
-                          const totalQ = task.totalQuestions ?? 0;
-                          const percent = totalQ ? Math.round((completed / totalQ) * 100) : 0;
-
-                          return (
-                            <div className="flex flex-col gap-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold">
-                                  {completed}/{totalQ}
-                                </span>
-                                <span className="text-muted-foreground">{percent}%</span>
-                              </div>
-                              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-2 bg-blue-500 rounded-full transition-all duration-300"
-                                  style={{ width: `${percent}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </TableCell>
-
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${task.complianceDay === "Compliant"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {task.complianceDay}
-                        </span>
-                      </TableCell>
-
-                      {/* Verification Column - Yes/No Buttons */}
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant={verifications[task.id] === "yes" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleVerificationChange(task.id, "yes")}
-                          >
-                            Yes
-                          </Button>
-                          <Button
-                            variant={verifications[task.id] === "no" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleVerificationChange(task.id, "no")}
-                          >
-                            No
-                          </Button>
+                </TableHeader>
+                <TableBody>
+                  {qList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={48} className="text-muted-foreground" />
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
                         </div>
                       </TableCell>
-
-                      {/* Comments Column */}
-                      <TableCell>
-                        <input
-                          type="text"
-                          value={comments[task.id] || ""}
-                          onChange={(e) => handleCommentChange(task.id, e.target.value)}
-                          disabled={verifiedTasks.has(task.id)}
-                          placeholder="Enter comments..."
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedTasks.has(task.id)
-                            ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
-                            : 'bg-background border-input'
-                            }`}
-                        />
-                      </TableCell>
-
-                      {/* Actions Column - Verify Button */}
-                      <TableCell>
-                        {comments[task.id] &&
-                          comments[task.id].trim() !== "" &&
-                          verifications[task.id] !== null &&
-                          verifications[task.id] !== undefined && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleVerify(task.id)}
-                              disabled={verifiedTasks.has(task.id)}
-                              className="rounded-lg bg-green-500 hover:bg-green-600 text-white"
-                              aria-label="Verify task"
-                            >
-                              <CheckCircle size={16} className="mr-1" />
-                              {verifiedTasks.has(task.id) ? "Verified" : "Verify"}
-                            </Button>
-                          )}
-                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Page {page + 1} of {totalPages}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(0)}
-                  disabled={page === 0}
-                >
-                  <ChevronsLeft size={16} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 0}
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-
-                {generatePageNumbers().map((p, i) =>
-                  p === "..." ? (
-                    <span key={i} className="px-3 py-1 text-muted-foreground">
-                      ...
-                    </span>
                   ) : (
-                    <Button
-                      key={i}
-                      variant={p === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(p as number)}
-                    >
-                      {(p as number) + 1}
-                    </Button>
-                  )
-                )}
+                    qList.map((q) => {
+                      const questionId = String(q.id);
+                      const key = qKey(t.id, q.id);
+                      const initial = getInitialResp(q);
+                      const value = respValues[key] ?? initial;
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages - 1}
-                >
-                  <ChevronRight size={16} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages - 1)}
-                  disabled={page === totalPages - 1}
-                >
-                  <ChevronsRight size={16} />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                      return (
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
+                          <TableCell className="font-medium">
+                            {q.questionId || `Q${q.id}`}
+                            <div className="text-xs text-muted-foreground">
+                              {isTextType(q) ? "Text" : "Yes/No"}
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <StatusPills q={q} />
+                          </TableCell>
+
+                          <TableCell className="text-muted-foreground">
+                            {q.complianceDay ?? (q as any).complainceDay ?? "—"}
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="w-full max-w-sm px-3 py-2 text-sm text-foreground">
+                              {q.response ? q.response : "—"}
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant={verifications[questionId] === "yes" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handleVerificationChange(questionId, "yes")}
+                                disabled={verifiedQuestions.has(questionId)}
+                              >
+                                Yes
+                              </Button>
+                              <Button
+                                variant={verifications[questionId] === "no" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handleVerificationChange(questionId, "no")}
+                                disabled={verifiedQuestions.has(questionId)}
+                              >
+                                No
+                              </Button>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <input
+                              type="text"
+                              value={comments[questionId] || ""}
+                              onChange={(e) => handleCommentChange(questionId, e.target.value)}
+                              disabled={verifiedQuestions.has(questionId)}
+                              placeholder="Enter comments..."
+                              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
+                                ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
+                                : 'bg-background border-input'
+                                }`}
+                            />
+                          </TableCell>
+
+                          <TableCell>
+                            {comments[questionId] &&
+                              comments[questionId].trim() !== "" &&
+                              verifications[questionId] !== null &&
+                              verifications[questionId] !== undefined && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleVerify(questionId)}
+                                  disabled={verifiedQuestions.has(questionId)}
+                                  className="rounded-lg bg-green-500 hover:bg-green-600 text-white"
+                                  aria-label="Verify question"
+                                >
+                                  <CheckCircle size={16} className="mr-1" />
+                                  {verifiedQuestions.has(questionId) ? "Verified" : "Verify"}
+                                </Button>
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };
