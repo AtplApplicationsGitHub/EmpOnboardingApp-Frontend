@@ -131,7 +131,7 @@ const AcknowledgementPage: React.FC = () => {
               ) : (
                 tasks.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell>{task.employeeId}</TableCell>
+                    <TableCell>{task.id}</TableCell>
                     <TableCell>{task.employeeName}</TableCell>
                     <TableCell>{task.groupName}</TableCell>
                     <TableCell>{task.level}</TableCell>
@@ -169,13 +169,48 @@ const AcknowledgementPage: React.FC = () => {
                         );
                       })()}
                     </TableCell>
-                    <TableCell>{task.complianceDay}</TableCell>
+                    {/* Status */}
+                    <TableCell >
+                      {(() => {
+                        const status = (task.status || "").toLowerCase();
+                        const base =
+                          "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ";
+
+                        if (status === "overdue") {
+                          return (
+                            <span
+                              className={`${base} bg-red-600/20 text-red-600`}
+                            >
+                              Overdue
+                            </span>
+                          );
+                        }
+
+                        if (status === "completed") {
+                          return (
+                            <span
+                              className={`${base} bg-green-600/20 text-green-600`}
+                            >
+                              Completed
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <span
+                            className={`${base} bg-amber-500/20 text-amber-600`}
+                          >
+                            In Progress
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
                         className="rounded-lg"
-                        onClick={() => router.push(`/admin/acknowledgement/${task.employeeId}`)} >
+                        onClick={() => router.push(`/admin/acknowledgement/${task.id}`)} >
                         <Eye size={16} />
                       </Button>
                     </TableCell>
