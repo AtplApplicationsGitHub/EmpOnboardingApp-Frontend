@@ -335,6 +335,22 @@ export const adminService = {
     return response.data;
   },
 
+  findFilteredTaskAck: async (params?: {
+  search?: string;
+  page?: number;
+}): Promise<{
+  commonListDto: Task[];
+  totalElements: number;
+}> => {
+  const search = params?.search ?? "null";
+  const page = params?.page ?? 0;
+  const response = await api.post<{
+    commonListDto: Task[];
+    totalElements: number;
+  }>(`/task/findFilteredTaskAck/${search}/${page}`);
+  return response.data;
+},
+
   acknowledgementQuestion: async (params?: {
     page?: number;
   }): Promise<{
@@ -349,9 +365,13 @@ export const adminService = {
     return response.data;
   },
 
-  saveVerificationComment: async (id: number, comment: string): Promise<boolean> => {
+saveVerificationComment: async (
+  answer: string, 
+  id: number, 
+  comment: string
+): Promise<boolean> => {
   const response = await api.post<boolean>(
-    `/task/saveVerificationComment/${id}`,
+    `/task/saveVerificationComment/${answer}/${id}`,
     comment,
     {
       headers: {
@@ -361,7 +381,6 @@ export const adminService = {
   );
   return response.data;
 },
-
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },
