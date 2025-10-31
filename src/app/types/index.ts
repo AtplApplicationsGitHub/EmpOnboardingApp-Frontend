@@ -129,12 +129,13 @@ export interface Task {
   feedback?: string;
   createdTime: string;
   updatedTime: string;
+  answer?: "yes" | "no" 
 
   // Additional fields that might come from API
-  mock_employee_id?: string;
-  mock_employee_name?: string;
-  mock_employee_level?: string;
-  completed_at?: string;
+  // mock_employee_id?: string;
+  // mock_employee_name?: string;
+  // mock_employee_level?: string;
+  // completed_at?: string;
 }
 
 export interface EmployeeQuestions {
