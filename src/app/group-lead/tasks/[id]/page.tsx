@@ -45,11 +45,12 @@ const qKey = (
 
 // Derive the initial response string from a question (adjust fallbacks if needed)
 const getInitialResp = (q: TaskQuestions) =>
-  (q as any).answer ??
+  (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
   (q as any).responseValue ??
   (q as any).userResponse ??
-  (typeof q.response === "string" && q.response !== "text" ? q.response : "") ??
+  (q as any).answer ??
   "";
+
 
 // Determine if question expects text vs yes/no
 // Based on your logic: q.response === "text" ? Text : Yes/No
@@ -525,12 +526,14 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
+                    <TableHead>Verified By</TableHead>
+                    <TableHead>Comments</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12">
+                      <TableCell colSpan={6} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
                           <p className="text-muted-foreground">
@@ -585,6 +588,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                 }}
                                 disabled={saving || freezeTask === "Y"}
                               />
+
                             ) : (
                               <div className="flex items-center gap-2">
                                 {(() => {
@@ -632,6 +636,39 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                 })()}
                               </div>
                             )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {(() => {
+                              const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
+                              const createdTime = q.createdTime ? q.createdTime.split(" ")[0] : "";
+
+                              if (verifiedBy && createdTime) {
+                                return `${verifiedBy} - ${createdTime}`;
+                              } else if (verifiedBy) {
+                                return verifiedBy;
+                              } else if (createdTime) {
+                                return createdTime;
+                              } else {
+                                return "—";
+                              }
+                            })()}
+                          </TableCell>
+
+                          <TableCell className="text-muted-foreground">
+                            {(() => {
+                              const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
+                              const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
+
+                              if (answer && comments) {
+                                return `${comments} - ${answer}`;
+                              } else if (answer) {
+                                return answer;
+                              } else if (comments) {
+                                return comments;
+                              } else {
+                                return "—";
+                              }
+                            })()}
                           </TableCell>
                         </TableRow>
                       );

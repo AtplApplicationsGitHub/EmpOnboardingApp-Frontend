@@ -129,7 +129,7 @@ export interface Task {
   feedback?: string;
   createdTime: string;
   updatedTime: string;
-  answer?: "yes" | "no" 
+  answer?: "yes" | "no"
 
   // Additional fields that might come from API
   // mock_employee_id?: string;
@@ -156,6 +156,8 @@ export interface TaskQuestions {
   overDueFlag: boolean;
   comments: string;
   groupName: string;
+  createdTime: string;
+  answer: string;
 }
 
 export interface TaskProjection {
