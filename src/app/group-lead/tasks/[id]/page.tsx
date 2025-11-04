@@ -526,20 +526,23 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead>Verified By</TableHead>
-                    <TableHead>Comments</TableHead>
+                    {qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") && (
+                      <>
+                        <TableHead>Verified By</TableHead>
+                        <TableHead>Comments</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <div className="flex flex-col items-center gap-2">
-                          <Users size={48} className="text-muted-foreground" />
-                          <p className="text-muted-foreground">
-                            No questions found for this task.
-                          </p>
-                        </div>
+                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 6 : 4} className="text-center py-12">                        <div className="flex flex-col items-center gap-2">
+                        <Users size={48} className="text-muted-foreground" />
+                        <p className="text-muted-foreground">
+                          No questions found for this task.
+                        </p>
+                      </div>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -548,6 +551,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                       const initial = getInitialResp(q);
                       const value = respValues[key] ?? initial;
                       const saving = respSaving[key] === true;
+                      const isVerified = q.verificationStatus?.toLowerCase() === "completed";
+                      const showVerificationColumns = qList.some((q) => q.verificationStatus?.toLowerCase() === "completed");
 
                       return (
                         <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
@@ -581,28 +586,19 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                 }
                                 onBlur={(e) => {
                                   const newVal = e.target.value.trim();
-                                  if (newVal === (initial ?? "")) return; // no change
+                                  if (newVal === (initial ?? "")) return;
                                   if (saving) return;
                                   if (freezeTask === "Y") return;
                                   saveQuestionResponse(t.id, q, newVal);
                                 }}
                                 disabled={saving || freezeTask === "Y"}
                               />
-
                             ) : (
                               <div className="flex items-center gap-2">
                                 {(() => {
-                                  const lower = String(
-                                    value || ""
-                                  ).toLowerCase();
-                                  const isYes =
-                                    lower === "yes" ||
-                                    lower === "y" ||
-                                    lower === "true";
-                                  const isNo =
-                                    lower === "no" ||
-                                    lower === "n" ||
-                                    lower === "false";
+                                  const lower = String(value || "").toLowerCase();
+                                  const isYes = lower === "yes" || lower === "y" || lower === "true";
+                                  const isNo = lower === "no" || lower === "n" || lower === "false";
 
                                   return (
                                     <>
@@ -610,9 +606,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                         type="button"
                                         variant={isYes ? "default" : "outline"}
                                         disabled={saving || freezeTask === "Y"}
-                                        onClick={() =>
-                                          saveQuestionResponse(t.id, q, "YES")
-                                        }
+                                        onClick={() => saveQuestionResponse(t.id, q, "YES")}
                                       >
                                         Yes
                                       </Button>
@@ -620,9 +614,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                         type="button"
                                         variant={isNo ? "default" : "outline"}
                                         disabled={saving || freezeTask === "Y"}
-                                        onClick={() =>
-                                          saveQuestionResponse(t.id, q, "NO")
-                                        }
+                                        onClick={() => saveQuestionResponse(t.id, q, "NO")}
                                       >
                                         No
                                       </Button>
@@ -637,39 +629,42 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {(() => {
-                              const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
-                              const createdTime = q.createdTime ? q.createdTime.split(" ")[0] : "";
 
-                              if (verifiedBy && createdTime) {
-                                return `${verifiedBy} - ${createdTime}`;
-                              } else if (verifiedBy) {
-                                return verifiedBy;
-                              } else if (createdTime) {
-                                return createdTime;
-                              } else {
-                                return "—";
-                              }
-                            })()}
-                          </TableCell>
+                          {showVerificationColumns && (
+                            <>
+                              <TableCell className="text-muted-foreground">
+                                {isVerified ? (
+                                  (() => {
+                                    const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
+                                    return verifiedBy || "—";
+                                  })()
+                                ) : (
+                                  "—"
+                                )}
+                              </TableCell>
 
-                          <TableCell className="text-muted-foreground">
-                            {(() => {
-                              const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
-                              const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
+                              <TableCell className="text-muted-foreground">
+                                {isVerified ? (
+                                  (() => {
+                                    const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
+                                    const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
 
-                              if (answer && comments) {
-                                return `${answer} - ${comments}`;
-                              } else if (answer) {
-                                return answer;
-                              } else if (comments) {
-                                return comments;
-                              } else {
-                                return "—";
-                              }
-                            })()}
-                          </TableCell>
+                                    if (answer && comments) {
+                                      return `${answer} - ${comments}`;
+                                    } else if (answer) {
+                                      return answer;
+                                    } else if (comments) {
+                                      return comments;
+                                    } else {
+                                      return "—";
+                                    }
+                                  })()
+                                ) : (
+                                  "—"
+                                )}
+                              </TableCell>
+                            </>
+                          )}
                         </TableRow>
                       );
                     })
