@@ -158,6 +158,8 @@ export interface TaskQuestions {
   groupName: string;
   createdTime: string;
   answer: string;
+  verifiedBy: string;              
+  verificationStatus: string;   
 }
 
 export interface TaskProjection {
