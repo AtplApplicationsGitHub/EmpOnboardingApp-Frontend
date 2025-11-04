@@ -660,7 +660,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                               const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
 
                               if (answer && comments) {
-                                return `${comments} - ${answer}`;
+                                return `${answer} - ${comments}`;
                               } else if (answer) {
                                 return answer;
                               } else if (comments) {
