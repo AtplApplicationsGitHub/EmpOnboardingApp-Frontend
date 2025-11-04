@@ -203,6 +203,18 @@ const Navbar: React.FC = () => {
                   <Settings className="h-4 w-4" />
                   <span>Manage Tasks</span>
                 </Link>
+                <Link
+                  href="/group-lead/acknowledgement"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/group-lead/acknowledgement"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FileCheck className="h-4 w-4" />
+                  <span>Acknowledgement</span>
+                </Link>
               </>
             )}
             {user.role === "employee" && (
