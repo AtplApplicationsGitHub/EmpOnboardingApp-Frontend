@@ -87,8 +87,8 @@ const TaskDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const t = await taskService.getTaskById(taskId);
+      console.log("Fetched task:", t);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
-      console.log("Fetched tasks:", list);
       setTasks(list);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load task(s)");
@@ -124,7 +124,6 @@ const TaskDetailsPage: React.FC = () => {
       }
       try {
         const labs = await adminService.getLab(department);
-        console.log("Fetched labs:", labs); // Debug log
         const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
           id: index + 1,
           value: lab as string,
@@ -142,7 +141,6 @@ const TaskDetailsPage: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching labs:", error);
         setLabOptions([]);
         toast.error("Failed to fetch labs for this department");
       }
@@ -191,7 +189,7 @@ const TaskDetailsPage: React.FC = () => {
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
- 
+
   useEffect(() => {
     if (department) {
       fetchLabsByDepartment(department, lab);
@@ -403,11 +401,10 @@ const TaskDetailsPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${
-                              star <= Number(t?.efstar ?? 0)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                              }`}
                           />
                         ))}
                       </button>
@@ -434,7 +431,7 @@ const TaskDetailsPage: React.FC = () => {
                           {/* Feedback text (from t.feedback) */}
                           <div className="text-sm whitespace-pre-wrap">
                             {t?.feedback &&
-                            String(t.feedback).trim().length > 0 ? (
+                              String(t.feedback).trim().length > 0 ? (
                               String(t.feedback)
                             ) : (
                               <span className="text-muted-foreground">
@@ -483,13 +480,15 @@ const TaskDetailsPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
+                    <TableHead>Verified By</TableHead>
+                    <TableHead>Comments</TableHead>
                     <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12">
+                      <TableCell colSpan={7} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
                           <p className="text-muted-foreground">
@@ -522,6 +521,39 @@ const TaskDetailsPage: React.FC = () => {
                             : "No response yet"}
                         </TableCell>
 
+                        <TableCell className="text-muted-foreground">
+                          {(() => {
+                            const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
+                            const createdTime = q.createdTime ? q.createdTime.split(" ")[0] : "";
+
+                            if (verifiedBy && createdTime) {
+                              return `${verifiedBy} - ${createdTime}`;
+                            } else if (verifiedBy) {
+                              return verifiedBy;
+                            } else if (createdTime) {
+                              return createdTime;
+                            } else {
+                              return "—";
+                            }
+                          })()}
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground">
+                          {(() => {
+                            const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
+                            const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
+
+                            if (answer && comments) {
+                              return `${answer} - ${comments}`;
+                            } else if (answer) {
+                              return answer;
+                            } else if (comments) {
+                              return comments;
+                            } else {
+                              return "—";
+                            }
+                          })()}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"

@@ -21,8 +21,10 @@ import {
   Lab,
   GLDashboard,
   LdapResponse,
+  TaskQuestions,
 } from "../types";
 import { group } from "console";
+import AcknowledgementPage from "../admin/acknowledgement/page";
 
 // Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -297,10 +299,11 @@ export const adminService = {
 
   getEmployeeGroup: async (
     level: string,
+    department: string,
     id: number
   ): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
-      `/question/getGroups/${level}/${id}`
+      `/question/getGroups/${level}/${department}/${id}`
     );
     return response.data;
   },
@@ -312,6 +315,7 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
+    verifiedBy?: string;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -324,12 +328,59 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
+    verifiedBy?: string;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
     return response.data;
   },
 
+  findFilteredTaskAck: async (params?: {
+  search?: string;
+  page?: number;
+}): Promise<{
+  commonListDto: Task[];
+  totalElements: number;
+}> => {
+  const search = params?.search ?? "null";
+  const page = params?.page ?? 0;
+  const response = await api.post<{
+    commonListDto: Task[];
+    totalElements: number;
+  }>(`/task/findFilteredTaskAck/${search}/${page}`);
+  return response.data;
+},
+
+  acknowledgementQuestion: async (params?: {
+    page?: number;
+  }): Promise<{
+    commonListDto: TaskQuestions[];
+    totalElements: number;
+  }> => {
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: TaskQuestions[];
+      totalElements: number;
+    }>(`/task/getQuestionsByAcknowledge/Y/${page}`);
+    return response.data;
+  },
+
+saveVerificationComment: async (
+  answer: string, 
+  id: number, 
+  comment: string
+): Promise<boolean> => {
+  const response = await api.post<boolean>(
+    `/task/saveVerificationComment/${answer}/${id}`,
+    comment,
+    {
+      headers: {
+        'Content-Type': 'text/plain'  
+      }
+    }
+  );
+  return response.data;
+},
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },

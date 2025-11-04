@@ -75,14 +75,9 @@ const ArchivedEmployeesPage: React.FC = () => {
 
             try {
                 const employeesWithQuestionsArray = await EQuestions.getEmployeesArchWithQuestions();
-                console.log("Raw API Response:", employeesWithQuestionsArray);
                 const employeeIdsSet = new Set(employeesWithQuestionsArray);
-                // console.log(" Set created:", employeeIdsSet);
-                // console.log(" Set size:", employeeIdsSet.size);
-
                 setEmployeesWithQuestions(employeeIdsSet);
             } catch (error) {
-                // console.error(" Error fetching employees with questions:", error);
                 setEmployeesWithQuestions(new Set());
             }
         } catch (err: any) {
@@ -101,7 +96,6 @@ const ArchivedEmployeesPage: React.FC = () => {
             setQuestionsLoading(true);
             setSelectedEmployeeName(employeeName);
             const questions = await EQuestions.getQuestionsByTaskArchId(taskId);
-            console.log("Fetched questions from BE:", questions);
 
             const completedQuestions = questions.filter(
                 (question) => question.completedFlag === true
@@ -112,7 +106,6 @@ const ArchivedEmployeesPage: React.FC = () => {
             setTotalQuestionCount(totalQuestions);
             setShowQuestionsModal(true);
         } catch (error) {
-            console.error("Error fetching task questions:", error);
             toast.error("Failed to load questions");
         } finally {
             setQuestionsLoading(false);
@@ -214,8 +207,6 @@ const ArchivedEmployeesPage: React.FC = () => {
                                 </TableRow>
                             ) : (
                                 employees.map((employee) => {
-                                    // console.log("Employee Data:", employee);
-                                    console.log(" Current Employee ID:", employee.employeeId);
 
                                     // compute progress values
                                     const completed =

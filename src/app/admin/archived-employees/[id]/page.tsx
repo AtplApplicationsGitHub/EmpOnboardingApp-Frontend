@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from  "../../../components/ui/card";
+} from "../../../components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from  "../../../components/ui/table";;
-import Button from  "../../../components/ui/button"
+} from "../../../components/ui/table";;
+import Button from "../../../components/ui/button"
 import { archiveService, taskService } from "@/app/services/api";
 import { Task, TaskQuestions } from "@/app/types";
 import { ArrowLeft, User2, CheckCircle2, Clock, AlertCircle, Star } from "lucide-react";
@@ -38,19 +38,18 @@ const ArchivedTaskDetails: React.FC = () => {
   const { id } = useParams();
   const router = useRouter();
 
- const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-    const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
+  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
     null
   );
 
- const fetchTask = useCallback(async () => {
+  const fetchTask = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await archiveService.getArchiveTaskById(id as string);
-      console.log("Fetched archived task:", data);
       setTasks(Array.isArray(data) ? data : [data]);
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load archived task");
@@ -64,7 +63,7 @@ const ArchivedTaskDetails: React.FC = () => {
     fetchTask();
   }, [fetchTask]);
 
-  
+
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
     const status = (q.status || "Pending").toLowerCase();
     const overdue = q.overDueFlag;
@@ -109,7 +108,7 @@ const ArchivedTaskDetails: React.FC = () => {
     );
   }
 
- if (!tasks || tasks.length === 0) {
+  if (!tasks || tasks.length === 0) {
     return (
       <div className="p-8 text-center">
         <div className="text-destructive">No tasks found</div>
@@ -121,7 +120,7 @@ const ArchivedTaskDetails: React.FC = () => {
   }
 
   const firstTask = tasks[0];
-   return (
+  return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -159,7 +158,7 @@ const ArchivedTaskDetails: React.FC = () => {
                       <span className="font-semibold">
                         {task.groupName} - {task.id} - {task.assignedTo}
                       </span>
-                      
+
                       <div className="relative" data-fb-trigger>
                         <button
                           type="button"
@@ -171,9 +170,8 @@ const ArchivedTaskDetails: React.FC = () => {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className={`w-4 h-4 ${
-                                star <= Number(task?.efstar ?? 0) ? "text-yellow-400 fill-current" : "text-gray-300"
-                              }`}
+                              className={`w-4 h-4 ${star <= Number(task?.efstar ?? 0) ? "text-yellow-400 fill-current" : "text-gray-300"
+                                }`}
                             />
                           ))}
                         </button>
