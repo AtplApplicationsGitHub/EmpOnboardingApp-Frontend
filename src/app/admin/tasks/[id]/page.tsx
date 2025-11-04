@@ -480,96 +480,111 @@ const TaskDetailsPage: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead>Verified By</TableHead>
-                    <TableHead>Comments</TableHead>
+                    {qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") && (
+                      <>
+                        <TableHead>Verified By</TableHead>
+                        <TableHead>Comments</TableHead>
+                      </>
+                    )}
                     <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12">
-                        <div className="flex flex-col items-center gap-2">
-                          <Users size={48} className="text-muted-foreground" />
-                          <p className="text-muted-foreground">
-                            No questions found for this task.
-                          </p>
-                        </div>
+                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 7 : 5} className="text-center py-12">                        <div className="flex flex-col items-center gap-2">
+                        <Users size={48} className="text-muted-foreground" />
+                        <p className="text-muted-foreground">
+                          No questions found for this task.
+                        </p>
+                      </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    qList.map((q) => (
-                      <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
-                        <TableCell className="font-medium">
-                          {q.questionId || `Q${q.id}`}
-                          <div className="text-xs text-muted-foreground">
-                            {q.responseType === "text" ? "Text" : "Yes/No"}
-                          </div>
-                        </TableCell>
+                    qList.map((q) => {
+                      const isVerified = q.verificationStatus?.toLowerCase() === "completed";
+                      const showVerificationColumns = qList.some((q) => q.verificationStatus?.toLowerCase() === "completed");
 
-                        <TableCell>
-                          <StatusPills q={q} />
-                        </TableCell>
+                      return (
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
+                          <TableCell className="font-medium">
+                            {q.questionId || `Q${q.id}`}
+                            <div className="text-xs text-muted-foreground">
+                              {q.responseType === "text" ? "Text" : "Yes/No"}
+                            </div>
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {q.complianceDay ?? (q as any).complainceDay ?? "—"}
-                        </TableCell>
+                          <TableCell>
+                            <StatusPills q={q} />
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {q.response && String(q.response).trim().length > 0
-                            ? q.response
-                            : "No response yet"}
-                        </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {q.complianceDay ?? (q as any).complainceDay ?? "—"}
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {(() => {
-                            const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
-                            const createdTime = q.createdTime ? q.createdTime.split(" ")[0] : "";
+                          <TableCell className="text-muted-foreground">
+                            {q.response && String(q.response).trim().length > 0
+                              ? q.response
+                              : "No response yet"}
+                          </TableCell>
 
-                            if (verifiedBy && createdTime) {
-                              return `${verifiedBy} - ${createdTime}`;
-                            } else if (verifiedBy) {
-                              return verifiedBy;
-                            } else if (createdTime) {
-                              return createdTime;
-                            } else {
-                              return "—";
-                            }
-                          })()}
-                        </TableCell>
+                          {showVerificationColumns && (
+                            <>
+                              <TableCell className="text-muted-foreground">
+                                {isVerified ? (
+                                  (() => {
+                                    const verifiedBy = q.verifiedBy && String(q.verifiedBy).trim().length > 0 ? String(q.verifiedBy) : "";
 
-                        <TableCell className="text-muted-foreground">
-                          {(() => {
-                            const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
-                            const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
+                                    if (verifiedBy) {
+                                      return verifiedBy;
+                                    } else {
+                                      return "—";
+                                    }
+                                  })()
+                                ) : (
+                                  "—"
+                                )}
+                              </TableCell>
 
-                            if (answer && comments) {
-                              return `${answer} - ${comments}`;
-                            } else if (answer) {
-                              return answer;
-                            } else if (comments) {
-                              return comments;
-                            } else {
-                              return "—";
-                            }
-                          })()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500"
-                            disabled={freezeTask === "Y"}
-                            onClick={() => {
-                              setQuestionToDelete(q.id);
-                              setShowDeleteModal(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              <TableCell className="text-muted-foreground">
+                                {isVerified ? (
+                                  (() => {
+                                    const answer = q.answer && String(q.answer).trim().length > 0 ? String(q.answer) : "";
+                                    const comments = q.comments && String(q.comments).trim().length > 0 ? String(q.comments) : "";
+
+                                    if (answer && comments) {
+                                      return `${answer} - ${comments}`;
+                                    } else if (answer) {
+                                      return answer;
+                                    } else if (comments) {
+                                      return comments;
+                                    } else {
+                                      return "—";
+                                    }
+                                  })()
+                                ) : (
+                                  "—"
+                                )}
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-500"
+                              disabled={freezeTask === "Y"}
+                              onClick={() => {
+                                setQuestionToDelete(q.id);
+                                setShowDeleteModal(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </Table>
