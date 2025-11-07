@@ -445,39 +445,30 @@ const TasksPage: React.FC = () => {
                       </TableCell>
                       {/* Actions */}
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-lg"
-                            onClick={() =>
-
-                              (window.location.href = `/admin/tasks/${task.taskIds}`)
-                            }
+                        <div className="flex items-center gap-5">
+                          <button
+                           className="rounded-lg p-2 text-[#474BDD]  "
+                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
                             aria-label="View details"
                           >
-                            <Eye size={16} />
-                          </Button>
+                            <Eye size={18} />
+                          </button>
 
                           {!task.lab && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg"
+                            <button
+                              className="rounded-lg text-[#eea11d]"
                               onClick={() => handleOpenLabChangeModal(task)}
                               aria-label="Change lab"
                               title="Change Lab"
                             >
-                              <FlaskConical size={16} />
-                            </Button>
+                              <FlaskConical size={18} />
+                            </button>
                           )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg"
+                            <button
+                              className="rounded-lg text-[#3b82f6]"
                               onClick={() => {
                                 const firstTaskId = task.taskIds.split(",")[0];
                                 handleViewQuestions(firstTaskId, (task as any).name);
@@ -486,8 +477,8 @@ const TasksPage: React.FC = () => {
                               aria-label="View answers"
                               title="View Employee Answers"
                             >
-                              <TicketCheck size={16} />
-                            </Button>
+                              <TicketCheck size={18} />
+                            </button>
                           )}
 
                           {task.status?.toLowerCase() === "completed" &&
@@ -765,7 +756,7 @@ const TasksPage: React.FC = () => {
               )}
             </div>
 
-           
+
           </div>
         </div>
       )}

@@ -1,274 +1,206 @@
 "use client";
 
 import React from "react";
-import { useAuth } from "../auth/AuthContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "../auth/AuthContext";
 import { cn } from "../lib/utils";
+import ThemeToggle from "./ThemeToggle";
+import { useAnimation, animationClasses } from "../lib/animations";
 import {
   Home,
   Users,
-  HelpCircle,
-  LogOut,
   UserPlus,
   Settings,
   ClipboardListIcon,
-  ScrollText,
-  MapPin,
   FlaskConical,
   Archive,
-  FileBarChart,
-  FileCheck
+  FileCheck,
+  LogOut,
 } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
-import {
-  useAnimation,
-  animationClasses,
-  staggerClasses,
-} from "../lib/animations";
 
-const Navbar: React.FC = () => {
+const itemBase =
+  "group relative flex items-center  gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all";
+const itemIdle =
+  "text-[#4a5568] hover:text-[#3448c3] hover:bg-[rgba(76,81,191,0.08)] hover:translate-x-1";
+const itemActive =
+  "bg-[#4c51bf] text-white shadow-md translate-x-2"; // pill + slide
+const iconBase = "h-5 w-5 shrink-0";
+const iconIdle = "text-[#6b6fcf] group-hover:text-inherit";
+const iconActive = "text-white";
+
+export default function Navbar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isVisible = useAnimation();
 
   if (!user) return null;
 
+  const initial = (user.name || "A").trim().charAt(0).toUpperCase();
+  const roleLabel =
+    user.role === "admin"
+      ? "Administrator"
+      : user.role === "group_lead"
+      ? "Group Lead"
+      : "Employee";
+
+  const NavItem = ({
+    href,
+    label,
+    active,
+    Icon,
+  }: {
+    href: string;
+    label: string;
+    active: boolean;
+    Icon: React.ElementType;
+  }) => (
+    <Link
+      href={href}
+      className={cn(itemBase, active ? itemActive : itemIdle)}
+    >
+      {/* left accent for active like HTML ::before */}
+      {active && (
+        <span className="absolute -left-3 top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-r bg-[#4c51bf]" />
+      )}
+      <Icon className={cn(iconBase, active ? iconActive : iconIdle)} />
+      <span>{label}</span>
+    </Link>
+  );
+
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-56 bg-card border-r border-border ${isVisible ? animationClasses.slideInLeft : "opacity-0"
-        }`}
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-[#e2e8f0] shadow-[4px_0_12px_rgba(0,0,0,0.08)]",
+        isVisible ? animationClasses.slideInLeft : "opacity-0"
+      )}
     >
-      <div className="flex flex-col h-full">
-        {/* Logo/Brand */}
-        <div className="flex items-center h-16 px-6 border-b border-border">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl text-foreground">
-              Onboarding App
-            </span>
-          </Link>
+      <div className="flex h-full flex-col">
+        {/* Title */}
+        <div className="flex h-20 items-center justify-center border-b border-[#e2e8f0] px-5">
+          <span className="text-[22px] font-bold tracking-wide text-[#4c51bf]">
+            Onboarding App
+          </span>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
           <div className="space-y-2">
-            {" "}
             {user.role === "admin" && (
               <>
-                <Link
+                <NavItem
                   href="/admin"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <Link
+                  label="Dashboard"
+                  active={pathname === "/admin"}
+                  Icon={Home}
+                />
+                <NavItem
                   href="/admin/groups"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/groups"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Manage Groups</span>
-                </Link>{" "}
-                <Link
+                  label="Manage Groups"
+                  active={pathname === "/admin/groups"}
+                  Icon={Users}
+                />
+                <NavItem
                   href="/admin/labs"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/labs"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <FlaskConical className="h-4 w-4" />
-                  <span>Manage Departments</span>
-                </Link>
-                <Link
+                  label="Manage Departments"
+                  active={pathname === "/admin/labs"}
+                  Icon={FlaskConical}
+                />
+                <NavItem
                   href="/admin/employees"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/employees"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Process Employees</span>
-                </Link>
-                <Link
+                  label="Process Employees"
+                  active={pathname === "/admin/employees"}
+                  Icon={UserPlus}
+                />
+                <NavItem
                   href="/admin/archived-employees"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/archived-employees"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Archive className="h-4 w-4" />
-                  <span>Archived Employees</span>
-                </Link>
-                <Link
+                  label="Archived Employees"
+                  active={pathname === "/admin/archived-employees"}
+                  Icon={Archive}
+                />
+                <NavItem
                   href="/admin/tasks"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/tasks"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ClipboardListIcon className="h-4 w-4" />
-                  <span>Manage Tasks</span>
-                </Link>
-                <Link
+                  label="Manage Tasks"
+                  active={pathname === "/admin/tasks"}
+                  Icon={ClipboardListIcon}
+                />
+                <NavItem
                   href="/admin/users"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/users"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Manage Users</span>
-                </Link>
-                {/* <Link
-                  href="/admin/audit-trail"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/audit-trail"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ScrollText className="h-4 w-4" />
-                  <span>Audit Trail</span>
-                </Link> */}
-                {/* <Link
-                  href="/admin/onboardingstatus-report"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/onboardingstatus-report"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <FileBarChart className="h-4 w-4" />
-                  <span>Status Report</span>
-                </Link> */}
-                <Link
+                  label="Manage Users"
+                  active={pathname === "/admin/users"}
+                  Icon={Settings}
+                />
+                <NavItem
                   href="/admin/acknowledgement"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/admin/acknowledgement"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <FileCheck className="h-4 w-4" />
-                  <span>Acknowledgement</span>
-                </Link>
+                  label="Acknowledgement"
+                  active={pathname === "/admin/acknowledgement"}
+                  Icon={FileCheck}
+                />
               </>
             )}
+
             {user.role === "group_lead" && (
               <>
-                <Link
+                <NavItem
                   href="/group-lead"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/group-lead"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <Link
+                  label="Dashboard"
+                  active={pathname === "/group-lead"}
+                  Icon={Home}
+                />
+                <NavItem
                   href="/group-lead/tasks"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/group-lead/tasks"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Manage Tasks</span>
-                </Link>
-                <Link
+                  label="Manage Tasks"
+                  active={pathname === "/group-lead/tasks"}
+                  Icon={Settings}
+                />
+                <NavItem
                   href="/group-lead/acknowledgement"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/group-lead/acknowledgement"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <FileCheck className="h-4 w-4" />
-                  <span>Acknowledgement</span>
-                </Link>
+                  label="Acknowledgement"
+                  active={pathname === "/group-lead/acknowledgement"}
+                  Icon={FileCheck}
+                />
               </>
             )}
+
             {user.role === "employee" && (
               <>
-                <Link
+                <NavItem
                   href="/employee"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/employee"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <Link
+                  label="Dashboard"
+                  active={pathname === "/employee"}
+                  Icon={Home}
+                />
+                <NavItem
                   href="/employee/my-tasks"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === "/employee/my-tasks"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ClipboardListIcon className="h-4 w-4" />
-                  <span>Onboarding Checklist</span>
-                </Link>
-
+                  label="Onboarding Checklist"
+                  active={pathname === "/employee/my-tasks"}
+                  Icon={ClipboardListIcon}
+                />
               </>
             )}
           </div>
         </nav>
 
-        {/* User info and logout */}
-        <div className="border-t border-border p-4">
+        {/* Bottom user card */}
+        <div className="border-t border-[#e2e8f0] bg-[#f8fafc] p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-foreground">
-                {user.name}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {user.role === "admin"
-                  ? "Administrator"
-                  : user.role === "group_lead"
-                    ? "Group Lead"
-                    : "Employee"}
-              </span>
+            <div className="flex items-center gap-3 pshadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+              <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-[#4c51bf] text-[16px] font-bold text-white">
+                {initial}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[14px] font-semibold text-[#2d3748]">
+                  {user.name}
+                </span>
+                <span className="text-[12px] text-[#718096]">{roleLabel}</span>
+              </div>
             </div>
             <ThemeToggle />
           </div>
+
           <button
             onClick={logout}
-            className="flex items-center space-x-2 w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-muted"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign out</span>
@@ -277,6 +209,4 @@ const Navbar: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default Navbar;
+}

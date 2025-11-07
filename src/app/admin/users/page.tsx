@@ -24,7 +24,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
-  Pencil,
+  Edit,
   X,
   Trash,
 } from "lucide-react";
@@ -479,20 +479,20 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-2">
+                    <TableCell className="flex items-center gap-3">
                       {user.role === "admin" ? (
-                        <Shield size={16} className="text-red-500" />
+                        <Shield size={18} className="text-red-500" />
                       ) : (
-                        <UserCheck size={16} className="text-blue-500" />
+                        <UserCheck size={18} className="text-blue-500" />
                       )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="p-1 hover:bg-transparent hover:text-primary"
+                      <button
+                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
                         onClick={() => handleEditUser(user.id)}
+                        title="Edit User"
                       >
-                        <Pencil size={14} />
-                      </Button>
+                        <Edit size={18} />
+                      </button>
+
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
