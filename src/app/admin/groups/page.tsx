@@ -289,19 +289,19 @@ const GroupsPage: React.FC = () => {
                   <Users size={20} className="text-primary" />
                   {group.name}
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => openEditModal(group)}
-                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                    className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                   >
-                    <Edit size={16} />
+                    <Edit size={18} />
                   </button>
                   <button
                     onClick={() => clone(group)}
-                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                    //  title="clone"
+  className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6]hover:bg-[rgba(124,58,237,0.08)]"
+                  //  title="clone"
                   >
-                    <Copy size={16} />
+                    <Copy size={18} />
                   </button>
                   {group.deleteFlag && (
                     <button
@@ -311,7 +311,7 @@ const GroupsPage: React.FC = () => {
                       }}
                       className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
                   )}
                 </div>
@@ -542,7 +542,7 @@ const GroupsPage: React.FC = () => {
                     placeholder="Select auto assign option"
                     required={false}
                     maxDisplayItems={2}
-                    isEmployeePage={true}        
+                    isEmployeePage={true}
                     displayFullValue={false}
                     className="w-full"
                   />
