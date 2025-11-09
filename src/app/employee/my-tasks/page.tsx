@@ -130,17 +130,17 @@ const MyTasksPage: React.FC = () => {
       setFeedBack((prev) =>
         prev && prev.taskId === selectedTaskId
           ? {
-              ...prev,
-              star: feedbackRating,
-              feedback: feedbackComment,
-              completed: true,
-            }
+            ...prev,
+            star: feedbackRating,
+            feedback: feedbackComment,
+            completed: true,
+          }
           : ({
-              taskId: selectedTaskId,
-              star: feedbackRating,
-              feedback: feedbackComment,
-              completed: true,
-            } as any)
+            taskId: selectedTaskId,
+            star: feedbackRating,
+            feedback: feedbackComment,
+            completed: true,
+          } as any)
       );
 
       setFeedbackRating(0);
@@ -274,7 +274,9 @@ const MyTasksPage: React.FC = () => {
         const pct = totalQuestions
           ? Math.round((completed / totalQuestions) * 100)
           : 0;
-
+        const hasVerifiedQuestions = qList.some(
+          (q) => q?.verificationStatus?.toLowerCase() === "completed"
+        );
         return (
           <Card key={t?.id ?? `task-${tIdx}`} className="mb-6">
             <CardHeader className="pb-4">
@@ -330,14 +332,17 @@ const MyTasksPage: React.FC = () => {
                   <TableRow>
                     <TableHead>Question</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead>Status</TableHead>
+                    {hasVerifiedQuestions && <TableHead>Verified By</TableHead>}                    <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12">
+                      <TableCell
+                        colSpan={hasVerifiedQuestions ? 5 : 4}
+                        className="text-center py-12"
+                      >
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-muted-foreground" />
                           <p className="text-muted-foreground">
@@ -348,6 +353,7 @@ const MyTasksPage: React.FC = () => {
                     </TableRow>
                   ) : (
                     qList.map((q, idx) => {
+                      const isVerified = q?.verificationStatus?.toLowerCase() === "completed";
                       return (
                         <TableRow
                           key={
@@ -367,6 +373,12 @@ const MyTasksPage: React.FC = () => {
                               return s.length > 0 ? s : "No response yet";
                             })()}
                           </TableCell>
+
+                          {hasVerifiedQuestions && (
+                            <TableCell className="text-muted-foreground">
+                              {isVerified ? (q?.verifiedBy ?? "—") : "—"}
+                            </TableCell>
+                          )}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {getStatusIcon(q?.status)}
@@ -420,11 +432,10 @@ const MyTasksPage: React.FC = () => {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-4 h-4 ${
-                          star <= Number(feedBack?.star ?? 0)
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        }`}
+                        className={`w-4 h-4 ${star <= Number(feedBack?.star ?? 0)
+                          ? "text-yellow-400 fill-current"
+                          : "text-gray-300"
+                          }`}
                       />
                     ))}
                   </div>
@@ -453,11 +464,10 @@ const MyTasksPage: React.FC = () => {
                         aria-label={`Rate ${star} stars`}
                       >
                         <Star
-                          className={`w-6 h-6 transition-colors ${
-                            star <= feedbackRating
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300 hover:text-yellow-200"
-                          }`}
+                          className={`w-6 h-6 transition-colors ${star <= feedbackRating
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300 hover:text-yellow-200"
+                            }`}
                         />
                       </button>
                     ))}

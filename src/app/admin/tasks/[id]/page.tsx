@@ -339,8 +339,7 @@ const TaskDetailsPage: React.FC = () => {
         </Button>
         <h3 className="text-xl font-semibold">
           {" "}
-          Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
-          {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
+          Tasks for {employeeName} ({employeeLevel}) 
         </h3>
         <div className="ml-auto flex items-end gap-3">
           <div className="min-w-[240px]">

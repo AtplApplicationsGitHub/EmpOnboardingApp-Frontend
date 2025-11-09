@@ -17,6 +17,7 @@ import {
   Archive,
   FileCheck,
   LogOut,
+  Building2
 } from "lucide-react";
 
 const itemBase =
@@ -41,8 +42,8 @@ export default function Navbar() {
     user.role === "admin"
       ? "Administrator"
       : user.role === "group_lead"
-      ? "Group Lead"
-      : "Employee";
+        ? "Group Lead"
+        : "Employee";
 
   const NavItem = ({
     href,
@@ -102,10 +103,17 @@ export default function Navbar() {
                 />
                 <NavItem
                   href="/admin/labs"
-                  label="Manage Departments"
+                  label="Manage Labs"
                   active={pathname === "/admin/labs"}
                   Icon={FlaskConical}
                 />
+                <NavItem
+  href="/admin/departments"
+  label="Manage Departments"
+  active={pathname === "/admin/departments"}
+  Icon={Building2}
+/>
+
                 <NavItem
                   href="/admin/employees"
                   label="Process Employees"
@@ -131,9 +139,9 @@ export default function Navbar() {
                   Icon={Settings}
                 />
                 <NavItem
-                  href="/admin/acknowledgement"
-                  label="Acknowledgement"
-                  active={pathname === "/admin/acknowledgement"}
+                  href="/admin/engineer-verification"
+                  label="Engineer Verification"
+                  active={pathname === "/admin/engineer-verification"}
                   Icon={FileCheck}
                 />
               </>
@@ -154,9 +162,9 @@ export default function Navbar() {
                   Icon={Settings}
                 />
                 <NavItem
-                  href="/group-lead/acknowledgement"
-                  label="Acknowledgement"
-                  active={pathname === "/group-lead/acknowledgement"}
+                  href="/group-lead/engineer-verification"
+                  label="Engineer Verification"
+                  active={pathname === "/group-lead/engineer-verification"}
                   Icon={FileCheck}
                 />
               </>

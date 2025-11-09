@@ -609,12 +609,14 @@ const UsersPage: React.FC = () => {
                   ref={nameInputRef}
                   type="text"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
                   placeholder="Enter user's full name"
                   required
+                  disabled={editMode}
+                  onChange={(e) => {
+                    if (!editMode) setFormData({ ...formData, name: e.target.value });
+                  }}
                 />
+
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Email</label>
