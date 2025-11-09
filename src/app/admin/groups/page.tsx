@@ -298,7 +298,7 @@ const GroupsPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => clone(group)}
-  className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6]hover:bg-[rgba(124,58,237,0.08)]"
+                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6]hover:bg-[rgba(124,58,237,0.08)]"
                   //  title="clone"
                   >
                     <Copy size={18} />
