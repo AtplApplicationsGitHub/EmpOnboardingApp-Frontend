@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "../../../components/ui/card";
 import Button from "../../../components/ui/button";
-import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, HelpCircle, Copy} from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { toast } from "react-hot-toast";
 
@@ -163,7 +163,7 @@ const GroupDetailsPage: React.FC = () => {
         ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-      console.log("Creating Question with data:", dataToSend.verifiedByEmail);
+      console.log("Creating Question with data:", dataToSend);
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
@@ -175,6 +175,29 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
+  const handleCloneQuestion = async (question: Question) => {
+    try {
+      const dataToSend = {
+        text: `${question.text}-Copy`,
+        response: question.response,
+        period: question.period,
+        complainceDay: question.complainceDay || "1",
+        questionDepartment: question.questionDepartment,
+        questionLevel: question.questionLevel,
+        groupId: question.groupId.toString(),
+        ...(question.verifiedByEmail && { verifiedByEmail: question.verifiedByEmail }),
+        ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
+      };
+
+      console.log("Cloning Question with data:", dataToSend);
+      await adminService.createQuestion(dataToSend);
+      await fetchGroupData();
+      toast.success("Question cloned successfully!");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to clone question");
+      toast.error("Failed to clone question");
+    }
+  };
 
   const handleEditQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,13 +407,15 @@ const GroupDetailsPage: React.FC = () => {
 
       {/* Questions List */}
       <div className="space-y-4">
-        {questions.map((question) => (
+        {questions.map((question, index) => (
           <Card key={question.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <HelpCircle size={20} className="text-primary" />
+                  <CardTitle className="flex items-center gap-4 text-lg">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
+                      {questionPage * PAGE_SIZE + index + 1}
+                    </span>
                     {question.text}
                   </CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
@@ -438,6 +463,13 @@ const GroupDetailsPage: React.FC = () => {
                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
                   >
                     <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleCloneQuestion(question)}
+                    className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Clone Question"
+                  >
+                    <Copy size={16} />
                   </button>
                   {question.deleteFlag && questions.length > 1 && (
                     <button
@@ -727,6 +759,7 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select departments"
                             disabled={showEditModal}
+                            showSelectAll={true}
                           />
                         </div>
                       </div>
