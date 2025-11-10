@@ -86,6 +86,11 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
+  // Pagination and search for group lead tasks
+  const [groupLeadPage, setGroupLeadPage] = useState(0);
+  const [groupLeadTotal, setGroupLeadTotal] = useState(0);
+  const [groupLeadSearch, setGroupLeadSearch] = useState("");
+
   // Fetch labs for a department
   const fetchLabsByDepartment = useCallback(
     async (department?: string, currentLab?: string) => {
@@ -185,18 +190,36 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   }, [fetchTasks, checkIfFirstTaskForEmployee]);
 
   // Load group leads
-  const fetchGroupLeads = useCallback(async () => {
+  const fetchGroupLeads = useCallback(async (search?: string, page: number = 0) => {
     try {
-      const groupLeadsData = await adminService.getAllGroupLeads();
-      setGroupLeads(groupLeadsData);
+      const groupLeadsData = await adminService.getAllGroupLeads(
+        search || groupLeadSearch || undefined,
+        page
+      );
+      setGroupLeads(groupLeadsData.leads || []);
+      setGroupLeadTotal(groupLeadsData.total || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
-  }, []);
+  }, [groupLeadSearch]);
 
   useEffect(() => {
-    fetchGroupLeads();
-  }, [fetchGroupLeads]);
+    fetchGroupLeads(groupLeadSearch, groupLeadPage);
+  }, [groupLeadPage, groupLeadSearch, fetchGroupLeads]);
+
+  // Handlers for pagination in group leads
+  const handleGroupLeadNextPage = () => {
+    const totalPages = Math.ceil(groupLeadTotal / 10);
+    if (groupLeadPage < totalPages - 1) {
+      setGroupLeadPage(prev => prev + 1);
+    }
+  };
+
+  const handleGroupLeadPrevPage = () => {
+    if (groupLeadPage > 0) {
+      setGroupLeadPage(prev => prev - 1);
+    }
+  };
 
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
@@ -697,6 +720,11 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                 required
                 maxDisplayItems={4}
                 className="w-full"
+                onNextPage={handleGroupLeadNextPage}
+                onPrevPage={handleGroupLeadPrevPage}
+                currentPage={groupLeadPage}
+                totalPages={Math.ceil(groupLeadTotal / 10)}
+                hasNextPage={groupLeadPage < Math.ceil(groupLeadTotal / 10) - 1}
               />
             </div>
 
