@@ -106,9 +106,14 @@ const EmployeesPage: React.FC = () => {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      const departments = await adminService.getLookupItems("Department");
-      console
-      setDepartmentOptions(departments);
+      const departments = await adminService.findAllDepartment();
+      // console.log("new api", departments); // DEBUG
+       const transformedDepartments = departments.map(dept => ({
+      ...dept,
+      value: dept.value || dept.key
+    }));
+    
+    setDepartmentOptions(transformedDepartments);
     } catch (error) {
       toast.error("Failed to load dropdown options.");
     }

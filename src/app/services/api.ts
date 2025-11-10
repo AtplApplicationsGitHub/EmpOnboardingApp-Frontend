@@ -456,6 +456,12 @@ saveVerificationComment: async (
     );
     return response.data;
   },
+  findAllDepartment: async (): Promise<DropDownDTO[]> => {
+  const response = await api.get<DropDownDTO[]>(
+    `/department/findAllDepartment`
+  );
+  return response.data;
+},
 
   // New admin reassignment methods
   reassignTaskToUser: async (
