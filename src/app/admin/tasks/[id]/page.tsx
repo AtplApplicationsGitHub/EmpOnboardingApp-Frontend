@@ -76,6 +76,9 @@ const TaskDetailsPage: React.FC = () => {
     undefined
   );
   const [deleteReason, setDeleteReason] = useState("");
+  const [groupLeadPage, setGroupLeadPage] = useState(0);
+  const [groupLeadTotal, setGroupLeadTotal] = useState(0);
+  const [groupLeadSearch, setGroupLeadSearch] = useState("");
 
 
   useEffect(() => {
@@ -98,14 +101,18 @@ const TaskDetailsPage: React.FC = () => {
     }
   }, [taskId]);
 
-  const fetchGroupLeads = useCallback(async () => {
+  const fetchGroupLeads = useCallback(async (search?: string, page: number = 0) => {
     try {
-      const groupLeadsData = await adminService.getAllGroupLeads();
-      setGroupLeads(groupLeadsData);
+      const groupLeadsData = await adminService.getAllGroupLeads(
+        search || groupLeadSearch || undefined,
+        page
+      );
+      setGroupLeads(groupLeadsData.leads || []);
+      setGroupLeadTotal(groupLeadsData.total || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
-  }, []);
+  }, [groupLeadSearch]);
 
   // const fetchLabs = useCallback(async () => {
   //   try {
@@ -178,8 +185,21 @@ const TaskDetailsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchGroupLeads();
-  }, [fetchGroupLeads]);
+    fetchGroupLeads(groupLeadSearch, groupLeadPage);
+  }, [groupLeadPage, groupLeadSearch, fetchGroupLeads]);
+
+  const handleGroupLeadNextPage = () => {
+    const totalPages = Math.ceil(groupLeadTotal / 10);
+    if (groupLeadPage < totalPages - 1) {
+      setGroupLeadPage(prev => prev + 1);
+    }
+  };
+
+  const handleGroupLeadPrevPage = () => {
+    if (groupLeadPage > 0) {
+      setGroupLeadPage(prev => prev - 1);
+    }
+  };
 
   const employeeId = tasks[0]?.employeeId;
   const employeeName = tasks[0]?.employeeName;
@@ -339,7 +359,7 @@ const TaskDetailsPage: React.FC = () => {
         </Button>
         <h3 className="text-xl font-semibold">
           {" "}
-          Tasks for {employeeName} ({employeeLevel}) 
+          Tasks for {employeeName} ({employeeLevel})
         </h3>
         <div className="ml-auto flex items-end gap-3">
           <div className="min-w-[240px]">
@@ -660,6 +680,11 @@ const TaskDetailsPage: React.FC = () => {
                 required
                 maxDisplayItems={4}
                 className="w-full"
+                onNextPage={handleGroupLeadNextPage}
+                onPrevPage={handleGroupLeadPrevPage}
+                currentPage={groupLeadPage}
+                totalPages={Math.ceil(groupLeadTotal / 10)}
+                hasNextPage={groupLeadPage < Math.ceil(groupLeadTotal / 10) - 1}
               />
             </div>
 

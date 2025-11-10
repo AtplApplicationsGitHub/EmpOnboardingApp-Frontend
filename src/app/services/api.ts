@@ -248,10 +248,19 @@ export const adminService = {
     return response.data;
   },
 
-  getAllGroupLeads: async (): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>("/group/loadGL");
-    return response.data;
-  },
+  // getAllGroupLeads: async (): Promise<DropDownDTO[]> => {
+  //   const response = await api.get<DropDownDTO[]>("/group/loadGL");
+  //   return response.data;
+  // },
+
+getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
+  const searchParam = search || "null";
+  const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
+  return {
+    leads: response.data.commonListDto || [],
+    total: response.data.totalElements || 0
+  };
+},
   createGroup: async (data: {
     name: string;
     pgLead?: number;

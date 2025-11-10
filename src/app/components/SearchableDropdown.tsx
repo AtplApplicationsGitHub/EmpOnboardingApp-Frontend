@@ -15,6 +15,11 @@ interface SearchableDropdownProps {
   isEmployeePage?: boolean;
   isMultiSelect?: boolean;
   showSelectAll?: boolean;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
+  currentPage?: number;
+  totalPages?: number;
+  hasNextPage?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -30,6 +35,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   isEmployeePage = false,
   isMultiSelect = false,
   showSelectAll = false,
+  onNextPage,
+  onPrevPage,
+  currentPage,
+  totalPages,
+  hasNextPage,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -352,6 +362,37 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
               Showing {maxDisplayItems} of {options.length} items. Type to filter more.
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {(onNextPage || onPrevPage) && (
+            <div className="sticky bottom-0 bg-background border-t border-border px-3 py-2 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrevPage?.();
+                }}
+                disabled={currentPage === 0}
+                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              <span className="text-xs text-muted-foreground">
+                Page {(currentPage ?? 0) + 1} {totalPages ? `of ${totalPages}` : ''}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNextPage?.();
+                }}
+                disabled={!hasNextPage}
+                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
             </div>
           )}
         </div>
