@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "../../../components/ui/card";
 import Button from "../../../components/ui/button";
-import { ArrowLeft, Plus, Edit, Trash2, HelpCircle, Copy} from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, HelpCircle, Copy } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { toast } from "react-hot-toast";
 
@@ -42,6 +42,9 @@ const GroupDetailsPage: React.FC = () => {
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
+  const [verifiedByPage, setVerifiedByPage] = useState(0);
+  const [verifiedByTotal, setVerifiedByTotal] = useState(0);
+  const [verifiedBySearch, setVerifiedBySearch] = useState("");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -99,8 +102,7 @@ const GroupDetailsPage: React.FC = () => {
         setLevelOptions(levels);
         const departments = await adminService.getLookupItems("Department");
         setDepartmentOptions(departments);
-        const groupLeads = await adminService.getAllGroupLeads();
-        setVerifiedByOptions(groupLeads);
+        await fetchVerifiedByOptions();
       } catch (error) {
         toast.error("Failed to load dropdown options.");
       }
@@ -108,6 +110,37 @@ const GroupDetailsPage: React.FC = () => {
     fetchLookupData();
   }, []);
 
+  //fetch verifiedBy options with pagination and search
+  const fetchVerifiedByOptions = async (search?: string, page: number = 0) => {
+    try {
+      const groupLeadsResponse = await adminService.getAllGroupLeads(
+        search || verifiedBySearch || undefined,
+        page
+      );
+      setVerifiedByOptions(groupLeadsResponse.leads || []);
+      setVerifiedByTotal(groupLeadsResponse.total || 0);
+    } catch (error) {
+      console.error("Failed to load group leads:", error);
+    }
+  };
+  useEffect(() => {
+    fetchVerifiedByOptions(verifiedBySearch, verifiedByPage);
+  }, [verifiedByPage, verifiedBySearch]);
+
+  //handlers for verifiedBy pagination
+  const handleVerifiedByNextPage = () => {
+    const totalPages = Math.ceil(verifiedByTotal / 10); // Assuming PAGE_SIZE of 10
+    if (verifiedByPage < totalPages - 1) {
+      setVerifiedByPage(prev => prev + 1);
+    }
+  };
+
+  //handlers for verifiedBy pagination
+  const handleVerifiedByPrevPage = () => {
+    if (verifiedByPage > 0) {
+      setVerifiedByPage(prev => prev - 1);
+    }
+  };
   useEffect(() => {
     if (groupId) {
       fetchGroupData();
@@ -188,8 +221,6 @@ const GroupDetailsPage: React.FC = () => {
         ...(question.verifiedByEmail && { verifiedByEmail: question.verifiedByEmail }),
         ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
       };
-
-      console.log("Cloning Question with data:", dataToSend);
       await adminService.createQuestion(dataToSend);
       await fetchGroupData();
       toast.success("Question cloned successfully!");
@@ -765,7 +796,7 @@ const GroupDetailsPage: React.FC = () => {
                       </div>
 
                       {/* Employee Levels */}
-                      <div className="flex-1">
+                      {/* <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Employee Levels * (Select at least one)
                         </label>
@@ -795,7 +826,35 @@ const GroupDetailsPage: React.FC = () => {
                             </label>
                           ))}
                         </div>
-                      </div>
+                      </div> */}
+                      {/* Employee Levels */}
+<div className="flex-1">
+  <label className="block text-sm font-medium mb-2">
+    Employee Levels * (Select at least one)
+  </label>
+  <div className="relative z-[9998]">
+    <SearchableDropdown
+      options={levelOptions}
+      value={valuesToIds(
+        formData.questionLevel,
+        levelOptions
+      )}
+      isMultiSelect={true}
+      onChange={(selectedIds) => {
+        setFormData((prev) => ({
+          ...prev,
+          questionLevel: idsToValues(
+            selectedIds,
+            levelOptions
+          ),
+        }));
+      }}
+      placeholder="Select levels"
+      disabled={showEditModal}
+      showSelectAll={true}
+    />
+  </div>
+</div>
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
@@ -803,27 +862,6 @@ const GroupDetailsPage: React.FC = () => {
                           Verified By
                         </label>
                         <div className="relative">
-                          {/* <SearchableDropdown
-                            className="w-full"
-                            options={verifiedByOptions}
-                            value={
-                              verifiedByOptions.find(
-                                (opt) => opt.value === formData.verifiedBy
-                              )?.id
-                            }
-                            onChange={(id) => {
-                              const selectedValue =
-                                verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
-                              setFormData((prev) => ({
-                                ...prev,
-                                verifiedBy: selectedValue,
-                              }));
-                            }}
-                            placeholder="Select who will verify"
-                            displayFullValue={false}
-                          // isEmployeePage={true}
-                          /> */}
-
                           <SearchableDropdown
                             className="w-full"
                             options={verifiedByOptions}
@@ -833,24 +871,19 @@ const GroupDetailsPage: React.FC = () => {
                               )?.id
                             }
                             onChange={(id) => {
-                              console.log("=== DROPDOWN CHANGE ===");
-                              console.log("Selected ID:", id);
-                              const selectedOption = verifiedByOptions.find((opt) => opt.id === id);
-                              console.log("Selected Option:", selectedOption);
-                              console.log("Selected Value:", selectedOption?.value);
-
-                              const selectedValue = selectedOption?.value ?? "";
-                              setFormData((prev) => {
-                                console.log("Previous formData.verifiedBy:", prev.verifiedBy);
-                                console.log("New formData.verifiedBy:", selectedValue);
-                                return {
-                                  ...prev,
-                                  verifiedBy: selectedValue,
-                                };
-                              });
+                              const selectedValue = verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
+                              setFormData((prev) => ({
+                                ...prev,
+                                verifiedBy: selectedValue,
+                              }));
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
+                            onNextPage={handleVerifiedByNextPage}
+                            onPrevPage={handleVerifiedByPrevPage}
+                            currentPage={verifiedByPage}
+                            totalPages={Math.ceil(verifiedByTotal / 10)}
+                            hasNextPage={verifiedByPage < Math.ceil(verifiedByTotal / 10) - 1}
                           />
                         </div>
                       </div>
@@ -859,11 +892,7 @@ const GroupDetailsPage: React.FC = () => {
                     </div>
 
                     <div className="pb-4"></div>
-
-
-
-
-                    <div className="pb-4"></div>
+                    {/* <div className="pb-4"></div> */}
                   </form>
                 </CardContent>
               </div>
