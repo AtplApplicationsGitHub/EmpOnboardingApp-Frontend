@@ -34,6 +34,7 @@ const GroupsPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // Zero-based index
   const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
+  const [escalationGroupLeads, setEscalationGroupLeads] = useState<DropDownDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -55,6 +56,11 @@ const GroupsPage: React.FC = () => {
   >();
   const [newAutoAssign, setNewAutoAssign] = useState<string>("Yes");
   const [editAutoAssign, setEditAutoAssign] = useState<string>("Yes");
+  const [groupLeadsPage, setGroupLeadsPage] = useState(0);
+  const [groupLeadsTotalPages, setGroupLeadsTotalPages] = useState(0);
+  const [escalationGroupLeadsPage, setEscalationGroupLeadsPage] = useState(0);
+  const [escalationGroupLeadsTotalPages, setEscalationGroupLeadsTotalPages] = useState(0);
+
 
   const getOptId = (opt: DropDownDTO) =>
     Number((opt as any).id ?? (opt as any).value);
@@ -94,12 +100,23 @@ const GroupsPage: React.FC = () => {
     [] // no deps; pass page explicitly
   );
 
-  const fetchGroupLeads = useCallback(async () => {
+  const fetchGroupLeads = useCallback(async (page: number = 0) => {
     try {
-      const groupLeadsData = await adminService.getAllGroupLeads();
-      setGroupLeads(groupLeadsData);
+      const response = await adminService.getAllGroupLeads("", page);
+      setGroupLeads(response.leads);
+      setGroupLeadsTotalPages(Math.ceil(response.total / 10)); // 10 items per page
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
+
+  const fetchEscalationGroupLeads = useCallback(async (page: number = 0) => {
+    try {
+      const response = await adminService.getAllGroupLeads("", page);
+      setEscalationGroupLeads(response.leads);
+      setEscalationGroupLeadsTotalPages(Math.ceil(response.total / 10));
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load escalation group leads");
     }
   }, []);
 
@@ -108,8 +125,12 @@ const GroupsPage: React.FC = () => {
   }, [currentPage, fetchPage]);
 
   useEffect(() => {
-    fetchGroupLeads();
-  }, [fetchGroupLeads]);
+    fetchGroupLeads(groupLeadsPage);
+  }, [groupLeadsPage, fetchGroupLeads]);
+
+  useEffect(() => {
+    fetchEscalationGroupLeads(escalationGroupLeadsPage);
+  }, [escalationGroupLeadsPage, fetchEscalationGroupLeads]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -503,6 +524,11 @@ const GroupsPage: React.FC = () => {
                     required={true}
                     maxDisplayItems={4}
                     className="w-full"
+                    onNextPage={() => setGroupLeadsPage(prev => prev + 1)}
+                    onPrevPage={() => setGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    currentPage={groupLeadsPage}
+                    totalPages={groupLeadsTotalPages}
+                    hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
                   />
                 </div>
                 <div>
@@ -520,6 +546,11 @@ const GroupsPage: React.FC = () => {
                     required={false}
                     maxDisplayItems={4}
                     className="w-full"
+                    onNextPage={() => setEscalationGroupLeadsPage(prev => prev + 1)}
+                    onPrevPage={() => setEscalationGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    currentPage={escalationGroupLeadsPage}
+                    totalPages={escalationGroupLeadsTotalPages}
+                    hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
                   />
                 </div>
                 <div>
@@ -606,6 +637,11 @@ const GroupsPage: React.FC = () => {
                     required={true}
                     maxDisplayItems={4}
                     className="w-full"
+                    onNextPage={() => setGroupLeadsPage(prev => prev + 1)}
+                    onPrevPage={() => setGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    currentPage={groupLeadsPage}
+                    totalPages={groupLeadsTotalPages}
+                    hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
                   />
                 </div>
                 <div>
@@ -623,6 +659,11 @@ const GroupsPage: React.FC = () => {
                     required={false}
                     maxDisplayItems={4}
                     className="w-full"
+                    onNextPage={() => setEscalationGroupLeadsPage(prev => prev + 1)}
+                    onPrevPage={() => setEscalationGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    currentPage={escalationGroupLeadsPage}
+                    totalPages={escalationGroupLeadsTotalPages}
+                    hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
                   />
                 </div>
                 <div>
