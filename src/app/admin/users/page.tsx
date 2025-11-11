@@ -449,12 +449,7 @@ const UsersPage: React.FC = () => {
       {/* Users Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="text-sm text-muted-foreground">
-              Showing {users.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
-              {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
-            </div>
-          </div>
+          
           <Table>
             <TableHeader>
               <TableRow>
@@ -529,6 +524,12 @@ const UsersPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Page {currentPage + 1} of {totalPages}
+              </div>
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {users.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button

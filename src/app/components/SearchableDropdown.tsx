@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X, Check } from 'lucide-react';
 
 interface SearchableDropdownProps {
@@ -44,8 +45,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Convert the value to an array of selected IDs
   const selectedValues = useMemo(() => {
@@ -71,6 +78,31 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const isAllSelected = useMemo(() => {
     return isMultiSelect && selectedValues.length === options.length && options.length > 0;
   }, [isMultiSelect, selectedValues, options]);
+
+  // Update dropdown position when opened or on scroll
+  useEffect(() => {
+    const updatePosition = () => {
+      if (isOpen && dropdownRef.current) {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+
+    updatePosition();
+
+    if (isOpen) {
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -179,6 +211,141 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     }
   };
 
+  // Dropdown menu content
+  const dropdownMenu = isOpen && !disabled && (
+    <div 
+      className="fixed bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+      style={{
+        top: `${dropdownPosition.top}px`,
+        left: `${dropdownPosition.left}px`,
+        width: `${dropdownPosition.width}px`,
+        zIndex: 9999,
+      }}
+    >
+      {/* Search hint when typing */}
+      {searchTerm && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
+          <Search size={12} className="inline mr-1" />
+          Searching for "{searchTerm}"...
+        </div>
+      )}
+
+      {/* Select All Option (only for multi-select with showSelectAll) */}
+      {isMultiSelect && showSelectAll && !searchTerm && (
+        <div
+          role="option"
+          tabIndex={0}
+          className="px-3 py-2 text-sm cursor-pointer hover:bg-muted font-semibold border-b border-border bg-primary/5 flex items-center justify-between"
+          onClick={handleSelectAll}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleSelectAll();
+            }
+          }}
+        >
+          <span className="text-primary">
+            {isAllSelected ? '✓ Deselect All' : 'Select All'}
+          </span>
+          {isAllSelected && <Check size={16} className="text-primary" />}
+        </div>
+      )}
+
+      {/* Clear option (if not required) */}
+      {!required && (
+        <div
+          role="option"
+          tabIndex={0}
+          className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-muted-foreground border-b border-border"
+          onClick={handleClear}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleClear();
+            }
+          }}
+        >
+          <span className="italic">Clear selection</span>
+        </div>
+      )}
+
+      {/* Options */}
+      {filteredOptions.length > 0 ? (
+        filteredOptions.map((option, index) => {
+          const isSelected = selectedValues.includes(option.id);
+          return (
+            <div
+              key={option.id}
+              role="option"
+              tabIndex={0}
+              aria-selected={isSelected}
+              className={`
+                px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between
+                ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
+                ${isSelected ? 'bg-primary/5 font-medium' : ''}
+              `}
+              onClick={() => handleSelectOption(option)}
+              onMouseEnter={() => setHighlightedIndex(index)}
+            >
+              <div>
+                {isEmployeePage ? (
+                  <div className="font-medium">{option.key}</div>
+                ) : (
+                  <>
+                    <div className="font-medium">{option.key}</div>
+                    <div className="text-xs text-muted-foreground">{option.value}</div>
+                  </>
+                )}
+              </div>
+              {isSelected && <Check size={16} className="text-primary" />}
+            </div>
+          );
+        })
+      ) : (
+        <div className="px-3 py-2 text-sm text-muted-foreground">
+          No options available
+        </div>
+      )}
+
+      {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
+          Showing {maxDisplayItems} of {options.length} items. Type to filter more.
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {(onNextPage || onPrevPage) && (
+        <div className="sticky bottom-0 bg-background border-t border-border px-3 py-2 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrevPage?.();
+            }}
+            disabled={currentPage === 0}
+            className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+          <span className="text-xs text-muted-foreground">
+            Page {(currentPage ?? 0) + 1} {totalPages ? `of ${totalPages}` : ''}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNextPage?.();
+            }}
+            disabled={!hasNextPage}
+            className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Input Field */}
@@ -271,132 +438,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {/* Search hint when typing */}
-          {searchTerm && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
-              <Search size={12} className="inline mr-1" />
-              Searching for "{searchTerm}"...
-            </div>
-          )}
-
-          {/* Select All Option (only for multi-select with showSelectAll) */}
-          {isMultiSelect && showSelectAll && !searchTerm && (
-            <div
-              role="option"
-              tabIndex={0}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted font-semibold border-b border-border bg-primary/5 flex items-center justify-between"
-              onClick={handleSelectAll}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSelectAll();
-                }
-              }}
-            >
-              <span className="text-primary">
-                {isAllSelected ? '✓ Deselect All' : 'Select All'}
-              </span>
-              {isAllSelected && <Check size={16} className="text-primary" />}
-            </div>
-          )}
-
-          {/* Clear option (if not required) */}
-          {!required && (
-            <div
-              role="option"
-              tabIndex={0}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-muted-foreground border-b border-border"
-              onClick={handleClear}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClear();
-                }
-              }}
-            >
-              <span className="italic">Clear selection</span>
-            </div>
-          )}
-
-          {/* Options */}
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => {
-              const isSelected = selectedValues.includes(option.id);
-              return (
-                <div
-                  key={option.id}
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={isSelected}
-                  className={`
-                    px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between
-                    ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
-                    ${isSelected ? 'bg-primary/5 font-medium' : ''}
-                  `}
-                  onClick={() => handleSelectOption(option)}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                >
-                  <div>
-                    {isEmployeePage ? (
-                      <div className="font-medium">{option.key}</div>
-                    ) : (
-                      <>
-                        <div className="font-medium">{option.key}</div>
-                        <div className="text-xs text-muted-foreground">{option.value}</div>
-                      </>
-                    )}
-                  </div>
-                  {isSelected && <Check size={16} className="text-primary" />}
-                </div>
-              );
-            })
-          ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              No options available
-            </div>
-          )}
-
-          {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing {maxDisplayItems} of {options.length} items. Type to filter more.
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {(onNextPage || onPrevPage) && (
-            <div className="sticky bottom-0 bg-background border-t border-border px-3 py-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrevPage?.();
-                }}
-                disabled={currentPage === 0}
-                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ← Previous
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Page {(currentPage ?? 0) + 1} {totalPages ? `of ${totalPages}` : ''}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNextPage?.();
-                }}
-                disabled={!hasNextPage}
-                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next →
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Dropdown Menu using Portal */}
+      {mounted && typeof document !== 'undefined' && createPortal(dropdownMenu, document.body)}
     </div>
   );
 };
