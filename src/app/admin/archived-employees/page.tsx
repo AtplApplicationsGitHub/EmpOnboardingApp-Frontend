@@ -311,24 +311,23 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                                             {/* Actions */}
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
-
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="rounded-lg"
+                                                <div className="flex items-center gap-5">
+                                                    {/* View Details */}
+                                                    <button
+                                                        className="rounded-lg p-2 text-[#474BDD]"
                                                         onClick={() =>
                                                             (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
                                                         aria-label="View details"
+                                                        title="View Details"
                                                     >
-                                                        <Eye size={16} />
-                                                    </Button>
+                                                        <Eye size={18} />
+                                                    </button>
+
+                                                    {/* View Answers */}
                                                     {employeesWithQuestions.has(parseInt(employee.employeeId, 10)) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="rounded-lg"
+                                                        <button
+                                                            className="rounded-lg text-[#3b82f6]"
                                                             onClick={() => {
                                                                 const firstTaskId = employee.taskIds.split(",")[0];
                                                                 handleViewQuestions(firstTaskId, employee.name);
@@ -337,11 +336,12 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                             aria-label="View answers"
                                                             title="View Employee Answers"
                                                         >
-                                                            <TicketCheck size={16} />
-                                                        </Button>
+                                                            <TicketCheck size={18} />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </TableCell>
+
                                         </TableRow>
                                     );
                                 })

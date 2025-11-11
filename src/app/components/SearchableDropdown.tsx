@@ -107,10 +107,19 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setSearchTerm('');
-        setHighlightedIndex(-1);
+      const target = event.target as Node;
+      
+      // Check if click is inside the dropdown ref or the portal dropdown
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        // Check if the click target or any of its parents have the dropdown menu class
+        const clickedElement = event.target as HTMLElement;
+        const isInsideDropdownMenu = clickedElement.closest('.dropdown-menu-portal');
+        
+        if (!isInsideDropdownMenu) {
+          setIsOpen(false);
+          setSearchTerm('');
+          setHighlightedIndex(-1);
+        }
       }
     };
 
@@ -214,7 +223,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   // Dropdown menu content
   const dropdownMenu = isOpen && !disabled && (
     <div 
-      className="fixed bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+      className="dropdown-menu-portal fixed bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
       style={{
         top: `${dropdownPosition.top}px`,
         left: `${dropdownPosition.left}px`,
@@ -433,7 +442,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             size={16}
             className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}
              ${selectedOptions.length > 0 && !isOpen ? '' : 'opacity-0'}`}
-
+            
           />
         </div>
       </div>

@@ -801,39 +801,6 @@ const GroupDetailsPage: React.FC = () => {
                           />
                         </div>
                       </div>
-
-                      {/* Employee Levels */}
-                      {/* <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
-                          Employee Levels * (Select at least one)
-                        </label>
-                        <div className="flex gap-3 flex-wrap">
-                          {levelOptions.map((levelOption) => (
-                            <label
-                              key={levelOption.value}
-                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
-                                levelOption.value
-                              )
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-input hover:border-primary/50"
-                                }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.questionLevel.includes(
-                                  levelOption.value
-                                )}
-                                onChange={() =>
-                                  handleLevelToggle(levelOption.value)
-                                }
-                                className="sr-only"
-                                disabled={showEditModal}
-                              />
-                              {levelOption.value}
-                            </label>
-                          ))}
-                        </div>
-                      </div> */}
                       {/* Employee Levels */}
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">

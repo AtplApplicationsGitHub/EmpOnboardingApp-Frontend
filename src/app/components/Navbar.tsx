@@ -17,7 +17,8 @@ import {
   Archive,
   FileCheck,
   LogOut,
-  Building2
+  Building2,
+  FileQuestion
 } from "lucide-react";
 
 const itemBase =
@@ -108,11 +109,11 @@ export default function Navbar() {
                   Icon={FlaskConical}
                 />
                 <NavItem
-  href="/admin/departments"
-  label="Manage Departments"
-  active={pathname === "/admin/departments"}
-  Icon={Building2}
-/>
+                  href="/admin/departments"
+                  label="Manage Departments"
+                  active={pathname === "/admin/departments"}
+                  Icon={Building2}
+                />
 
                 <NavItem
                   href="/admin/employees"
@@ -143,6 +144,12 @@ export default function Navbar() {
                   label="Engineer Verification"
                   active={pathname === "/admin/engineer-verification"}
                   Icon={FileCheck}
+                />
+                <NavItem
+                  href="/admin/employee-questionnaire"
+                  label="Employee Questionnaire"
+                  active={pathname === "/admin/employee-questionnaire"}
+                  Icon={FileQuestion}
                 />
               </>
             )}

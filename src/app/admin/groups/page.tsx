@@ -512,6 +512,7 @@ const GroupsPage: React.FC = () => {
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
@@ -524,19 +525,18 @@ const GroupsPage: React.FC = () => {
                     required={true}
                     maxDisplayItems={4}
                     className="w-full"
-                    onNextPage={() => setGroupLeadsPage(prev => prev + 1)}
-                    onPrevPage={() => setGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
+                    onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
                     currentPage={groupLeadsPage}
                     totalPages={groupLeadsTotalPages}
                     hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-muted-foreground">
-                      (Optional)
-                    </span>
+                    <span className="text-sm text-muted-foreground">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     options={filterLeads(newPrimaryGroupLeadId)}
@@ -546,13 +546,14 @@ const GroupsPage: React.FC = () => {
                     required={false}
                     maxDisplayItems={4}
                     className="w-full"
-                    onNextPage={() => setEscalationGroupLeadsPage(prev => prev + 1)}
-                    onPrevPage={() => setEscalationGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
+                    onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}
                     currentPage={escalationGroupLeadsPage}
                     totalPages={escalationGroupLeadsTotalPages}
                     hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Assign Task
@@ -577,25 +578,33 @@ const GroupsPage: React.FC = () => {
                     displayFullValue={false}
                     className="w-full"
                   />
-
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1">
-                    Create Group
-                  </Button>
-                  <Button
+
+                {/* Buttons */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => {
                       setShowCreateModal(false);
                       setNewGroupName("");
                       setNewPrimaryGroupLeadId(undefined);
                       setNewEscalationGroupLeadId(undefined);
                     }}
-                    className="flex-1"
+                    className="px-6 py-2.5 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
+                transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
                   >
                     Cancel
-                  </Button>
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                shadow-md transition-all duration-300 ease-in-out 
+                hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+                disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Create Group
+                  </button>
+
                 </div>
               </form>
             </CardContent>
@@ -613,9 +622,7 @@ const GroupsPage: React.FC = () => {
             <CardContent>
               <form onSubmit={handleEditGroup} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Group Name
-                  </label>
+                  <label className="block text-sm font-medium mb-2">Group Name</label>
                   <input
                     type="text"
                     autoFocus
@@ -625,6 +632,7 @@ const GroupsPage: React.FC = () => {
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
@@ -637,19 +645,18 @@ const GroupsPage: React.FC = () => {
                     required={true}
                     maxDisplayItems={4}
                     className="w-full"
-                    onNextPage={() => setGroupLeadsPage(prev => prev + 1)}
-                    onPrevPage={() => setGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
+                    onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
                     currentPage={groupLeadsPage}
                     totalPages={groupLeadsTotalPages}
                     hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-muted-foreground">
-                      (Optional)
-                    </span>
+                    <span className="text-sm text-muted-foreground">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     options={filterLeads(editPrimaryGroupLeadId)}
@@ -659,17 +666,16 @@ const GroupsPage: React.FC = () => {
                     required={false}
                     maxDisplayItems={4}
                     className="w-full"
-                    onNextPage={() => setEscalationGroupLeadsPage(prev => prev + 1)}
-                    onPrevPage={() => setEscalationGroupLeadsPage(prev => Math.max(0, prev - 1))}
+                    onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
+                    onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}
                     currentPage={escalationGroupLeadsPage}
                     totalPages={escalationGroupLeadsTotalPages}
                     hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Assign Task
-                  </label>
+                  <label className="block text-sm font-medium mb-2">Assign Task</label>
                   <SearchableDropdown
                     options={autoAssignOptions}
                     value={
@@ -692,13 +698,11 @@ const GroupsPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1">
-                    Update Group
-                  </Button>
-                  <Button
+                {/* Buttons */}
+                <div className=" mt-6 pt-4 flex justify-end gap-3">
+
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => {
                       setShowEditModal(false);
                       setEditingGroup(null);
@@ -706,10 +710,20 @@ const GroupsPage: React.FC = () => {
                       setEditPrimaryGroupLeadId(undefined);
                       setEditEscalationGroupLeadId(undefined);
                     }}
-                    className="flex-1"
+                    className="px-6 py-2.5 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
+                transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
                   >
                     Cancel
-                  </Button>
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                shadow-md transition-all duration-300 ease-in-out 
+                hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+                disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Update Group
+                  </button>
                 </div>
               </form>
             </CardContent>

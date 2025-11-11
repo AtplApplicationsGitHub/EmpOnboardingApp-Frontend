@@ -298,18 +298,18 @@ const LabsPage: React.FC = () => {
       </div>
 
       {/* Results Count */}
-      {labs.length > 0 && (
+      {/* {labs.length > 0 && (
         <div className="mb-4 text-sm text-gray-600">
           Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} labs
         </div>
-      )}
+      )} */}
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#4c51bf]">
+              <tr className="bg-primary-gradient">
                 <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[20%]">
                   Department
                 </th>

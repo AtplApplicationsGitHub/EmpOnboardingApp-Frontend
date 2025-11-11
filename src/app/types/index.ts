@@ -59,6 +59,16 @@ export interface Lab {
   createdTime: string;
   updatedTime: string;
 }
+
+export interface Department {
+  id: string;
+  location: string;
+  lab?: string;
+  createdTime: string;
+  updatedTime: string;
+};
+
+
 // export interface Group {
 //   id: number;
 //   name: string;
@@ -158,8 +168,8 @@ export interface TaskQuestions {
   groupName: string;
   createdTime: string;
   answer: string;
-  verifiedBy: string;              
-  verificationStatus: string;   
+  verifiedBy: string;
+  verificationStatus: string;
 }
 
 export interface TaskProjection {
@@ -334,3 +344,12 @@ export interface OnboardingPipelineDTO {
   overallStatus: string;
   owner: string;
 }
+
+export interface Questionnaire {
+  id: string;
+  question: string;
+  responseType: string;
+  level: string;
+  createdDate?: string;
+  updatedTime?: string;
+};

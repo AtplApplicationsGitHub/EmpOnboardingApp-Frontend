@@ -630,7 +630,7 @@ const EmployeesPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#4c51bf]">
+              <tr className="bg-primary-gradient">
                 <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[18%]">
                   Name
                 </th>
