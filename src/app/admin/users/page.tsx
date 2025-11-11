@@ -259,23 +259,8 @@ const UsersPage: React.FC = () => {
     try {
       setLdapLoading(true);
 
-      const mockResponse = {
-        successUsers: [
-          {
-            name: "John",
-            lastName: "Doe",
-            email: "john.doe@example.com",
-            designation: "Software Engineer",
-            userName: "jdoe",
-            userPrincipalName: "jdoe@domain.com",
-            mobile: "1234567890",
-            id: "EMP001",
-            department: "Engineering"
-          }
-        ]
-      };
-      //const response = await adminService.getLdapUsers(ldapUsers);
-      const response = mockResponse;
+      const response = await adminService.getLdapUsers(ldapUsers);
+
       console.log("LDAP API Response:", response);
 
       const usersArray = response.successUsers || [];
