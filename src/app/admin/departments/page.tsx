@@ -136,27 +136,27 @@ const DepartmentsPage: React.FC = () => {
   };
 
 const handleUpdate = async (e: React.FormEvent) => {
-    // e.preventDefault();
+    e.preventDefault();
 
-    // if (!selectedDeptId) return;
+    if (!selectedDeptId) return;
 
-    // const location = form.name.trim();
-    // if (!location) {
-    //   toast.error("Department name is required");
-    //   return;
-    // }
+    const location = form.name.trim();
+    if (!location) {
+      toast.error("Department name is required");
+      return;
+    }
 
-    // try {
-    //   await employeeService.createDepartment({
-    //     id: selectedDeptId,
-    //     location,
-    //   });
-    //   toast.success("Department updated successfully");
-    //   closeModal();
-    //   fetchDepartments();
-    // } catch (err: any) {
-    //   toast.error(err?.response?.data?.message || "Failed to update department");
-    // }
+    try {
+      await employeeService.createDepartment({
+        id: selectedDeptId,
+        location,
+      });
+      toast.success("Department updated successfully");
+      closeModal();
+      fetchDepartments();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update department");
+    }
   };;
 
   const handlePageChange = (page: number) => {

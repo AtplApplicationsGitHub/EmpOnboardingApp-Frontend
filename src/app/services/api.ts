@@ -1354,11 +1354,10 @@ export const employeeService = {
   //department service
 
   createDepartment: async (data: {
+    id?:string;
     location: string;
   }): Promise<boolean> => {
-    const response = await api.post<boolean>("/department/saveDepartment", {
-      location: data.location,
-    });
+    const response = await api.post<boolean>("/department/saveDepartment", data);
     return response.data;
   },
 
