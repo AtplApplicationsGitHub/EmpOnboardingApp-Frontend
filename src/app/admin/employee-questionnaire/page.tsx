@@ -230,20 +230,18 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="bg-primary-gradient">
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[35%]">
+                            <tr className="table-heading-bg">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
                                     Question
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[15%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
                                     Response Type
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[12%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%]">
                                     Level
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[15%]">
-                                    Created
-                                </th>
-                                <th className="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider w-[8%]">
+                                
+                                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                                     Actions
                                 </th>
                             </tr>
@@ -283,9 +281,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                                 }`}>
                                                 {questionnaire.level}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm text-gray-600">{questionnaire.createdDate}</span>
                                         </td>
 
                                         <td className="px-6 py-4 text-center">
@@ -372,8 +367,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
                         {/* Gradient Header */}
-                        <div className="flex-shrink-0 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] px-8 py-6 shadow-md">
-                            <h2 className="text-2xl font-semibold text-white">
+                        <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
+                            <h2 className="text-1xl font-semibold text-popup-heading">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
                             </h2>
                         </div>

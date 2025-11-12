@@ -33,7 +33,6 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: 'https://dev.goval.app:2083/api',
   baseURL: "https://emp-onboard.goval.app:8084/api",
   // baseURL: "http://localhost:8084/api",
   headers: {
@@ -515,12 +514,14 @@ export const adminService = {
     commonListDto: User[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: User[];
       totalElements: number;
-    }>(`/user/findFilteredPatient/${search}/${page}`);
+    }>(`/user/findFilteredPatient/${page}`,
+      { search: search }
+    );
     return response.data;
   },
 
@@ -1354,11 +1355,10 @@ export const employeeService = {
   //department service
 
   createDepartment: async (data: {
+    id?:string;
     location: string;
   }): Promise<boolean> => {
-    const response = await api.post<boolean>("/department/saveDepartment", {
-      location: data.location,
-    });
+    const response = await api.post<boolean>("/department/saveDepartment", data);
     return response.data;
   },
 
@@ -1387,13 +1387,13 @@ export const employeeService = {
     totalElements: number;
   }> => {
     const page = pageNo ?? 0;
-    const search = searchTerm || null;
+    const search = searchTerm || "";
     const response = await api.post<{
       commonListDto: Questionnaire[];
       totalElements: number;
     }>(
       `/eQuestions/loadMasterEQuestions/${page}`,
-      { question: search }
+      { search: search }
     );
     return response.data;
   },
