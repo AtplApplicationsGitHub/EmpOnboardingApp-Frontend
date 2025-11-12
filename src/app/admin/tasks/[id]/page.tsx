@@ -103,12 +103,8 @@ const TaskDetailsPage: React.FC = () => {
 
   const fetchGroupLeads = useCallback(async (search?: string, page: number = 0) => {
     try {
-      const groupLeadsData = await adminService.getAllGroupLeads(
-        search || groupLeadSearch || undefined,
-        page
-      );
-      setGroupLeads(groupLeadsData.leads || []);
-      setGroupLeadTotal(groupLeadsData.total || 0);
+      const groupLeadsData = await adminService.getAllGroupLeads();
+      setGroupLeads(groupLeadsData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
@@ -680,11 +676,6 @@ const TaskDetailsPage: React.FC = () => {
                 required
                 maxDisplayItems={4}
                 className="w-full"
-                onNextPage={handleGroupLeadNextPage}
-                onPrevPage={handleGroupLeadPrevPage}
-                currentPage={groupLeadPage}
-                totalPages={Math.ceil(groupLeadTotal / 10)}
-                hasNextPage={groupLeadPage < Math.ceil(groupLeadTotal / 10) - 1}
               />
             </div>
 
