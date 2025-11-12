@@ -100,11 +100,11 @@ const GroupsPage: React.FC = () => {
     [] // no deps; pass page explicitly
   );
 
-  const fetchGroupLeads = useCallback(async (page: number = 0) => {
+  const fetchGroupLeads = useCallback(async () => {
     try {
-      const response = await adminService.getAllGroupLeads("", page);
-      setGroupLeads(response.leads);
-      setGroupLeadsTotalPages(Math.ceil(response.total / 10)); // 10 items per page
+      const leads = await adminService.getAllGroupLeads();
+      console.log("Fetched group leads:", leads);
+      setGroupLeads(leads);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group leads");
     }
@@ -112,9 +112,8 @@ const GroupsPage: React.FC = () => {
 
   const fetchEscalationGroupLeads = useCallback(async (page: number = 0) => {
     try {
-      const response = await adminService.getAllGroupLeads("", page);
-      setEscalationGroupLeads(response.leads);
-      setEscalationGroupLeadsTotalPages(Math.ceil(response.total / 10));
+      const leads = await adminService.getAllGroupLeads();
+      setEscalationGroupLeads(leads);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load escalation group leads");
     }
@@ -125,7 +124,7 @@ const GroupsPage: React.FC = () => {
   }, [currentPage, fetchPage]);
 
   useEffect(() => {
-    fetchGroupLeads(groupLeadsPage);
+    fetchGroupLeads();
   }, [groupLeadsPage, fetchGroupLeads]);
 
   useEffect(() => {
@@ -523,7 +522,7 @@ const GroupsPage: React.FC = () => {
                     onChange={setNewPrimaryGroupLeadId}
                     placeholder="Select a group lead (Required)"
                     required={true}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
                     onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
@@ -544,7 +543,7 @@ const GroupsPage: React.FC = () => {
                     onChange={setNewEscalationGroupLeadId}
                     placeholder="Select a group lead (Optional)"
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
                     onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}
@@ -643,7 +642,7 @@ const GroupsPage: React.FC = () => {
                     onChange={setEditPrimaryGroupLeadId}
                     placeholder="Select a group lead (Required)"
                     required={true}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
                     onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
@@ -664,7 +663,7 @@ const GroupsPage: React.FC = () => {
                     onChange={setEditEscalationGroupLeadId}
                     placeholder="Select a group lead (Optional)"
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
                     onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}

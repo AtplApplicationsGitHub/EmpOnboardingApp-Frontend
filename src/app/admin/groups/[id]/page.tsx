@@ -42,10 +42,7 @@ const GroupDetailsPage: React.FC = () => {
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
-  const [verifiedByPage, setVerifiedByPage] = useState(0);
-  const [verifiedByTotal, setVerifiedByTotal] = useState(0);
-  const [verifiedBySearch, setVerifiedBySearch] = useState("");
-
+  
   // Form states
   const [formData, setFormData] = useState({
     id: 0,
@@ -70,7 +67,6 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
-    // if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -118,36 +114,15 @@ const GroupDetailsPage: React.FC = () => {
   }, []);
 
   //fetch verifiedBy options with pagination and search
-  const fetchVerifiedByOptions = async (search?: string, page: number = 0) => {
+  const fetchVerifiedByOptions = async () => {
     try {
-      const groupLeadsResponse = await adminService.getAllGroupLeads(
-        search || verifiedBySearch || undefined,
-        page
-      );
-      setVerifiedByOptions(groupLeadsResponse.leads || []);
-      setVerifiedByTotal(groupLeadsResponse.total || 0);
+      const groupLeadsResponse = await adminService.getAllGroupLeads();
+      setVerifiedByOptions(groupLeadsResponse);
     } catch (error) {
       console.error("Failed to load group leads:", error);
     }
   };
-  useEffect(() => {
-    fetchVerifiedByOptions(verifiedBySearch, verifiedByPage);
-  }, [verifiedByPage, verifiedBySearch]);
-
-  //handlers for verifiedBy pagination
-  const handleVerifiedByNextPage = () => {
-    const totalPages = Math.ceil(verifiedByTotal / 10); // Assuming PAGE_SIZE of 10
-    if (verifiedByPage < totalPages - 1) {
-      setVerifiedByPage(prev => prev + 1);
-    }
-  };
-
-  //handlers for verifiedBy pagination
-  const handleVerifiedByPrevPage = () => {
-    if (verifiedByPage > 0) {
-      setVerifiedByPage(prev => prev - 1);
-    }
-  };
+ 
   useEffect(() => {
     if (groupId) {
       fetchGroupData();
@@ -853,11 +828,7 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
-                            onNextPage={handleVerifiedByNextPage}
-                            onPrevPage={handleVerifiedByPrevPage}
-                            currentPage={verifiedByPage}
-                            totalPages={Math.ceil(verifiedByTotal / 10)}
-                            hasNextPage={verifiedByPage < Math.ceil(verifiedByTotal / 10) - 1}
+                            
                           />
                         </div>
                       </div>
