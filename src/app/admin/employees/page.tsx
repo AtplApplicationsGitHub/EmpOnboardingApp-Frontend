@@ -106,9 +106,14 @@ const EmployeesPage: React.FC = () => {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      const departments = await adminService.getLookupItems("Department");
-      console
-      setDepartmentOptions(departments);
+      const departments = await adminService.findAllDepartment();
+      // console.log("new api", departments); // DEBUG
+       const transformedDepartments = departments.map(dept => ({
+      ...dept,
+      value: dept.value || dept.key
+    }));
+    
+    setDepartmentOptions(transformedDepartments);
     } catch (error) {
       toast.error("Failed to load dropdown options.");
     }
@@ -625,7 +630,7 @@ const EmployeesPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#4c51bf]">
+              <tr className="bg-primary-gradient">
                 <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[18%]">
                   Name
                 </th>

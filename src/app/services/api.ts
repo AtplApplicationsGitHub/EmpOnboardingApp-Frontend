@@ -22,6 +22,8 @@ import {
   GLDashboard,
   LdapResponse,
   TaskQuestions,
+  Department,
+  Questionnaire
 } from "../types";
 import { group } from "console";
 import AcknowledgementPage from "../admin/acknowledgement/page";
@@ -173,12 +175,12 @@ export const authService = {
         };
       } else {
         throw new Error(
-          "Unable to send OTP to this email. Please check if the email is registered."
+          "Invalid email. Please enter a valid email to continue."
         );
       }
     } catch (error: any) {
       console.error("Failed to send OTP:", error);
-      throw new Error("Failed to send OTP. Please try again.");
+      throw new Error("Invalid email. Please enter a valid email to continue.");
     }
   },
 
@@ -253,14 +255,14 @@ export const adminService = {
   //   return response.data;
   // },
 
-getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
-  const searchParam = search || "null";
-  const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
-  return {
-    leads: response.data.commonListDto || [],
-    total: response.data.totalElements || 0
-  };
-},
+  getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
+    const searchParam = search || "null";
+    const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
+    return {
+      leads: response.data.commonListDto || [],
+      total: response.data.totalElements || 0
+    };
+  },
   createGroup: async (data: {
     name: string;
     pgLead?: number;
@@ -345,20 +347,20 @@ getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
   },
 
   findFilteredTaskAck: async (params?: {
-  search?: string;
-  page?: number;
-}): Promise<{
-  commonListDto: Task[];
-  totalElements: number;
-}> => {
-  const search = params?.search ?? "null";
-  const page = params?.page ?? 0;
-  const response = await api.post<{
+    search?: string;
+    page?: number;
+  }): Promise<{
     commonListDto: Task[];
     totalElements: number;
-  }>(`/task/findFilteredTaskAck/${search}/${page}`);
-  return response.data;
-},
+  }> => {
+    const search = params?.search ?? "null";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/findFilteredTaskAck/${search}/${page}`);
+    return response.data;
+  },
 
   acknowledgementQuestion: async (params?: {
     page?: number;
@@ -374,22 +376,22 @@ getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
     return response.data;
   },
 
-saveVerificationComment: async (
-  answer: string, 
-  id: number, 
-  comment: string
-): Promise<boolean> => {
-  const response = await api.post<boolean>(
-    `/task/saveVerificationComment/${answer}/${id}`,
-    comment,
-    {
-      headers: {
-        'Content-Type': 'text/plain'  
+  saveVerificationComment: async (
+    answer: string,
+    id: number,
+    comment: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/saveVerificationComment/${answer}/${id}`,
+      comment,
+      {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
       }
-    }
-  );
-  return response.data;
-},
+    );
+    return response.data;
+  },
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },
@@ -453,6 +455,12 @@ saveVerificationComment: async (
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/lookup/getCategoryItemByName/${type}`
+    );
+    return response.data;
+  },
+  findAllDepartment: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/department/findAllDepartment`
     );
     return response.data;
   },
@@ -1342,4 +1350,66 @@ export const employeeService = {
       throw new Error("Failed to submit feedback. Please try again.");
     }
   },
+
+  //department service
+
+  createDepartment: async (data: {
+    location: string;
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>("/department/saveDepartment", {
+      location: data.location,
+    });
+    return response.data;
+  },
+
+  getDepartments: async (
+    pageNo: number,
+    department?: string
+  ): Promise<{
+    commonListDto: Department[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const searchTerm = department || null;
+    const response = await api.post<{
+      commonListDto: Department[];
+      totalElements: number;
+    }>(`/department/findFilteredDepartment/${searchTerm}/${page}`);
+    return response.data;
+  },
+
+
+  getMasterEQuestions: async (
+    pageNo: number,
+    searchTerm?: string
+  ): Promise<{
+    commonListDto: Questionnaire[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const search = searchTerm || null;
+    const response = await api.post<{
+      commonListDto: Questionnaire[];
+      totalElements: number;
+    }>(
+      `/eQuestions/loadMasterEQuestions/${page}`,
+      { question: search }
+    );
+    return response.data;
+  },
+
+  saveMasterEQuestions: async (data: {
+    id?: string;
+    question: string;
+    responseType: "yes_no" | "text";
+    level: string;
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      "/eQuestions/saveMasterEQuestions",
+      data
+    );
+    return response.data;
+  },
+
+
 };

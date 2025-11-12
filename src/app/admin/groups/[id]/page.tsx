@@ -100,8 +100,15 @@ const GroupDetailsPage: React.FC = () => {
 
         const levels = await adminService.getLookupItems("Level");
         setLevelOptions(levels);
-        const departments = await adminService.getLookupItems("Department");
-        setDepartmentOptions(departments);
+
+        const departments = await adminService.findAllDepartment();
+        // console.log("new api", departments); // DEBUG
+        const transformedDepartments = departments.map(dept => ({
+          ...dept,
+          value: dept.value || dept.key
+        }));
+
+        setDepartmentOptions(transformedDepartments);
         await fetchVerifiedByOptions();
       } catch (error) {
         toast.error("Failed to load dropdown options.");
@@ -794,67 +801,34 @@ const GroupDetailsPage: React.FC = () => {
                           />
                         </div>
                       </div>
-
                       {/* Employee Levels */}
-                      {/* <div className="flex-1">
+                      <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Employee Levels * (Select at least one)
                         </label>
-                        <div className="flex gap-3 flex-wrap">
-                          {levelOptions.map((levelOption) => (
-                            <label
-                              key={levelOption.value}
-                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
-                                levelOption.value
-                              )
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-input hover:border-primary/50"
-                                }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.questionLevel.includes(
-                                  levelOption.value
-                                )}
-                                onChange={() =>
-                                  handleLevelToggle(levelOption.value)
-                                }
-                                className="sr-only"
-                                disabled={showEditModal}
-                              />
-                              {levelOption.value}
-                            </label>
-                          ))}
+                        <div className="relative z-[9998]">
+                          <SearchableDropdown
+                            options={levelOptions}
+                            value={valuesToIds(
+                              formData.questionLevel,
+                              levelOptions
+                            )}
+                            isMultiSelect={true}
+                            onChange={(selectedIds) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                questionLevel: idsToValues(
+                                  selectedIds,
+                                  levelOptions
+                                ),
+                              }));
+                            }}
+                            placeholder="Select levels"
+                            disabled={showEditModal}
+                            showSelectAll={true}
+                          />
                         </div>
-                      </div> */}
-                      {/* Employee Levels */}
-<div className="flex-1">
-  <label className="block text-sm font-medium mb-2">
-    Employee Levels * (Select at least one)
-  </label>
-  <div className="relative z-[9998]">
-    <SearchableDropdown
-      options={levelOptions}
-      value={valuesToIds(
-        formData.questionLevel,
-        levelOptions
-      )}
-      isMultiSelect={true}
-      onChange={(selectedIds) => {
-        setFormData((prev) => ({
-          ...prev,
-          questionLevel: idsToValues(
-            selectedIds,
-            levelOptions
-          ),
-        }));
-      }}
-      placeholder="Select levels"
-      disabled={showEditModal}
-      showSelectAll={true}
-    />
-  </div>
-</div>
+                      </div>
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
