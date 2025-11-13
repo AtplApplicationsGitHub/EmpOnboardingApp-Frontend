@@ -75,8 +75,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       if (isOpen && dropdownRef.current) {
         const rect = dropdownRef.current.getBoundingClientRect();
         setDropdownPosition({
-          top: rect.bottom,
-          left: rect.left,
+          top: rect.bottom+16,
+          left: rect.left+15,
           width: rect.width,
         });
       }
