@@ -2,6 +2,7 @@
 
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SidebarProvider } from './components/SidebarContext'; 
 
 export default function ClientLayout({
   children,
@@ -11,7 +12,9 @@ export default function ClientLayout({
   return (
     <ThemeProvider>
       <AuthProvider>
-        {children}
+        <SidebarProvider>
+          {children}
+        </SidebarProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -42,9 +42,6 @@ const GroupDetailsPage: React.FC = () => {
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
-  const [verifiedByPage, setVerifiedByPage] = useState(0);
-  const [verifiedByTotal, setVerifiedByTotal] = useState(0);
-  const [verifiedBySearch, setVerifiedBySearch] = useState("");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -70,7 +67,6 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
-    // if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -100,8 +96,15 @@ const GroupDetailsPage: React.FC = () => {
 
         const levels = await adminService.getLookupItems("Level");
         setLevelOptions(levels);
-        const departments = await adminService.getLookupItems("Department");
-        setDepartmentOptions(departments);
+
+        const departments = await adminService.findAllDepartment();
+        // console.log("new api", departments); // DEBUG
+        const transformedDepartments = departments.map(dept => ({
+          ...dept,
+          value: dept.value || dept.key
+        }));
+
+        setDepartmentOptions(transformedDepartments);
         await fetchVerifiedByOptions();
       } catch (error) {
         toast.error("Failed to load dropdown options.");
@@ -111,36 +114,15 @@ const GroupDetailsPage: React.FC = () => {
   }, []);
 
   //fetch verifiedBy options with pagination and search
-  const fetchVerifiedByOptions = async (search?: string, page: number = 0) => {
+  const fetchVerifiedByOptions = async () => {
     try {
-      const groupLeadsResponse = await adminService.getAllGroupLeads(
-        search || verifiedBySearch || undefined,
-        page
-      );
-      setVerifiedByOptions(groupLeadsResponse.leads || []);
-      setVerifiedByTotal(groupLeadsResponse.total || 0);
+      const groupLeadsResponse = await adminService.getAllGroupLeads();
+      setVerifiedByOptions(groupLeadsResponse);
     } catch (error) {
       console.error("Failed to load group leads:", error);
     }
   };
-  useEffect(() => {
-    fetchVerifiedByOptions(verifiedBySearch, verifiedByPage);
-  }, [verifiedByPage, verifiedBySearch]);
 
-  //handlers for verifiedBy pagination
-  const handleVerifiedByNextPage = () => {
-    const totalPages = Math.ceil(verifiedByTotal / 10); // Assuming PAGE_SIZE of 10
-    if (verifiedByPage < totalPages - 1) {
-      setVerifiedByPage(prev => prev + 1);
-    }
-  };
-
-  //handlers for verifiedBy pagination
-  const handleVerifiedByPrevPage = () => {
-    if (verifiedByPage > 0) {
-      setVerifiedByPage(prev => prev - 1);
-    }
-  };
   useEffect(() => {
     if (groupId) {
       fetchGroupData();
@@ -395,32 +377,33 @@ const GroupDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/groups")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Back to Groups
-          </Button>
           <div>
-            <h1 className="text-3xl font-bold">{group.name} Questions</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-[17px] font-bold text-[#4c51bf]">{group.name} Questions</h1>
+            <p className="text-[15px] text-muted-foreground mt-2">
               Manage onboarding questions for the {group.name} department
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Question
-        </Button>
+        <div className="flex items-right gap-2">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center">
+            <Plus size={16} />
+            Add Question
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/admin/groups")}
+            className="flex items-center">
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+       
       </div>
 
       {/* Error Display */}
@@ -585,8 +568,8 @@ const GroupDetailsPage: React.FC = () => {
           <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
             <Card className="flex flex-col h-full bg-background">
               {/* Fixed Header */}
-              <CardHeader className="flex-shrink-0 border-b">
-                <CardTitle className="text-xl">
+              <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md">
+                <CardTitle className="text-1xl font-semibold text-primary-gradient">
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
@@ -794,67 +777,34 @@ const GroupDetailsPage: React.FC = () => {
                           />
                         </div>
                       </div>
-
                       {/* Employee Levels */}
-                      {/* <div className="flex-1">
+                      <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Employee Levels * (Select at least one)
                         </label>
-                        <div className="flex gap-3 flex-wrap">
-                          {levelOptions.map((levelOption) => (
-                            <label
-                              key={levelOption.value}
-                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
-                                levelOption.value
-                              )
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-input hover:border-primary/50"
-                                }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.questionLevel.includes(
-                                  levelOption.value
-                                )}
-                                onChange={() =>
-                                  handleLevelToggle(levelOption.value)
-                                }
-                                className="sr-only"
-                                disabled={showEditModal}
-                              />
-                              {levelOption.value}
-                            </label>
-                          ))}
+                        <div className="relative z-[9998]">
+                          <SearchableDropdown
+                            options={levelOptions}
+                            value={valuesToIds(
+                              formData.questionLevel,
+                              levelOptions
+                            )}
+                            isMultiSelect={true}
+                            onChange={(selectedIds) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                questionLevel: idsToValues(
+                                  selectedIds,
+                                  levelOptions
+                                ),
+                              }));
+                            }}
+                            placeholder="Select levels"
+                            disabled={showEditModal}
+                            showSelectAll={true}
+                          />
                         </div>
-                      </div> */}
-                      {/* Employee Levels */}
-<div className="flex-1">
-  <label className="block text-sm font-medium mb-2">
-    Employee Levels * (Select at least one)
-  </label>
-  <div className="relative z-[9998]">
-    <SearchableDropdown
-      options={levelOptions}
-      value={valuesToIds(
-        formData.questionLevel,
-        levelOptions
-      )}
-      isMultiSelect={true}
-      onChange={(selectedIds) => {
-        setFormData((prev) => ({
-          ...prev,
-          questionLevel: idsToValues(
-            selectedIds,
-            levelOptions
-          ),
-        }));
-      }}
-      placeholder="Select levels"
-      disabled={showEditModal}
-      showSelectAll={true}
-    />
-  </div>
-</div>
+                      </div>
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
@@ -879,11 +829,7 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
-                            onNextPage={handleVerifiedByNextPage}
-                            onPrevPage={handleVerifiedByPrevPage}
-                            currentPage={verifiedByPage}
-                            totalPages={Math.ceil(verifiedByTotal / 10)}
-                            hasNextPage={verifiedByPage < Math.ceil(verifiedByTotal / 10) - 1}
+
                           />
                         </div>
                       </div>
@@ -898,16 +844,9 @@ const GroupDetailsPage: React.FC = () => {
               </div>
 
               {/* Sticky Footer with Buttons */}
-              <div className="flex-shrink-0 border-t bg-background p-6">
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    form="question-form"
-                    disabled={!isFormValid}
-                    className="flex-1"
-                  >
-                    {showCreateModal ? "Create Question" : "Update Question"}
-                  </Button>
+              {/* Sticky Footer with Buttons */}
+              <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="flex gap-3 justify-end">
                   <Button
                     type="button"
                     variant="outline"
@@ -917,10 +856,20 @@ const GroupDetailsPage: React.FC = () => {
                       setEditingQuestion(null);
                       resetForm();
                     }}
-                    className="flex-1"
                   >
                     Cancel
                   </Button>
+                  <button
+                    type="submit"
+                    form="question-form"
+                    disabled={!isFormValid}
+                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+        shadow-md transition-all duration-300 ease-in-out 
+        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {showCreateModal ? "Create Question" : "Update Question"}
+                  </button>
                 </div>
               </div>
             </Card>
@@ -942,13 +891,7 @@ const GroupDetailsPage: React.FC = () => {
                 ? This action cannot be undone.
               </p>
               <div className="flex gap-3 flex-wrap">
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteQuestion}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -958,6 +901,13 @@ const GroupDetailsPage: React.FC = () => {
                   className="flex-1"
                 >
                   Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </CardContent>

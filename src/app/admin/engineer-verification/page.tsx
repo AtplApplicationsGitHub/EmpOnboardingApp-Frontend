@@ -84,28 +84,26 @@ const AcknowledgementPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-9xl mx-auto">
-      <Card>
-        <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search by employee, group, department, or role..."
-              className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
-              aria-label="Search tasks"
-            />
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Search by employee, group, department, or role..."
+            className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Task ID</TableHead>
                 <TableHead>Employee Name</TableHead>
                 <TableHead>Group ID</TableHead>

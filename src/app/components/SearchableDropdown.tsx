@@ -14,12 +14,6 @@ interface SearchableDropdownProps {
   displayFullValue?: boolean;
   isEmployeePage?: boolean;
   isMultiSelect?: boolean;
-  showSelectAll?: boolean;
-  onNextPage?: () => void;
-  onPrevPage?: () => void;
-  currentPage?: number;
-  totalPages?: number;
-  hasNextPage?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -34,12 +28,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   displayFullValue = true,
   isEmployeePage = false,
   isMultiSelect = false,
-  showSelectAll = false,
-  onNextPage,
-  onPrevPage,
-  currentPage,
-  totalPages,
-  hasNextPage,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,10 +55,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       option.value.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, maxDisplayItems);
   }, [options, searchTerm, maxDisplayItems]);
-
-  const isAllSelected = useMemo(() => {
-    return isMultiSelect && selectedValues.length === options.length && options.length > 0;
-  }, [isMultiSelect, selectedValues, options]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -140,19 +124,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setHighlightedIndex(-1);
   };
 
-  // Selects or deselects all options in multi-select mode
-  const handleSelectAll = () => {
-    if (isAllSelected) {
-      // Deselect all
-      onChange(undefined);
-    } else {
-      // Select all
-      const allIds = options.map(opt => opt.id);
-      onChange(allIds);
-    }
-    setSearchTerm('');
-    setHighlightedIndex(-1);
-  };
   // Clears all selected options
   const handleClear = () => {
     onChange(undefined);
@@ -266,7 +237,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             size={16}
             className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}
              ${selectedOptions.length > 0 && !isOpen ? '' : 'opacity-0'}`}
-
+            
           />
         </div>
       </div>
@@ -279,27 +250,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
               <Search size={12} className="inline mr-1" />
               Searching for "{searchTerm}"...
-            </div>
-          )}
-
-          {/* Select All Option (only for multi-select with showSelectAll) */}
-          {isMultiSelect && showSelectAll && !searchTerm && (
-            <div
-              role="option"
-              tabIndex={0}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted font-semibold border-b border-border bg-primary/5 flex items-center justify-between"
-              onClick={handleSelectAll}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSelectAll();
-                }
-              }}
-            >
-              <span className="text-primary">
-                {isAllSelected ? '✓ Deselect All' : 'Select All'}
-              </span>
-              {isAllSelected && <Check size={16} className="text-primary" />}
             </div>
           )}
 
@@ -354,7 +304,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               );
             })
           ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
+              <div className="px-3 py-2 text-sm text-muted-foreground">
               No options available
             </div>
           )}
@@ -362,37 +312,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
               Showing {maxDisplayItems} of {options.length} items. Type to filter more.
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {(onNextPage || onPrevPage) && (
-            <div className="sticky bottom-0 bg-background border-t border-border px-3 py-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrevPage?.();
-                }}
-                disabled={currentPage === 0}
-                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ← Previous
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Page {(currentPage ?? 0) + 1} {totalPages ? `of ${totalPages}` : ''}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNextPage?.();
-                }}
-                disabled={!hasNextPage}
-                className="text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next →
-              </button>
             </div>
           )}
         </div>

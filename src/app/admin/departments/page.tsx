@@ -12,13 +12,17 @@ import {
   Edit,
 } from "lucide-react";
 import Button from "../../components/ui/button";
+import { employeeService } from "@/app/services/api";
+import toast from "react-hot-toast";
+import { Card, CardContent, CardTitle } from "../../components/ui/card";
 
 
 const PAGE_SIZE = 10;
 
 type Department = {
   id: string;
-  name: string;
+  location: string;
+  lab?: string;
   createdTime: string;
   updatedTime: string;
 };
@@ -34,41 +38,11 @@ const emptyForm: FormState = {
 const DepartmentsPage: React.FC = () => {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Hardcoded sample data (you can change this anytime)
-  const [departments, setDepartments] = useState<Department[]>([
-    {
-      id: "dept-1",
-      name: "Human Resources",
-      createdTime: "01/05/2024, 09:45 AM",
-      updatedTime: "15/07/2024, 02:30 PM",
-    },
-    {
-      id: "dept-2",
-      name: "Engineering",
-      createdTime: "10/03/2024, 10:00 AM",
-      updatedTime: "22/06/2024, 11:15 AM",
-    },
-    {
-      id: "dept-3",
-      name: "Sales and Marketing",
-      createdTime: "15/01/2024, 01:20 PM",
-      updatedTime: "20/07/2024, 04:45 PM",
-    },
-    {
-      id: "dept-4",
-      name: "Finance",
-      createdTime: "02/02/2024, 11:00 AM",
-      updatedTime: "18/08/2024, 03:10 PM",
-    },
-    {
-      id: "dept-5",
-      name: "Customer Support",
-      createdTime: "12/04/2024, 08:30 AM",
-      updatedTime: "19/08/2024, 10:50 AM",
-    },
-  ]);
 
-  const [total] = useState(departments.length);
+  const [loading, setLoading] = useState(false);
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -82,17 +56,6 @@ const DepartmentsPage: React.FC = () => {
     [total]
   );
 
-  // ✅ Filter + paginate departments
-  const paginatedDepartments = useMemo(() => {
-    let filtered = departments;
-    if (searchFilter) {
-      filtered = departments.filter((dept) =>
-        dept.name.toLowerCase().includes(searchFilter.toLowerCase())
-      );
-    }
-    const start = currentPage * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [departments, searchFilter, currentPage]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +77,7 @@ const DepartmentsPage: React.FC = () => {
   const openEditModal = (deptId: string) => {
     const dept = departments.find((d) => d.id === deptId);
     if (!dept) return;
-    setForm({ name: dept.name });
+    setForm({ name: dept.location });
     setSelectedDeptId(deptId);
     setEditMode(true);
     setShowModal(true);
@@ -131,44 +94,70 @@ const DepartmentsPage: React.FC = () => {
     setForm({ ...emptyForm });
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  // Fetch departments
+  const fetchDepartments = async () => {
+    setLoading(true);
+    try {
+      const searchTerm = searchFilter || undefined;
+      const data = await employeeService.getDepartments(currentPage, searchTerm);
+      console.log("Fetched departments:", data);
+      setDepartments(data.commonListDto);
+      setTotal(data.totalElements);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to fetch departments");
+    } finally {
+      setLoading(false);
+    }
+  };
+  React.useEffect(() => {
+    fetchDepartments();
+  }, [currentPage, searchFilter]);
+
+
+  // Handle create department
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = form.name.trim();
-    if (!name) {
-      alert("Department name is required");
+
+    const location = form.name.trim();
+    if (!location) {
+      toast.error("Department name is required");
       return;
     }
 
-    const newDept: Department = {
-      id: `dept-${Date.now()}`,
-      name,
-      createdTime: new Date().toLocaleString(),
-      updatedTime: new Date().toLocaleString(),
-    };
-
-    setDepartments((prev) => [newDept, ...prev]);
-    closeModal();
+    try {
+      await employeeService.createDepartment({ location });
+      console.log("Department created:", location);
+      toast.success("Department created successfully");
+      closeModal();
+      fetchDepartments();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to create department");
+    }
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!selectedDeptId) return;
 
-    const name = form.name.trim();
-    if (!name) {
-      alert("Department name is required");
+    const location = form.name.trim();
+    if (!location) {
+      toast.error("Department name is required");
       return;
     }
 
-    setDepartments((prev) =>
-      prev.map((dept) =>
-        dept.id === selectedDeptId
-          ? { ...dept, name, updatedTime: new Date().toLocaleString() }
-          : dept
-      )
-    );
-    closeModal();
-  };
+    try {
+      await employeeService.createDepartment({
+        id: selectedDeptId,
+        location,
+      });
+      toast.success("Department updated successfully");
+      closeModal();
+      fetchDepartments();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update department");
+    }
+  };;
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -194,9 +183,9 @@ const DepartmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-full mx-auto min-h-screen">
+    <div className="space-y-2">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between">
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="relative w-80">
           <Search
@@ -216,33 +205,39 @@ const DepartmentsPage: React.FC = () => {
         <Button
           onClick={openCreateModal}
         >
-          <Plus size={16} />
+          <Plus size={16} style={{ marginRight: '8px' }} />
           <span>Add New Department</span>
         </Button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-        <div className="overflow-x-auto">
+      <Card>
+        <CardContent className="p-0">
           <table className="w-full">
             <thead>
-              <tr className="bg-primary-gradient">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[35%]">
+              <tr className="table-heading-bg text-primary-gradient">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
                   Department
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[25%]">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[25%]">
                   Created
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[25%]">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[25%]">
                   Updated
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider w-[15%]">
+                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[15%]">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedDepartments.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-16 text-center">
+                    <p className="text-gray-500 text-sm">Loading departments...</p>
+                  </td>
+                </tr>
+              ) : departments.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -254,10 +249,10 @@ const DepartmentsPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedDepartments.map((dept) => (
+                departments.map((dept) => (
                   <tr key={dept.id} className="hover:bg-gray-50 transition-all">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {dept.name}
+                      {dept.location}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {dept.createdTime}
@@ -279,75 +274,86 @@ const DepartmentsPage: React.FC = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
+        </CardContent>
+      </Card>
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(0)}
-              disabled={currentPage === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronsLeft size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            {generatePageNumbers().map((pageNum, idx) =>
-              typeof pageNum === "number" ? (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </div>
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {departments.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  key={idx}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[40px] h-10 rounded text-sm font-medium ${
-                    currentPage === pageNum
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                  onClick={() => handlePageChange(0)}
+                  disabled={currentPage === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
                 >
-                  {pageNum + 1}
+                  <ChevronsLeft size={18} />
                 </button>
-              ) : (
-                <span key={idx} className="px-2 text-gray-400">
-                  {pageNum}
-                </span>
-              )
-            )}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                >
+                  <ChevronLeft size={18} />
+                </button>
 
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(totalPages - 1)}
-              disabled={currentPage >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronsRight size={18} />
-            </button>
-          </div>
-        </div>
+                {generatePageNumbers().map((pageNum, idx) =>
+                  typeof pageNum === "number" ? (
+                    <button
+                      key={idx}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${currentPage === pageNum
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  ) : (
+                    <span key={idx} className="px-2 text-gray-400">
+                      {pageNum}
+                    </span>
+                  )
+                )}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages - 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </div>
+
+          </CardContent>
+        </Card>
       )}
 
-      {/* Modal (unchanged, works same) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] px-8 py-6 shadow-md">
-              <h2 className="text-2xl font-semibold text-white">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 {editMode ? "Update Department" : "Create New Department"}
-              </h2>
+              </CardTitle>
             </div>
 
             {/* Body */}
@@ -368,20 +374,19 @@ const DepartmentsPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-6 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center gap-3">
-                <button
+                <Button
+                  variant="outline"
                   onClick={closeModal}
-                  className="px-6 py-2.5 bg-[#ff5555] text-white rounded-lg text-sm font-semibold hover:shadow-md hover:-translate-y-0.5 transition-all"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={editMode ? handleUpdate : handleCreate}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 transition-all"
                 >
                   {editMode ? "Update Department" : "Create Department"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
