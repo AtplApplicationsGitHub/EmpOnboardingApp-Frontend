@@ -755,11 +755,13 @@ export const labService = {
     totalElements: number;
   }> => {
     const page = pageNo ?? 0;
-    const searchTerm = location || null;
+    const searchTerm = location || "";
     const response = await api.post<{
       commonListDto: Lab[];
       totalElements: number;
-    }>(`/location/findFilteredLocation/${searchTerm}/${page}`);
+    }>(`/location/findFilteredLocation/${page}`,
+      {search:searchTerm}
+    );
     return response.data;
   },
 
