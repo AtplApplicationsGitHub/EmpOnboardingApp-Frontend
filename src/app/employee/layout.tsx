@@ -4,12 +4,11 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthContext';
 import Navbar from '../components/Navbar';
-
+import { useSidebar } from '../components/SidebarContext';
 const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-
-  // Redirect if not authenticated or not an employee
+  const { isCollapsed } = useSidebar();
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'employee')) {
       router.push('/auth/login');
@@ -24,7 +23,6 @@ const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Don't render anything if not authenticated or not an employee
   if (!user || user.role !== 'employee') {
     return null;
   }
@@ -32,7 +30,10 @@ const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <div className="flex-1 ml-64">
+      <div
+        className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-56'
+          }`}
+      >
         <main className="p-6">
           {children}
         </main>

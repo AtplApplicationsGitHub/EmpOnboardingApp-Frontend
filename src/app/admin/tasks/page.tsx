@@ -267,25 +267,23 @@ const TasksPage: React.FC = () => {
   );
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-2">
       {/* Header / Search */}
-      <Card>
-        <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => {
-                setSearchFilter(e.target.value);
-                setCurrentPage(0);
-              }}
-              placeholder="Search…"
-              className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
-              aria-label="Search tasks"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => {
+              setSearchFilter(e.target.value);
+              setCurrentPage(0);
+            }}
+            placeholder="Search…"
+            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </div>
 
       {/* Tasks Table */}
       <Card>
@@ -298,7 +296,7 @@ const TasksPage: React.FC = () => {
 
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Employee</TableHead>
                 <TableHead>Level</TableHead>
                 <TableHead>Role & Department</TableHead>
@@ -445,39 +443,30 @@ const TasksPage: React.FC = () => {
                       </TableCell>
                       {/* Actions */}
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-lg"
-                            onClick={() =>
-
-                              (window.location.href = `/admin/tasks/${task.taskIds}`)
-                            }
+                        <div className="flex items-center gap-5">
+                          <button
+                            className="rounded-lg p-2 text-[#474BDD]  "
+                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
                             aria-label="View details"
                           >
-                            <Eye size={16} />
-                          </Button>
+                            <Eye size={18} />
+                          </button>
 
                           {!task.lab && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg"
+                            <button
+                              className="rounded-lg text-[#eea11d]"
                               onClick={() => handleOpenLabChangeModal(task)}
                               aria-label="Change lab"
                               title="Change Lab"
                             >
-                              <FlaskConical size={16} />
-                            </Button>
+                              <FlaskConical size={18} />
+                            </button>
                           )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="rounded-lg"
+                            <button
+                              className="rounded-lg text-[#3b82f6]"
                               onClick={() => {
                                 const firstTaskId = task.taskIds.split(",")[0];
                                 handleViewQuestions(firstTaskId, (task as any).name);
@@ -486,8 +475,8 @@ const TasksPage: React.FC = () => {
                               aria-label="View answers"
                               title="View Employee Answers"
                             >
-                              <TicketCheck size={16} />
-                            </Button>
+                              <TicketCheck size={18} />
+                            </button>
                           )}
 
                           {task.status?.toLowerCase() === "completed" &&
@@ -639,12 +628,13 @@ const TasksPage: React.FC = () => {
       )}
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
+          <Card className="w-full max-w-md mx-4 ">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 ">
                 Change Lab
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select Lab:</label>
@@ -666,32 +656,39 @@ const TasksPage: React.FC = () => {
                   />
                 )}
               </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleLabChangeSubmit}
-                  disabled={!selectedLabId}
-                  className="flex-1"
-                >
-                  Update Lab
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowLabChangeModal(false);
-                    setSelectedEmployeeForLabChange(null);
-                    setSelectedLabId(undefined);
-                    setLabOptions([]);
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
             </CardContent>
+
+            {/* Footer with top border and wider buttons */}
+            <div className="flex justify-between items-center gap-3 border-t border-gray-200 bg-gray-50 px-6 py-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLabChangeModal(false);
+                  setSelectedEmployeeForLabChange(null);
+                  setSelectedLabId(undefined);
+                  setLabOptions([]);
+                }}
+                className="min-w-[130px] px-7 py-3 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
+          transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleLabChangeSubmit}
+                disabled={!selectedLabId}
+                className="min-w-[130px] px-7 py-3 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+          shadow-md transition-all duration-300 ease-in-out 
+          hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+          disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Update Lab
+              </button>
+            </div>
           </Card>
         </div>
       )}
+
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -765,7 +762,7 @@ const TasksPage: React.FC = () => {
               )}
             </div>
 
-           
+
           </div>
         </div>
       )}

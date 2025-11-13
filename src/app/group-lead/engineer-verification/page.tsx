@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 
 const PAGE_SIZE = 10;
 
-const AcknowledgementPage: React.FC = () => {
+const GroupLeadAcknowledgementPage: React.FC = () => {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchFilter, setSearchFilter] = useState("");
@@ -210,7 +210,7 @@ const AcknowledgementPage: React.FC = () => {
                         variant="outline"
                         size="sm"
                         className="rounded-lg"
-                        onClick={() => router.push(`/admin/acknowledgement/${task.id}`)} >
+                        onClick={() => router.push(`/group-lead/engineer-verification/${task.id}`)} >
                         <Eye size={16} />
                       </Button>
                     </TableCell>
@@ -291,4 +291,4 @@ const AcknowledgementPage: React.FC = () => {
   );
 };
 
-export default AcknowledgementPage;
+export default GroupLeadAcknowledgementPage;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
 import { User, DropDownDTO } from "../../types";
-import { Card, CardContent } from "../../components/ui/card";
+import { Card, CardContent, CardTitle } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
 import {
@@ -24,7 +24,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
-  Pencil,
+  Edit,
   X,
   Trash,
 } from "lucide-react";
@@ -392,7 +392,7 @@ const UsersPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-2">
       {/* Header with Search and Add User */}
       <div className="flex items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
@@ -449,21 +449,16 @@ const UsersPage: React.FC = () => {
       {/* Users Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="text-sm text-muted-foreground">
-              Showing {users.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
-              {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
-            </div>
-          </div>
+
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Last Updated</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -479,21 +474,7 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-2">
-                      {user.role === "admin" ? (
-                        <Shield size={16} className="text-red-500" />
-                      ) : (
-                        <UserCheck size={16} className="text-blue-500" />
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="p-1 hover:bg-transparent hover:text-primary"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                    </TableCell>
+
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
@@ -514,6 +495,21 @@ const UsersPage: React.FC = () => {
                     <TableCell className="text-muted-foreground">
                       {user.updatedTime}
                     </TableCell>
+                    <TableCell className="flex items-center gap-3">
+                      {user.role === "admin" ? (
+                        <Shield size={18} className="text-red-500" />
+                      ) : (
+                        <UserCheck size={18} className="text-blue-500" />
+                      )}
+                      <button
+                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                        onClick={() => handleEditUser(user.id)}
+                        title="Edit User"
+                      >
+                        <Edit size={18} />
+                      </button>
+
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -529,6 +525,12 @@ const UsersPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Page {currentPage + 1} of {totalPages}
+              </div>
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {users.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -593,97 +595,122 @@ const UsersPage: React.FC = () => {
 
       {/* Create/Update User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              {editMode ? "Update User" : "Create New User"}
-            </h2>
-            <form
-              onSubmit={editMode ? handleUpdateUser : handleCreateUser}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium mb-2">Name</label>
-                <Input
-                  id="name"
-                  ref={nameInputRef}
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Enter user's full name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  disabled={editMode}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  placeholder="Enter user's email address"
-                  required
-                />
-                {!editMode && emailExists && (
-                  <p className="text-red-500 text-sm mt-1">
-                    Email already exists
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      role: e.target.value as "admin" | "group_lead",
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.key}>
-                      {role.key}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                {editMode ? "Edit User" : "Create New User"}
+              </CardTitle>
+            </div>
 
-              {/* Password only for create */}
-              {!editMode && (
+            {/* Body */}
+            <div className="flex-1 px-8 py-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+              <div className="grid grid-cols-1 gap-5">
+                {/* Name Field */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Password
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({ ...formData, password: value });
-                      setPasswordError(validatePassword(value));
-                    }}
-                    placeholder="Enter password"
+                  <input
+                    id="name"
+                    ref={nameInputRef}
+                    type="text"
+                    value={formData.name}
+                    placeholder="Enter user's full name"
                     required
+                    disabled={editMode}
+                    onChange={(e) => {
+                      if (!editMode) setFormData({ ...formData, name: e.target.value });
+                    }}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 disabled:bg-gray-50 disabled:cursor-not-allowed"
                   />
-                  {passwordError && (
-                    <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                </div>
+
+                {/* Email Field */}
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    disabled={editMode}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder="Enter user's email address"
+                    required
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  />
+                  {!editMode && emailExists && (
+                    <p className="text-red-500 text-sm mt-1">Email already exists</p>
                   )}
                 </div>
-              )}
 
-              <div className="flex justify-end gap-2 mt-6">
-                <Button type="button" variant="outline" onClick={resetForm}>
+                {/* Role Field */}
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        role: e.target.value as "admin" | "group_lead",
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 bg-white"
+                    required
+                  >
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.key}>
+                        {role.key === "admin" ? "Administrator" : "Group Lead"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Password Field - Only for Create */}
+                {!editMode && (
+                  <div>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, password: value });
+                        setPasswordError(validatePassword(value));
+                      }}
+                      placeholder="Enter password"
+                      required
+                      className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    />
+                    {passwordError && (
+                      <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={resetForm}
+                >
                   Cancel
                 </Button>
+
                 <Button
-                  type="submit"
+                  onClick={editMode ? handleUpdateUser : handleCreateUser}
                   disabled={
                     emailExists ||
                     checkingEmail ||
@@ -693,7 +720,7 @@ const UsersPage: React.FC = () => {
                   {editMode ? "Update User" : "Create User"}
                 </Button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

@@ -212,7 +212,7 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       <div className="p-8">
         <div className="text-center py-12">
           <div className="text-destructive mb-4">{error}</div>
-          <Button onClick={() => router.push("/group-lead/acknowledgement")}>
+          <Button onClick={() => router.push("/group-lead/engineer-verification")}>
             Back to Tasks
           </Button>
         </div>
@@ -226,7 +226,7 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
         <div className="text-center py-12">
           <div className="text-destructive">Task not found</div>
           <Button
-            onClick={() => router.push("/group-lead/acknowledgement")}
+            onClick={() => router.push("/group-lead/engineer-verification")}
             className="mt-4"
           >
             Back to Tasks
@@ -241,7 +241,7 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          onClick={() => router.push("/group-lead/acknowledgement")}
+          onClick={() => router.push("/group-lead/engineer-verification")}
           className="flex items-center gap-2"
         >
           <ArrowLeft size={16} />

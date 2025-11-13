@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "../../../components/ui/card";
 import Button from "../../../components/ui/button";
-import { ArrowLeft, Plus, Edit, Trash2, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, HelpCircle, Copy } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { toast } from "react-hot-toast";
 
@@ -67,7 +67,6 @@ const GroupDetailsPage: React.FC = () => {
       return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
-    // if (!formData.verifiedBy) return false;
     return true;
   };
   useEffect(() => {
@@ -97,16 +96,32 @@ const GroupDetailsPage: React.FC = () => {
 
         const levels = await adminService.getLookupItems("Level");
         setLevelOptions(levels);
-        const departments = await adminService.getLookupItems("Department");
-        setDepartmentOptions(departments);
-        const groupLeads = await adminService.getAllGroupLeads();
-        setVerifiedByOptions(groupLeads);
+
+        const departments = await adminService.findAllDepartment();
+        // console.log("new api", departments); // DEBUG
+        const transformedDepartments = departments.map(dept => ({
+          ...dept,
+          value: dept.value || dept.key
+        }));
+
+        setDepartmentOptions(transformedDepartments);
+        await fetchVerifiedByOptions();
       } catch (error) {
         toast.error("Failed to load dropdown options.");
       }
     };
     fetchLookupData();
   }, []);
+
+  //fetch verifiedBy options with pagination and search
+  const fetchVerifiedByOptions = async () => {
+    try {
+      const groupLeadsResponse = await adminService.getAllGroupLeads();
+      setVerifiedByOptions(groupLeadsResponse);
+    } catch (error) {
+      console.error("Failed to load group leads:", error);
+    }
+  };
 
   useEffect(() => {
     if (groupId) {
@@ -163,7 +178,7 @@ const GroupDetailsPage: React.FC = () => {
         ...(verifiedBy && { verifiedByEmail: verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-      console.log("Creating Question with data:", dataToSend.verifiedByEmail);
+      console.log("Creating Question with data:", dataToSend);
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
@@ -175,6 +190,27 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
+  const handleCloneQuestion = async (question: Question) => {
+    try {
+      const dataToSend = {
+        text: `${question.text}-Copy`,
+        response: question.response,
+        period: question.period,
+        complainceDay: question.complainceDay || "1",
+        questionDepartment: question.questionDepartment,
+        questionLevel: question.questionLevel,
+        groupId: question.groupId.toString(),
+        ...(question.verifiedByEmail && { verifiedByEmail: question.verifiedByEmail }),
+        ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
+      };
+      await adminService.createQuestion(dataToSend);
+      await fetchGroupData();
+      toast.success("Question cloned successfully!");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to clone question");
+      toast.error("Failed to clone question");
+    }
+  };
 
   const handleEditQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,32 +377,33 @@ const GroupDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/groups")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Back to Groups
-          </Button>
           <div>
-            <h1 className="text-3xl font-bold">{group.name} Questions</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-[17px] font-bold text-[#4c51bf]">{group.name} Questions</h1>
+            <p className="text-[15px] text-muted-foreground mt-2">
               Manage onboarding questions for the {group.name} department
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Question
-        </Button>
+        <div className="flex items-right gap-2">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center">
+            <Plus size={16} />
+            Add Question
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/admin/groups")}
+            className="flex items-center">
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+       
       </div>
 
       {/* Error Display */}
@@ -384,13 +421,15 @@ const GroupDetailsPage: React.FC = () => {
 
       {/* Questions List */}
       <div className="space-y-4">
-        {questions.map((question) => (
+        {questions.map((question, index) => (
           <Card key={question.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <HelpCircle size={20} className="text-primary" />
+                  <CardTitle className="flex items-center gap-4 text-lg">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
+                      {questionPage * PAGE_SIZE + index + 1}
+                    </span>
                     {question.text}
                   </CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
@@ -438,6 +477,13 @@ const GroupDetailsPage: React.FC = () => {
                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
                   >
                     <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleCloneQuestion(question)}
+                    className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Clone Question"
+                  >
+                    <Copy size={16} />
                   </button>
                   {question.deleteFlag && questions.length > 1 && (
                     <button
@@ -522,8 +568,8 @@ const GroupDetailsPage: React.FC = () => {
           <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
             <Card className="flex flex-col h-full bg-background">
               {/* Fixed Header */}
-              <CardHeader className="flex-shrink-0 border-b">
-                <CardTitle className="text-xl">
+              <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md">
+                <CardTitle className="text-1xl font-semibold text-primary-gradient">
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
@@ -727,40 +773,36 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select departments"
                             disabled={showEditModal}
+                            showSelectAll={true}
                           />
                         </div>
                       </div>
-
                       {/* Employee Levels */}
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Employee Levels * (Select at least one)
                         </label>
-                        <div className="flex gap-3 flex-wrap">
-                          {levelOptions.map((levelOption) => (
-                            <label
-                              key={levelOption.value}
-                              className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer transition-colors ${formData.questionLevel.includes(
-                                levelOption.value
-                              )
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-input hover:border-primary/50"
-                                }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.questionLevel.includes(
-                                  levelOption.value
-                                )}
-                                onChange={() =>
-                                  handleLevelToggle(levelOption.value)
-                                }
-                                className="sr-only"
-                                disabled={showEditModal}
-                              />
-                              {levelOption.value}
-                            </label>
-                          ))}
+                        <div className="relative z-[9998]">
+                          <SearchableDropdown
+                            options={levelOptions}
+                            value={valuesToIds(
+                              formData.questionLevel,
+                              levelOptions
+                            )}
+                            isMultiSelect={true}
+                            onChange={(selectedIds) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                questionLevel: idsToValues(
+                                  selectedIds,
+                                  levelOptions
+                                ),
+                              }));
+                            }}
+                            placeholder="Select levels"
+                            disabled={showEditModal}
+                            showSelectAll={true}
+                          />
                         </div>
                       </div>
                     </div>
@@ -770,27 +812,6 @@ const GroupDetailsPage: React.FC = () => {
                           Verified By
                         </label>
                         <div className="relative">
-                          {/* <SearchableDropdown
-                            className="w-full"
-                            options={verifiedByOptions}
-                            value={
-                              verifiedByOptions.find(
-                                (opt) => opt.value === formData.verifiedBy
-                              )?.id
-                            }
-                            onChange={(id) => {
-                              const selectedValue =
-                                verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
-                              setFormData((prev) => ({
-                                ...prev,
-                                verifiedBy: selectedValue,
-                              }));
-                            }}
-                            placeholder="Select who will verify"
-                            displayFullValue={false}
-                          // isEmployeePage={true}
-                          /> */}
-
                           <SearchableDropdown
                             className="w-full"
                             options={verifiedByOptions}
@@ -800,24 +821,15 @@ const GroupDetailsPage: React.FC = () => {
                               )?.id
                             }
                             onChange={(id) => {
-                              console.log("=== DROPDOWN CHANGE ===");
-                              console.log("Selected ID:", id);
-                              const selectedOption = verifiedByOptions.find((opt) => opt.id === id);
-                              console.log("Selected Option:", selectedOption);
-                              console.log("Selected Value:", selectedOption?.value);
-
-                              const selectedValue = selectedOption?.value ?? "";
-                              setFormData((prev) => {
-                                console.log("Previous formData.verifiedBy:", prev.verifiedBy);
-                                console.log("New formData.verifiedBy:", selectedValue);
-                                return {
-                                  ...prev,
-                                  verifiedBy: selectedValue,
-                                };
-                              });
+                              const selectedValue = verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
+                              setFormData((prev) => ({
+                                ...prev,
+                                verifiedBy: selectedValue,
+                              }));
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
+
                           />
                         </div>
                       </div>
@@ -826,26 +838,15 @@ const GroupDetailsPage: React.FC = () => {
                     </div>
 
                     <div className="pb-4"></div>
-
-
-
-
-                    <div className="pb-4"></div>
+                    {/* <div className="pb-4"></div> */}
                   </form>
                 </CardContent>
               </div>
 
               {/* Sticky Footer with Buttons */}
-              <div className="flex-shrink-0 border-t bg-background p-6">
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    form="question-form"
-                    disabled={!isFormValid}
-                    className="flex-1"
-                  >
-                    {showCreateModal ? "Create Question" : "Update Question"}
-                  </Button>
+              {/* Sticky Footer with Buttons */}
+              <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="flex gap-3 justify-end">
                   <Button
                     type="button"
                     variant="outline"
@@ -855,10 +856,20 @@ const GroupDetailsPage: React.FC = () => {
                       setEditingQuestion(null);
                       resetForm();
                     }}
-                    className="flex-1"
                   >
                     Cancel
                   </Button>
+                  <button
+                    type="submit"
+                    form="question-form"
+                    disabled={!isFormValid}
+                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+        shadow-md transition-all duration-300 ease-in-out 
+        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {showCreateModal ? "Create Question" : "Update Question"}
+                  </button>
                 </div>
               </div>
             </Card>
@@ -880,13 +891,7 @@ const GroupDetailsPage: React.FC = () => {
                 ? This action cannot be undone.
               </p>
               <div className="flex gap-3 flex-wrap">
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteQuestion}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -896,6 +901,13 @@ const GroupDetailsPage: React.FC = () => {
                   className="flex-1"
                 >
                   Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </CardContent>

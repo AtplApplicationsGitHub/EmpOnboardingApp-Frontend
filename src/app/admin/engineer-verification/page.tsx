@@ -85,27 +85,25 @@ const AcknowledgementPage: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <Card>
-        <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search by employee, group, department, or role..."
-              className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
-              aria-label="Search tasks"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Search by employee, group, department, or role..."
+            className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Task ID</TableHead>
                 <TableHead>Employee Name</TableHead>
                 <TableHead>Group ID</TableHead>
@@ -210,7 +208,7 @@ const AcknowledgementPage: React.FC = () => {
                         variant="outline"
                         size="sm"
                         className="rounded-lg"
-                        onClick={() => router.push(`/admin/acknowledgement/${task.id}`)} >
+                        onClick={() => router.push(`/admin/engineer-verification/${task.id}`)} >
                         <Eye size={16} />
                       </Button>
                     </TableCell>

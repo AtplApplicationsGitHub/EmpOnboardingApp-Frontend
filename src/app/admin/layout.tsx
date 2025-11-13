@@ -3,11 +3,13 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthContext';
+import { useSidebar } from '../components/SidebarContext';
 import Navbar from '../components/Navbar';
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { isCollapsed } = useSidebar(); // Use the sidebar state
 
   // Redirect if not authenticated or not an admin
   useEffect(() => {
@@ -32,7 +34,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <div className="flex-1 ml-48">
+      <div 
+        className={`flex-1 transition-all duration-300 ${
+          isCollapsed ? 'ml-20' : 'ml-56'
+        }`}
+      >
         <main className="p-6">
           {children}
         </main>

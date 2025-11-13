@@ -151,7 +151,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className={`p-8 space-y-8 ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
+    <div className={`space-y-2 ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Groups - Clickable */}

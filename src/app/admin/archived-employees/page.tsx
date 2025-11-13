@@ -151,27 +151,22 @@ const ArchivedEmployeesPage: React.FC = () => {
 
 
     return (
-        <div className="p-8 space-y-6">
-            {/* Header / Search */}
-            <Card>
-
-                <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={searchFilter}
-                            onChange={(e) => {
-                                setSearchFilter(e.target.value);
-                                setCurrentPage(0);
-                            }}
-                            placeholder="Search…"
-                            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
-                            aria-label="Search archived employees"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={searchFilter}
+                        onChange={(e) => {
+                            setSearchFilter(e.target.value);
+                            setCurrentPage(0);
+                        }}
+                        placeholder="Search…"
+                        className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+                        aria-label="Search archived employees"
+                    />
+                </div>
+            </div>
             {/* Archived Employees Table */}
             <Card>
                 <CardContent className="p-0">
@@ -181,9 +176,9 @@ const ArchivedEmployeesPage: React.FC = () => {
                         </div>
                     )}
 
-                    <Table>
+                    <Table >
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="table-heading-bg text-primary-gradient">
                                 <TableHead>Employee</TableHead>
                                 <TableHead>Level</TableHead>
                                 <TableHead>Role & Department</TableHead>
@@ -311,24 +306,23 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                                             {/* Actions */}
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
-
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="rounded-lg"
+                                                <div className="flex items-center gap-5">
+                                                    {/* View Details */}
+                                                    <button
+                                                        className="rounded-lg p-2 text-[#474BDD]"
                                                         onClick={() =>
                                                             (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
                                                         aria-label="View details"
+                                                        title="View Details"
                                                     >
-                                                        <Eye size={16} />
-                                                    </Button>
+                                                        <Eye size={18} />
+                                                    </button>
+
+                                                    {/* View Answers */}
                                                     {employeesWithQuestions.has(parseInt(employee.employeeId, 10)) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="rounded-lg"
+                                                        <button
+                                                            className="rounded-lg text-[#3b82f6]"
                                                             onClick={() => {
                                                                 const firstTaskId = employee.taskIds.split(",")[0];
                                                                 handleViewQuestions(firstTaskId, employee.name);
@@ -337,11 +331,12 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                             aria-label="View answers"
                                                             title="View Employee Answers"
                                                         >
-                                                            <TicketCheck size={16} />
-                                                        </Button>
+                                                            <TicketCheck size={18} />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </TableCell>
+
                                         </TableRow>
                                     );
                                 })

@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import {
-  Pencil,
+  Edit,
   Download,
   Upload,
   Plus,
@@ -27,6 +27,8 @@ import {
   Trash2,
   Clock,
   Archive,
+  Search,
+  AlertTriangle, X
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -104,8 +106,14 @@ const EmployeesPage: React.FC = () => {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      const departments = await adminService.getLookupItems("Department");
-      setDepartmentOptions(departments);
+      const departments = await adminService.findAllDepartment();
+      // console.log("new api", departments); // DEBUG
+      const transformedDepartments = departments.map(dept => ({
+        ...dept,
+        value: dept.value || dept.key
+      }));
+
+      setDepartmentOptions(transformedDepartments);
     } catch (error) {
       toast.error("Failed to load dropdown options.");
     }
@@ -142,13 +150,11 @@ const EmployeesPage: React.FC = () => {
     try {
       const groups = await adminService.getEmployeeGroup(level, department, employeeId);
 
-      // Transform the response into DropDownDTO format
       const groupDropdownOptions: DropDownDTO[] = groups.map((group: any, index: number) => ({
         id: group.id || index + 1,
         value: group.name || group.key || group.value || "Unknown",
         key: group.key || group.name || group.value || `group-${index}`
       }));
-
 
       setGroupOptions(groupDropdownOptions);
     } catch (error) {
@@ -164,7 +170,6 @@ const EmployeesPage: React.FC = () => {
   useEffect(() => {
     fetchEmployees();
   }, [searchFilter, page]);
-
 
   const fetchEmployees = async () => {
     try {
@@ -189,7 +194,6 @@ const EmployeesPage: React.FC = () => {
     setPage(0);
   };
 
-  //create
   const handleAddEmployee = async () => {
     if (!newEmployee.name) {
       toast.error("Please fill in Candidate Name");
@@ -212,7 +216,6 @@ const EmployeesPage: React.FC = () => {
 
       toast.success("Employee added successfully");
 
-      // Reset the form
       setNewEmployee({
         name: "",
         date: "",
@@ -237,18 +240,16 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  //edit
   const handleEditEmployee = async (employeeId: number) => {
     if (!employeeId) return;
 
     try {
       const emp: Employee = await adminService.findByEmployee(employeeId);
-
       const formattedDate = formatDateForInput(emp.date);
 
       setOriginalGroupValue(emp.group || "");
       setGroupChanged(false);
-      // Prefill the modal form with fetched employee data
+
       setNewEmployee({
         name: emp.name,
         date: formattedDate,
@@ -263,12 +264,10 @@ const EmployeesPage: React.FC = () => {
         group: emp.group || "",
       });
 
-
       if (emp.department) {
         await fetchLabsByDepartment(emp.department);
       }
 
-      // Fetch groups for the employee's level and ID
       if (emp.level && emp.department && employeeId) {
         await fetchEmployeeGroups(emp.level, emp.department, employeeId);
       }
@@ -283,7 +282,6 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  //update
   const handleUpdateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -314,7 +312,6 @@ const EmployeesPage: React.FC = () => {
 
       if (groupChanged && newEmployee.group && newEmployee.group !== originalGroupValue) {
         try {
-          // Find the group ID from the selected group value
           const selectedGroupOption = groupOptions.find(
             option => option.value === newEmployee.group
           );
@@ -334,8 +331,6 @@ const EmployeesPage: React.FC = () => {
         }
       }
 
-
-      // Reset state and close the modal
       setNewEmployee({
         name: "",
         date: "",
@@ -380,7 +375,6 @@ const EmployeesPage: React.FC = () => {
 
   const handleDepartmentChange = (value: number | number[] | undefined) => {
     const departmentId = Array.isArray(value) ? value[0] : value;
-
     const selectedDept = departmentOptions.find(
       (option) => option.id === departmentId
     );
@@ -388,14 +382,15 @@ const EmployeesPage: React.FC = () => {
     setNewEmployee({
       ...newEmployee,
       department: selectedDept?.value || "",
-      labAllocation: "", // Reset lab allocation when department changes
+      labAllocation: "",
     });
 
     if (selectedDept?.value) {
       fetchLabsByDepartment(selectedDept.value);
     } else {
-      setLabOptions([]); // Reset lab options
+      setLabOptions([]);
     }
+
     if (editMode && selectedEmployeeId && newEmployee.level) {
       setGroupOptions([]);
       if (selectedDept?.value) {
@@ -404,7 +399,6 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  // Handle group change
   const handleGroupChange = (id: number | number[] | undefined) => {
     const selectedGroup = groupOptions.find(option => option.id === id);
     const newGroupValue = selectedGroup?.value || "";
@@ -414,11 +408,9 @@ const EmployeesPage: React.FC = () => {
       group: newGroupValue
     });
 
-    // Track if group was actually changed from original value
     setGroupChanged(newGroupValue !== originalGroupValue && newGroupValue !== "");
   };
 
-  //delete
   const handleDeleteEmployee = async () => {
     if (!employeeToDelete) return;
 
@@ -442,8 +434,6 @@ const EmployeesPage: React.FC = () => {
       toast.error(err.response?.data?.message || "Failed to archive employee.");
     }
   };
-
-  //download template
 
   const base64ToBlob = (b64: string, mime: string) => {
     const byteString = atob(b64);
@@ -471,7 +461,6 @@ const EmployeesPage: React.FC = () => {
     try {
       setImportLoading(true);
       setImportErrors([]);
-      debugger;
       const result = await adminService.importEmployees(importFile);
       const errorCount: number = result.errorCount ?? 0;
       const rawErrors = result.errors ?? [];
@@ -529,7 +518,7 @@ const EmployeesPage: React.FC = () => {
       setProcessing(false);
     }
   };
-  // Pagination logic
+
   const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
   const handlePageChange = (newPage: number) => {
@@ -555,24 +544,36 @@ const EmployeesPage: React.FC = () => {
     return pages;
   };
 
+  // Get initials for avatar
+  // const getInitials = (name: string) => {
+  //   const parts = name.split(' ');
+  //   if (parts.length >= 2) {
+  //     return (parts[0][0] + parts[1][0]).toUpperCase();
+  //   }
+  //   return name.substring(0, 2).toUpperCase();
+  // };
+
   return (
-    <div className="p-6 max-w-9xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <form onSubmit={handleSearchSubmit} className="w-full">
-                <Input
-                  type="text"
-                  placeholder="Search employees..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-64"
-                />
-              </form>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0">
-              {/* <Button
+    <div className="space-y-2">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        {/* Search Box */}
+        <div className="relative w-80">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <form onSubmit={handleSearchSubmit}>
+            <input
+              type="text"
+              placeholder="Search employees..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white transition-all focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+            />
+          </form>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          {/* <Button
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap flex-shrink-0"
@@ -582,495 +583,498 @@ const EmployeesPage: React.FC = () => {
                 <span className="hidden sm:inline">Download Template</span>
                 <span className="sm:hidden">Download</span>
               </Button> */}
-              <Button
-                onClick={() => setShowImportModal(true)}
-                disabled={processing}
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-              >
-                <Upload size={14} className="mr-1" />
-                <span className="hidden sm:inline">Import from Excel</span>
-                <span className="sm:hidden">Import</span>
-              </Button>
-              <Button
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-                onClick={() => {
-                  setShowAddModal(true);
-                  setEditMode(false);
-                  setSelectedEmployeeId(null);
-                  setEmailExists(false);
-                  setCheckingEmail(false);
-                  setLabOptions([]);
-                  setGroupOptions([]);
-                  setOriginalGroupValue("");
-                  setGroupChanged(false);
-                  setNewEmployee({
-                    name: "",
-                    date: "",
-                    department: "",
-                    role: "",
-                    level: "L1",
-                    totalExperience: "0",
-                    pastOrganization: "",
-                    labAllocation: "",
-                    complianceDay: "",
-                    email: "",
-                    group: "",
-                  });
-                }}
-              >
-                <Plus size={14} className="mr-1" />
-                <span className="hidden sm:inline">Add Employee</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 space-y-4 ">
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableCell className="w-32"></TableCell>
-                <TableCell className="w-40">Name</TableCell>
-                <TableCell className="w-44">Email</TableCell>
-                <TableCell className="w-22">DOJ</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Lab</TableCell>
-                <TableCell>Level</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Compliance Day</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <button
+            onClick={() => setShowImportModal(true)}
+            disabled={processing}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm font-medium transition-all hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+          >
+            <Upload size={16} />
+            <span>Import from Excel</span>
+          </button>
+
+          <Button
+            onClick={() => {
+              setShowAddModal(true);
+              setEditMode(false);
+              setSelectedEmployeeId(null);
+              setEmailExists(false);
+              setCheckingEmail(false);
+              setLabOptions([]);
+              setGroupOptions([]);
+              setOriginalGroupValue("");
+              setGroupChanged(false);
+              setNewEmployee({
+                name: "",
+                date: "",
+                department: "",
+                role: "",
+                level: "L1",
+                totalExperience: "0",
+                pastOrganization: "",
+                labAllocation: "",
+                complianceDay: "",
+                email: "",
+                group: "",
+              });
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Add Employee</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="table-heading-bg text-primary-gradient">
+                <th className="px-6 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
+                  Name
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
+                  Email
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                  DOJ
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                  Department
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                  Lab
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[8%]">
+                  Level
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[11%]">
+                  Role
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                  Compliance
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
               {employees.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        No employees found
-                      </p>
+                <tr>
+                  <td colSpan={9} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Users size={48} className="text-gray-300" />
+                      <p className="text-gray-500 text-sm font-medium">No employees found</p>
+
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ) : (
-                employees.map((emp) => (
-                  <TableRow key={emp.id}>
-                    <TableCell className="w-32">
-                      <div className="flex items-center gap-1 w-32">
-                        <Button
-                          size="sm"
-                          variant="ghost"
+                employees.map((emp, index) => (
+                  <tr
+                    key={emp.id}
+                    className={`transition-all group ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-indigo-50 hover:bg-indigo-100'
+                      }`}
+                  >
+
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-gray-900">{emp.name}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">{emp.email}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 font-medium">{emp.date}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                        {emp.department || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-500">
+                        {emp.labAllocation || "-"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                        {emp.level || "L1"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">{emp.role || "N/A"}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-gray-700">
+                        {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
                           onClick={() => handleEditEmployee(emp.id)}
-                          className="flex-shrink-0"
+                          className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                          title="Edit Employee"
                         >
-                          <Pencil size={14} />
-                        </Button>
-
-                        {emp.archiveFlag && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => archiveEmployee(emp.id)}
-                            className="flex-shrink-0"
-                          >
-                            <Archive size={14} />
-                          </Button>
-                        )}
-
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-500 flex-shrink-0"
+                          <Edit size={18} />
+                        </button>
+                        <button
                           onClick={() => {
                             setEmployeeToDelete(emp);
                             setShowDeleteModal(true);
                           }}
+                          className="p-2 rounded-lg text-red-500 transition-all hover:bg-red-50 hover:scale-110"
+                          title="Delete Employee"
                         >
-                          <Trash2 size={14} />
-                        </Button>
+                          <Trash2 size={18} />
+                        </button>
                       </div>
-                    </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap overflow-hidden w-40">
-                      {emp.name}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis w-44">
-                      {emp.email}
-                    </TableCell>
-
-                    <TableCell className="whitespace-nowrap w-24">
-                      {emp.date}
-                    </TableCell>
-                    <TableCell>{emp.department || "N/A"}</TableCell>
-                    <TableCell>{emp.labAllocation || ""}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${emp.level === "L1"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          : emp.level === "L2"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : emp.level === "L3"
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                          }`}
-                      >
-                        {emp.level || "L1"}
-                      </span>
-                    </TableCell>
-                    <TableCell>{emp.role || "N/A"}</TableCell>
-
-                    <TableCell>
-                      {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
       {totalPages > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Page {page + 1} of {totalPages}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(0)}
-                  disabled={page === 0}
-                  className="p-2"
+        <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(0)}
+              disabled={page === 0}
+              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronsLeft size={18} />
+            </button>
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 0}
+              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            {generatePageNumbers().map((pageNum, idx) =>
+              typeof pageNum === "number" ? (
+                <button
+                  key={idx}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
-                  <ChevronsLeft size={16} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 0}
-                  className="p-2"
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                {generatePageNumbers().map((p, idx) =>
-                  p === "..." ? (
-                    <span key={idx} className="px-3 py-2 text-muted-foreground">
-                      ...
-                    </span>
-                  ) : (
-                    <Button
-                      key={idx}
-                      variant={p === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(p as number)}
-                      className="min-w-[40px]"
-                    >
-                      {(p as number) + 1}
-                    </Button>
-                  )
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages - 1}
-                  className="p-2"
-                >
-                  <ChevronRight size={16} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages - 1)}
-                  disabled={page === totalPages - 1}
-                  className="p-2"
-                >
-                  <ChevronsRight size={16} />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  {pageNum + 1}
+                </button>
+              ) : (
+                <span key={idx} className="px-2 text-gray-400">
+                  {pageNum}
+                </span>
+              )
+            )}
+
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={18} />
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages - 1)}
+              disabled={page >= totalPages - 1}
+              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronsRight size={18} />
+            </button>
+          </div>
+        </div>
       )}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
-            <Card className="flex flex-col h-full bg-background">
-              {/* Fixed Header */}
-              <CardHeader className="flex-shrink-0 border-b p-5">
-                <CardTitle className="text-2xl">
-                  {editMode ? "Edit User" : "Create User"}
-                </CardTitle>
-              </CardHeader>
+          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div className="flex-shrink-0  px-5 py-4 shadow-md">
 
-              {/* Form Content */}
-              <div className={`flex-1 ${editMode ? "overflow-y-auto" : ""}`}>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 mt-3 md:grid-cols-2 gap-4">
-                    {/* Candidate Name */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1 ">
-                        Candidate Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={(newEmployee.name as string) ?? ""}
-                        onChange={(e) =>
-                          setNewEmployee({ ...newEmployee, name: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="Enter full name"
-                      />
-                    </div>
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                {editMode ? "Edit User" : "Create User"}
+              </CardTitle>
+            </div>
 
-                    {/* Date of Joining */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Date of Joining
-                      </label>
-                      <input
-                        type="date"
-                        value={newEmployee.date ?? ""}
-                        onChange={(e) =>
-                          setNewEmployee({ ...newEmployee, date: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        max="9999-12-31"
-                        min="1900-01-01"
-                      />
-                    </div>
+            {/* Scrollable Body */}
+            <div className={`flex-1 ${editMode ? "overflow-y-auto max-h-[calc(90vh-180px)]" : ""} px-8 py-6`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Candidate Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={(newEmployee.name as string) ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, name: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="Enter full name"
+                  />
+                </div>
 
-                    {/* Department */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Department *
-                      </label>
-                      <SearchableDropdown
-                        options={departmentOptions}
-                        value={
-                          departmentOptions.find(
-                            (option) => option.value === newEmployee.department
-                          )?.id
-                        }
-                        onChange={handleDepartmentChange}
-                        placeholder="Select Department"
-                        displayFullValue={false}
-                        isEmployeePage={true}
-                        disabled={editMode}
-                      />
-                    </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Date of Joining <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={newEmployee.date ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, date: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm text-gray-700 transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    max="9999-12-31"
+                    min="1900-01-01"
+                  />
+                </div>
 
-                    {/* Lab Allocation */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Lab Allocation
-                      </label>
-                      <SearchableDropdown
-                        options={labOptions}
-                        value={
-                          labOptions.find(
-                            (option) => option.value === newEmployee.labAllocation
-                          )?.id
-                        }
-                        onChange={(id) => {
-                          const selectedLab = labOptions.find(
-                            (option) => option.id === id
-                          )?.value;
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Department <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableDropdown
+                    options={departmentOptions}
+                    value={
+                      departmentOptions.find(
+                        (option) => option.value === newEmployee.department
+                      )?.id
+                    }
+                    onChange={handleDepartmentChange}
+                    placeholder="Select Department"
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                    disabled={editMode}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Lab Allocation
+                  </label>
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={
+                      labOptions.find(
+                        (option) => option.value === newEmployee.labAllocation
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedLab = labOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setNewEmployee({
+                        ...newEmployee,
+                        labAllocation: selectedLab || "",
+                      });
+                    }}
+                    placeholder={
+                      !newEmployee.department
+                        ? "Select Department First"
+                        : labOptions.length === 0
+                          ? "No labs available"
+                          : "Select Lab"
+                    }
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                    disabled={!newEmployee.department || labOptions.length === 0}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Level <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableDropdown
+                    options={levelOptions}
+                    value={
+                      levelOptions.find(
+                        (option) => option.value === newEmployee.level
+                      )?.id
+                    }
+                    onChange={(id) => {
+                      const selectedLevel = levelOptions.find(
+                        (option) => option.id === id
+                      )?.value;
+                      setNewEmployee({
+                        ...newEmployee,
+                        level: selectedLevel as "L1" | "L2" | "L3" | "L4",
+                      });
+                    }}
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                    disabled={editMode}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Total Experience (years)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={40}
+                    value={newEmployee.totalExperience ?? "0"}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = parseInt(value);
+
+
+                      if (value === "" || value === "-") {
+                        setNewEmployee({
+                          ...newEmployee,
+                          totalExperience: value,
+                        });
+                      } else if (!isNaN(numValue)) {
+                        if (numValue <= 40 && numValue >= 0) {
                           setNewEmployee({
                             ...newEmployee,
-                            labAllocation: selectedLab || "",
+                            totalExperience: value,
                           });
-                        }}
-                        placeholder={
-                          !newEmployee.department
-                            ? "Select Department First"
-                            : labOptions.length === 0
-                              ? "No labs available"
-                              : "Select Lab"
                         }
-                        displayFullValue={false}
-                        isEmployeePage={true}
-                        disabled={!newEmployee.department || labOptions.length === 0}
-                      />
-                    </div>
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      const numValue = parseInt(value);
 
-                    {/* Level */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Level *
-                      </label>
-                      <SearchableDropdown
-                        options={levelOptions}
-                        value={
-                          levelOptions.find(
-                            (option) => option.value === newEmployee.level
-                          )?.id
-                        }
-                        onChange={(id) => {
-                          const selectedLevel = levelOptions.find(
-                            (option) => option.id === id
-                          )?.value;
-                          setNewEmployee({
-                            ...newEmployee,
-                            level: selectedLevel as "L1" | "L2" | "L3" | "L4",
-                          });
-                        }}
-                        displayFullValue={false}
-                        isEmployeePage={true}
-                        disabled={editMode}
-                      />
-                    </div>
+                      if (value === "" || isNaN(numValue) || numValue < 0) {
+                        setNewEmployee({
+                          ...newEmployee,
+                          totalExperience: "0",
+                        });
+                      } else if (numValue > 40) {
+                        setNewEmployee({
+                          ...newEmployee,
+                          totalExperience: "40",
+                        });
+                      }
+                    }}
 
-                    {/* Total Experience */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Total Experience (years)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={newEmployee.totalExperience ?? "0"}
-                        onChange={(e) =>
-                          setNewEmployee({
-                            ...newEmployee,
-                            totalExperience: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="e.g., 3"
-                      />
-                    </div>
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="0"
+                  />
+                </div>
 
-                    {/* Past Organization */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Past Organization
-                      </label>
-                      <input
-                        type="text"
-                        value={newEmployee.pastOrganization ?? ""}
-                        onChange={(e) =>
-                          setNewEmployee({
-                            ...newEmployee,
-                            pastOrganization: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="Previous company name"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Past Organization
+                  </label>
+                  <input
+                    type="text"
+                    value={newEmployee.pastOrganization ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({
+                        ...newEmployee,
+                        pastOrganization: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="Previous company name"
+                  />
+                </div>
 
-                    {/* Role */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Role</label>
-                      <input
-                        type="text"
-                        value={newEmployee.role ?? ""}
-                        onChange={(e) =>
-                          setNewEmployee({ ...newEmployee, role: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="e.g., Software Engineer, Manager"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">Role</label>
+                  <input
+                    type="text"
+                    value={newEmployee.role ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, role: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="e.g., Software Engineer, Manager"
+                  />
+                </div>
 
-                    {/* Compliance Day */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Compliance Day
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={newEmployee.complianceDay ?? "3"}
-                        onChange={(e) =>
-                          setNewEmployee({
-                            ...newEmployee,
-                            complianceDay: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="Number of compliance days"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Compliance Day
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newEmployee.complianceDay ?? "3"}
+                    onChange={(e) =>
+                      setNewEmployee({
+                        ...newEmployee,
+                        complianceDay: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="Number of compliance days"
+                  />
+                </div>
 
-                    {/* Email */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Email *</label>
-                      <Input
-                        type="email"
-                        value={newEmployee.email ?? ""}
-                        onChange={(e) => handleEmailChange(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md bg-background"
-                        placeholder="Enter email address"
-                        disabled={editMode}
-                      />
-                      {!editMode && emailExists && (
-                        <p className="text-red-500 text-sm mt-1">
-                          Email already exists
-                        </p>
-                      )}
-                    </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="email"
+                    value={newEmployee.email ?? ""}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    placeholder="Enter email address"
+                    disabled={editMode}
+                  />
+                  {!editMode && emailExists && (
+                    <p className="text-red-500 text-sm mt-1">
+                      Email already exists
+                    </p>
+                  )}
+                </div>
 
-                    {/* Group - only for edit mode */}
-                    {editMode && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Select Group
-                        </label>
-                        <SearchableDropdown
-                          options={groupOptions}
-                          value={
-                            groupOptions.find(
-                              (option) => option.value === newEmployee.group
-                            )?.id
-                          }
-                          onChange={handleGroupChange}
-                          placeholder={
-                            !newEmployee.level || !newEmployee.department || !selectedEmployeeId
-                              ? "Level, Department and Employee ID required"
-                              : groupOptions.length === 0
-                                ? "No groups available"
-                                : "Select Group"
-                          }
-                          displayFullValue={false}
-                          isEmployeePage={true}
-                          disabled={
-                            !newEmployee.level ||
-                            !selectedEmployeeId ||
-                            groupOptions.length === 0
-                          }
-                        />
-                      </div>
-                    )}
+                {editMode && (
+                  <div>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                      Select Group
+                    </label>
+                    <SearchableDropdown
+                      options={groupOptions}
+                      value={
+                        groupOptions.find(
+                          (option) => option.value === newEmployee.group
+                        )?.id
+                      }
+                      onChange={handleGroupChange}
+                      placeholder={
+                        !newEmployee.level || !newEmployee.department || !selectedEmployeeId
+                          ? "Level, Department and Employee ID required"
+                          : groupOptions.length === 0
+                            ? "No groups available"
+                            : "Select Group"
+                      }
+                      displayFullValue={false}
+                      isEmployeePage={true}
+                      disabled={
+                        !newEmployee.level ||
+                        !selectedEmployeeId ||
+                        groupOptions.length === 0
+                      }
+                    />
                   </div>
-                </CardContent>
+                )}
               </div>
+            </div>
 
-              {/* Sticky Footer */}
-              <div className="flex-shrink-0 border-t bg-background p-6 flex gap-3">
-                <Button
-                  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
-                  className="flex-1"
-                  disabled={
-                    !newEmployee.name ||
-                    !newEmployee.name.trim() ||
-                    !newEmployee.level ||
-                    !newEmployee.department ||
-                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
-                    emailExists ||
-                    checkingEmail
-                  }
-                >
-                  {editMode ? "Update User" : "Create User"}
-                </Button>
+            {/* Footer with gradient button */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
+                  type="button"
                   onClick={() => {
                     setShowAddModal(false);
                     setEmailExists(false);
@@ -1092,18 +1096,37 @@ const EmployeesPage: React.FC = () => {
                     setEditMode(false);
                     setGroupOptions([]);
                   }}
-                  className="flex-1"
                 >
                   Cancel
                 </Button>
+
+                <button
+                  onClick={editMode ? handleUpdateEmployee : handleAddEmployee}
+                  disabled={
+                    !newEmployee.name ||
+                    !newEmployee.name.trim() ||
+                    !newEmployee.level ||
+                    !newEmployee.department ||
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
+                    emailExists ||
+                    checkingEmail
+                  }
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+        shadow-md transition-all duration-300 ease-in-out 
+        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editMode ? "Update User" : "Create User"}
+                </button>
               </div>
-            </Card>
+            </div>
+
+
+
           </div>
         </div>
       )}
 
-
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && employeeToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-sm mx-4">
@@ -1140,68 +1163,73 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Import Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Import from Excel</CardTitle>
-            </CardHeader>
+    {showImportModal && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="relative w-full max-w-lg flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+      {/* Header */}
+      <div className="flex-shrink-0 px-5 py-4 shadow-md">
+        <CardTitle className="text-1xl font-semibold text-primary-gradient">
+          Import from Excel
+        </CardTitle>
+      </div>
 
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Select Excel File
-                </label>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                />
-                {importFile && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Selected: {importFile.name}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-
-            {/* Action Buttons - Fixed at bottom */}
-            <div className="p-6 pt-4 border-t border-border bg-card flex-shrink-0">
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleImportFromExcel}
-                  disabled={!importFile || importLoading}
-                  className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
-                >
-                  {importLoading ? (
-                    <>
-                      <Clock size={16} className="animate-spin mr-2" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={16} className="mr-2" />
-                      Import Employees
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowImportModal(false);
-                    setImportFile(null);
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </Card>
+      {/* Body */}
+      <div className="flex-1 px-8 py-6">
+        <div>
+          <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+            Select Excel File <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+            className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+          />
+          {importFile && (
+            <p className="text-sm text-gray-500 mt-2">
+              Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
+            </p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Footer with gradient button */}
+      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowImportModal(false);
+              setImportFile(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <button
+            onClick={handleImportFromExcel}
+            disabled={!importFile || importLoading}
+            className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {importLoading ? (
+              <>
+                <Clock size={16} className="animate-spin" />
+                Importing...
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Import Employees
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
