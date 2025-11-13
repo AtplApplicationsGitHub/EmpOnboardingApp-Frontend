@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-background p-8 space-y-8">
+    <div className="space-y-2">
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
