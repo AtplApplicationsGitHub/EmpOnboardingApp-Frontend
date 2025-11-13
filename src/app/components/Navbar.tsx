@@ -7,26 +7,31 @@ import { useAuth } from "../auth/AuthContext";
 import { cn } from "../lib/utils";
 import ThemeToggle from "./ThemeToggle";
 import { useAnimation, animationClasses } from "../lib/animations";
+import { useSidebar } from "./SidebarContext";
 import {
   Home,
   Users,
   UserPlus,
   Settings,
-  ClipboardListIcon,
+  ClipboardList, // Changed from ClipboardListIcon
   FlaskConical,
   Archive,
   FileCheck,
   LogOut,
   Building2,
-  FileQuestion
+  FileQuestion,
+  Menu,
+  X,
+  ChevronLeft,
+  User
 } from "lucide-react";
 
 const itemBase =
-  "group relative flex items-center  gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all";
+  "group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all";
 const itemIdle =
   "text-[#4a5568] hover:text-[#3448c3] hover:bg-[rgba(76,81,191,0.08)] hover:translate-x-1";
 const itemActive =
-  "bg-[#4c51bf] text-white shadow-md translate-x-2"; // pill + slide
+  "bg-[#4c51bf] text-white shadow-md translate-x-2";
 const iconBase = "h-5 w-5 shrink-0";
 const iconIdle = "text-[#6b6fcf] group-hover:text-inherit";
 const iconActive = "text-white";
@@ -35,6 +40,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isVisible = useAnimation();
+  const { isCollapsed, toggleSidebar } = useSidebar(); // Use the sidebar context
 
   if (!user) return null;
 
@@ -60,29 +66,46 @@ export default function Navbar() {
     <Link
       href={href}
       className={cn(itemBase, active ? itemActive : itemIdle)}
+      title={isCollapsed ? label : ''} // Show tooltip when collapsed
     >
-      {/* left accent for active like HTML ::before */}
-      {active && (
+      {active && !isCollapsed && (
         <span className="absolute -left-3 top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-r bg-[#4c51bf]" />
       )}
       <Icon className={cn(iconBase, active ? iconActive : iconIdle)} />
-      <span>{label}</span>
+      {!isCollapsed && <span>{label}</span>} {/* Hide label when collapsed */}
     </Link>
   );
 
   return (
     <div
       className={cn(
-        "fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-[#e2e8f0] shadow-[4px_0_12px_rgba(0,0,0,0.08)]",
+        "fixed inset-y-0 left-0 z-50 bg-white border-r border-[#e2e8f0] shadow-[4px_0_12px_rgba(0,0,0,0.08)] transition-all duration-300",
+        isCollapsed ? "w-20" : "w-56", // Dynamic width
         isVisible ? animationClasses.slideInLeft : "opacity-0"
       )}
     >
       <div className="flex h-full flex-col">
-        {/* Title */}
-        <div className="flex h-20 items-center justify-center border-b border-[#e2e8f0] px-5">
-          <span className="text-[22px] font-bold tracking-wide text-[#4c51bf]">
-            Onboarding App
-          </span>
+        {/* Title with toggle button */}
+        <div className="flex h-20 items-center justify-between border-b border-[#e2e8f0] px-5">
+          {!isCollapsed && (
+            <span className="text-[17px] font-bold tracking-wide text-[#4c51bf]">
+              Onboarding App
+            </span>
+          )}
+          <button
+            onClick={toggleSidebar}
+            className={cn(
+              "p-2 rounded-lg hover:bg-[rgba(76,81,191,0.08)] transition-colors",
+              isCollapsed && "mx-auto"
+            )}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? (
+              <Menu className="h-5 w-5 text-[#4c51bf]" />
+            ) : (
+              <ChevronLeft className="h-5 w-5 text-[#4c51bf]" />
+            )}
+          </button>
         </div>
 
         {/* Nav */}
@@ -96,11 +119,11 @@ export default function Navbar() {
                   active={pathname === "/admin"}
                   Icon={Home}
                 />
-                 <NavItem
+                <NavItem
                   href="/admin/users"
                   label="Users"
                   active={pathname === "/admin/users"}
-                  Icon={Settings}
+                  Icon={User}
                 />
                 <NavItem
                   href="/admin/groups"
@@ -126,7 +149,6 @@ export default function Navbar() {
                   active={pathname === "/admin/employee-questionnaire"}
                   Icon={FileQuestion}
                 />
-
                 <NavItem
                   href="/admin/employees"
                   label="Process Employees"
@@ -137,7 +159,7 @@ export default function Navbar() {
                   href="/admin/tasks"
                   label="Tasks"
                   active={pathname === "/admin/tasks"}
-                  Icon={ClipboardListIcon}
+                  Icon={ClipboardList}
                 />
                 <NavItem
                   href="/admin/engineer-verification"
@@ -189,7 +211,7 @@ export default function Navbar() {
                   href="/employee/my-tasks"
                   label="Onboarding Checklist"
                   active={pathname === "/employee/my-tasks"}
-                  Icon={ClipboardListIcon}
+                  Icon={ClipboardList}
                 />
               </>
             )}
@@ -198,28 +220,44 @@ export default function Navbar() {
 
         {/* Bottom user card */}
         <div className="border-t border-[#e2e8f0] bg-[#f8fafc] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3 pshadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          {!isCollapsed ? (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-[#4c51bf] text-[16px] font-bold text-white">
+                    {initial}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[14px] font-semibold text-[#2d3748]">
+                      {user.name}
+                    </span>
+                    <span className="text-[12px] text-[#718096]">{roleLabel}</span>
+                  </div>
+                </div>
+                <ThemeToggle />
+              </div>
+              <button
+                onClick={logout}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign out</span>
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
               <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-[#4c51bf] text-[16px] font-bold text-white">
                 {initial}
               </div>
-              <div className="flex flex-col">
-                <span className="text-[14px] font-semibold text-[#2d3748]">
-                  {user.name}
-                </span>
-                <span className="text-[12px] text-[#718096]">{roleLabel}</span>
-              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg border border-[#e2e8f0] bg-white text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
-            <ThemeToggle />
-          </div>
-
-          <button
-            onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Sign out</span>
-          </button>
+          )}
         </div>
       </div>
     </div>
