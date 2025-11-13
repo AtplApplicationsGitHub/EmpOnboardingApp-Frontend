@@ -234,7 +234,7 @@ export default function Navbar() {
                     <span className="text-[12px] text-[#718096]">{roleLabel}</span>
                   </div>
                 </div>
-                <ThemeToggle />
+                {/* <ThemeToggle /> */}
               </div>
               <button
                 onClick={logout}

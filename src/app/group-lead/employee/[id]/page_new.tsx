@@ -242,7 +242,7 @@ const EmployeeTasksPage: React.FC = () => {
 
   if (tasks.length === 0) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="space-y-2">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -282,7 +282,7 @@ const EmployeeTasksPage: React.FC = () => {
   const employee = tasks[0]; // Get employee info from first task
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Employee Info Card with Back Button */}
       <Card>
         <CardContent className="p-6">
