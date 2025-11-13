@@ -1163,66 +1163,73 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Import from Excel</CardTitle>
-            </CardHeader>
+    {showImportModal && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="relative w-full max-w-lg flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+      {/* Header */}
+      <div className="flex-shrink-0 px-5 py-4 shadow-md">
+        <CardTitle className="text-1xl font-semibold text-primary-gradient">
+          Import from Excel
+        </CardTitle>
+      </div>
 
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Select Excel File
-                </label>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                />
-                {importFile && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Selected: {importFile.name}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-
-            <div className="p-6 pt-4 border-t border-border bg-card flex-shrink-0">
-              <div className="flex gap-3  justify-end">
-                
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowImportModal(false);
-                    setImportFile(null);
-                  }}
-                  className=""
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleImportFromExcel}
-                  disabled={!importFile || importLoading}
-                >
-                  {importLoading ? (
-                    <>
-                      <Clock size={16} className="animate-spin mr-2" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={16} className="mr-2" />
-                      Import Employees
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </Card>
+      {/* Body */}
+      <div className="flex-1 px-8 py-6">
+        <div>
+          <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+            Select Excel File <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+            className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+          />
+          {importFile && (
+            <p className="text-sm text-gray-500 mt-2">
+              Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
+            </p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Footer with gradient button */}
+      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowImportModal(false);
+              setImportFile(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <button
+            onClick={handleImportFromExcel}
+            disabled={!importFile || importLoading}
+            className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {importLoading ? (
+              <>
+                <Clock size={16} className="animate-spin" />
+                Importing...
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Import Employees
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
