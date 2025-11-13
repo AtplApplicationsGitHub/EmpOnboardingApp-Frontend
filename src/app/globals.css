@@ -88,6 +88,7 @@
   }
 
   body {
+    zoom: 0.95;
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;

@@ -271,9 +271,9 @@ const LabsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 max-w-full mx-auto min-h-screen">
+    <div className="space-y-2">
       {/* Header Section */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between">
         {/* Search Box */}
         <div className="relative w-80">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -305,8 +305,8 @@ const LabsPage: React.FC = () => {
       )} */}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-        <div className="overflow-x-auto">
+      <Card>
+        <CardContent className="p-0">
           <table className="w-full">
             <thead>
               <tr className="table-heading-bg text-primary-gradient">
@@ -374,63 +374,76 @@ const LabsPage: React.FC = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(0)}
-              disabled={currentPage === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsLeft size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            {generatePageNumbers().map((pageNum, idx) =>
-              typeof pageNum === "number" ? (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </div>
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {labs.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  key={idx}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${currentPage === pageNum
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  onClick={() => handlePageChange(0)}
+                  disabled={currentPage === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {pageNum + 1}
+                  <ChevronsLeft size={18} />
                 </button>
-              ) : (
-                <span key={idx} className="px-2 text-gray-400">
-                  {pageNum}
-                </span>
-              )
-            )}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={18} />
+                </button>
 
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(totalPages - 1)}
-              disabled={currentPage >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsRight size={18} />
-            </button>
-          </div>
-        </div>
+                {generatePageNumbers().map((pageNum, idx) =>
+                  typeof pageNum === "number" ? (
+                    <button
+                      key={idx}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${currentPage === pageNum
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  ) : (
+                    <span key={idx} className="px-2 text-gray-400">
+                      {pageNum}
+                    </span>
+                  )
+                )}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages - 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Create / Edit Modal */}
