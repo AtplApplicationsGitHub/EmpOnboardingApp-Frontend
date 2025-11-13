@@ -484,16 +484,21 @@ const GroupsPage: React.FC = () => {
 
       {/* Create Group Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader className=" px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">Create New Group</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateGroup} className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                Create New Group
+              </CardTitle>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
+              <form onSubmit={handleCreateGroup} id="createGroupForm" className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium mb-2 mt-4">
-                    Group Name
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Group Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -501,13 +506,13 @@ const GroupsPage: React.FC = () => {
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="e.g., Engineering, Marketing, Sales"
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
@@ -527,9 +532,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-muted-foreground">(Optional)</span>
+                    <span className="text-sm text-gray-500 font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     options={filterLeads(newPrimaryGroupLeadId)}
@@ -548,7 +553,7 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
                     Assign Task
                   </label>
                   <SearchableDropdown
@@ -572,64 +577,71 @@ const GroupsPage: React.FC = () => {
                     className="w-full"
                   />
                 </div>
-
-                {/* Buttons */}
-                <div className="flex justify-end gap-3 pt-4  bg-gray-50 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      setNewGroupName("");
-                      setNewPrimaryGroupLeadId(undefined);
-                      setNewEscalationGroupLeadId(undefined);
-                    }}
-                    variant="outline"
-                  //               className="transition-all duration-300 ease-in-out 
-                  //  hover:-translate-y-0.5 active:translate-y-0 
-                  // disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </Button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-                shadow-md transition-all duration-300 ease-in-out 
-                hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
-                disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Create Group
-                  </button>
-
-                </div>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Footer with gradient button */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setNewGroupName("");
+                    setNewPrimaryGroupLeadId(undefined);
+                    setNewEscalationGroupLeadId(undefined);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="submit"
+                  form="createGroupForm"
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Group
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Edit Group Modal */}
       {showEditModal && editingGroup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader className=" px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">Edit Group</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleEditGroup} className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                Edit Group
+              </CardTitle>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
+              <form onSubmit={handleEditGroup} id="editGroupForm" className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium mb-2 mt-4">Group Name</label>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Group Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     autoFocus
                     value={editGroupName}
                     onChange={(e) => setEditGroupName(e.target.value)}
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="e.g., Engineering, Marketing, Sales"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
@@ -649,9 +661,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-muted-foreground">(Optional)</span>
+                    <span className="text-sm text-gray-500 font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     options={filterLeads(editPrimaryGroupLeadId)}
@@ -670,7 +682,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Assign Task</label>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Assign Task
+                  </label>
                   <SearchableDropdown
                     options={autoAssignOptions}
                     value={
@@ -692,38 +706,40 @@ const GroupsPage: React.FC = () => {
                     displayFullValue={false}
                   />
                 </div>
-
-                {/* Buttons */}
-                <div className=" mt-6 pt-4 flex justify-end gap-3  bg-gray-50 border-t border-gray-200">
-
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setShowEditModal(false);
-                      setEditingGroup(null);
-                      setEditGroupName("");
-                      setEditPrimaryGroupLeadId(undefined);
-                      setEditEscalationGroupLeadId(undefined);
-                    }}
-                    variant="outline"  >
-                    Cancel
-                  </Button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-                shadow-md transition-all duration-300 ease-in-out 
-                hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
-                disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Update Group
-                  </button>
-                </div>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Footer with gradient button */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingGroup(null);
+                    setEditGroupName("");
+                    setEditPrimaryGroupLeadId(undefined);
+                    setEditEscalationGroupLeadId(undefined);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="submit"
+                  form="editGroupForm"
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Update Group
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteModal && groupToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -738,13 +754,7 @@ const GroupsPage: React.FC = () => {
                 This action cannot be undone.
               </p>
               <div className="flex gap-3">
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteGroup}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
+               
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -754,6 +764,13 @@ const GroupsPage: React.FC = () => {
                   className="flex-1"
                 >
                   Cancel
+                </Button>
+                 <Button
+                  variant="destructive"
+                  onClick={handleDeleteGroup}
+                  className="flex-1"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </CardContent>
