@@ -349,7 +349,7 @@ export interface Questionnaire {
   id: string;
   question: string;
   responseType: string;
-  level: string;
+  levels: string[];
   createdDate?: string;
   updatedTime?: string;
 };

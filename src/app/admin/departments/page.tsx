@@ -14,6 +14,7 @@ import {
 import Button from "../../components/ui/button";
 import { employeeService } from "@/app/services/api";
 import toast from "react-hot-toast";
+import { CardTitle } from "@/app/components/ui/card";
 
 
 
@@ -205,7 +206,7 @@ const handleUpdate = async (e: React.FormEvent) => {
         <Button
           onClick={openCreateModal}
         >
-          <Plus size={16} />
+          <Plus size={16} style={{ marginRight: '8px' }} />
           <span>Add New Department</span>
         </Button>
       </div>
@@ -215,17 +216,17 @@ const handleUpdate = async (e: React.FormEvent) => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-primary-gradient">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[35%]">
+              <tr className="table-heading-bg">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
                   Department
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[25%]">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[25%]">
                   Created
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-[25%]">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[25%]">
                   Updated
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider w-[15%]">
+                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[15%]">
                   Actions
                 </th>
               </tr>
@@ -337,10 +338,10 @@ const handleUpdate = async (e: React.FormEvent) => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] px-8 py-6 shadow-md">
-              <h2 className="text-2xl font-semibold text-white">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-popup-heading">
                 {editMode ? "Update Department" : "Create New Department"}
-              </h2>
+              </CardTitle>
             </div>
 
             {/* Body */}
@@ -363,12 +364,12 @@ const handleUpdate = async (e: React.FormEvent) => {
             {/* Footer */}
             <div className="flex-shrink-0 flex justify-end items-center px-8 py-6 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center gap-3">
-                <button
+                <Button
+                variant="outline"
                   onClick={closeModal}
-                  className="px-6 py-2.5 bg-[#ff5555] text-white rounded-lg text-sm font-semibold hover:shadow-md hover:-translate-y-0.5 transition-all"
                 >
                   Cancel
-                </button>
+                </Button>
                 <Button
                   onClick={editMode ? handleUpdate : handleCreate}
                 >

@@ -486,13 +486,13 @@ const GroupsPage: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
-            <CardHeader>
-              <CardTitle>Create New Group</CardTitle>
+            <CardHeader className=" px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-popup-heading">Create New Group</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreateGroup} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-sm font-medium mb-2 mt-4">
                     Group Name
                   </label>
                   <input
@@ -574,8 +574,8 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
+                <div className="flex justify-end gap-3 pt-4  bg-gray-50 border-t border-gray-200">
+                  <Button
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false);
@@ -583,11 +583,13 @@ const GroupsPage: React.FC = () => {
                       setNewPrimaryGroupLeadId(undefined);
                       setNewEscalationGroupLeadId(undefined);
                     }}
-                    className="px-6 py-2.5 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
-                transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
-                  >
+                    variant="outline"
+      //               className="transition-all duration-300 ease-in-out 
+      //  hover:-translate-y-0.5 active:translate-y-0 
+      // disabled:opacity-50 disabled:cursor-not-allowed"
+       >
                     Cancel
-                  </button>
+                  </Button>
                   <button
                     type="submit"
                     className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
@@ -609,13 +611,13 @@ const GroupsPage: React.FC = () => {
       {showEditModal && editingGroup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
-            <CardHeader>
-              <CardTitle>Edit Group</CardTitle>
+            <CardHeader className=" px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-popup-heading">Edit Group</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleEditGroup} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Group Name</label>
+                  <label className="block text-sm font-medium mb-2 mt-4">Group Name</label>
                   <input
                     type="text"
                     autoFocus
@@ -692,9 +694,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className=" mt-6 pt-4 flex justify-end gap-3">
+                <div className=" mt-6 pt-4 flex justify-end gap-3  bg-gray-50 border-t border-gray-200">
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
@@ -703,11 +705,9 @@ const GroupsPage: React.FC = () => {
                       setEditPrimaryGroupLeadId(undefined);
                       setEditEscalationGroupLeadId(undefined);
                     }}
-                    className="px-6 py-2.5 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
-                transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
-                  >
+                    variant="outline"  >
                     Cancel
-                  </button>
+                  </Button>
                   <button
                     type="submit"
                     className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 

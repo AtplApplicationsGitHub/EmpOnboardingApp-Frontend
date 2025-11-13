@@ -181,9 +181,9 @@ const ArchivedEmployeesPage: React.FC = () => {
                         </div>
                     )}
 
-                    <Table>
+                    <Table >
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="table-heading-bg">
                                 <TableHead>Employee</TableHead>
                                 <TableHead>Level</TableHead>
                                 <TableHead>Role & Department</TableHead>

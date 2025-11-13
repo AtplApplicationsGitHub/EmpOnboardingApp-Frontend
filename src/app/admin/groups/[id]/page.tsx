@@ -567,8 +567,8 @@ const GroupDetailsPage: React.FC = () => {
           <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
             <Card className="flex flex-col h-full bg-background">
               {/* Fixed Header */}
-              <CardHeader className="flex-shrink-0 border-b">
-                <CardTitle className="text-xl">
+              <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md">
+                <CardTitle className="text-1xl font-semibold text-popup-heading">
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
@@ -843,31 +843,34 @@ const GroupDetailsPage: React.FC = () => {
               </div>
 
               {/* Sticky Footer with Buttons */}
-              <div className="flex-shrink-0 border-t bg-background p-6">
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    form="question-form"
-                    disabled={!isFormValid}
-                    className="flex-1"
-                  >
-                    {showCreateModal ? "Create Question" : "Update Question"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      setShowEditModal(false);
-                      setEditingQuestion(null);
-                      resetForm();
-                    }}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
+             {/* Sticky Footer with Buttons */}
+<div className="flex-shrink-0 border-t bg-background p-6">
+  <div className="flex gap-3 justify-end">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => {
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        setEditingQuestion(null);
+        resetForm();
+      }}
+    >
+      Cancel
+    </Button>
+    <button
+      type="submit"
+      form="question-form"
+      disabled={!isFormValid}
+      className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+        shadow-md transition-all duration-300 ease-in-out 
+        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {showCreateModal ? "Create Question" : "Update Question"}
+    </button>
+  </div>
+</div>
             </Card>
           </div>
         </div>

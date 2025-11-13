@@ -1401,10 +1401,9 @@ export const employeeService = {
   },
 
   saveMasterEQuestions: async (data: {
-    id?: string;
     question: string;
     responseType: "yes_no" | "text";
-    level: string;
+    levels: string[];
   }): Promise<boolean> => {
     const response = await api.post<boolean>(
       "/eQuestions/saveMasterEQuestions",
@@ -1413,5 +1412,17 @@ export const employeeService = {
     return response.data;
   },
 
+  updateMasterEQuestions: async (data: {
+  id: string;
+  question: string;
+  responseType: "yes_no" | "text";
+  levels: string[];
+}): Promise<boolean> => {
+  const response = await api.post<boolean>(
+    "/eQuestions/updateMasterEQuestions",
+    data
+  );
+  return response.data;
+},
 
 };
