@@ -630,7 +630,7 @@ const EmployeesPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="table-heading-bg">
+              <tr className="table-heading-bg text-primary-gradient">
                 <th className="px-6 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
                   Name
                 </th>
@@ -800,7 +800,7 @@ const EmployeesPage: React.FC = () => {
           <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             <div className="flex-shrink-0  px-5 py-4 shadow-md">
 
-              <CardTitle className="text-1xl font-semibold text-popup-heading">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 {editMode ? "Edit User" : "Create User"}
               </CardTitle>
             </div>
@@ -1070,7 +1070,7 @@ const EmployeesPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-6 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"

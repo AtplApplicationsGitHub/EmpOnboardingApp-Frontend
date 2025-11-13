@@ -42,18 +42,12 @@
     }
 
      .table-heading-bg {
-      background-color: #dfdddd;
+      background-color: #e8e8e8;
     }
 
     .text-primary-gradient {
-      color: hsl(var(--primary-gradient));
+      color: rgb(76 81 191 / var(--tw-text-opacity, 1));
     }
-
-    .text-popup-heading {
-      color: rgb(76 81 191 / var(--tw-bg-opacity, 1));
-      ;
-    }
-
   }
 
   .dark {

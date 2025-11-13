@@ -42,7 +42,7 @@ const GroupDetailsPage: React.FC = () => {
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     id: 0,
@@ -122,7 +122,7 @@ const GroupDetailsPage: React.FC = () => {
       console.error("Failed to load group leads:", error);
     }
   };
- 
+
   useEffect(() => {
     if (groupId) {
       fetchGroupData();
@@ -568,7 +568,7 @@ const GroupDetailsPage: React.FC = () => {
             <Card className="flex flex-col h-full bg-background">
               {/* Fixed Header */}
               <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md">
-                <CardTitle className="text-1xl font-semibold text-popup-heading">
+                <CardTitle className="text-1xl font-semibold text-primary-gradient">
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
@@ -828,7 +828,7 @@ const GroupDetailsPage: React.FC = () => {
                             }}
                             placeholder="Select who will verify"
                             displayFullValue={false}
-                            
+
                           />
                         </div>
                       </div>
@@ -843,34 +843,34 @@ const GroupDetailsPage: React.FC = () => {
               </div>
 
               {/* Sticky Footer with Buttons */}
-             {/* Sticky Footer with Buttons */}
-<div className="flex-shrink-0 border-t bg-background p-6">
-  <div className="flex gap-3 justify-end">
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => {
-        setShowCreateModal(false);
-        setShowEditModal(false);
-        setEditingQuestion(null);
-        resetForm();
-      }}
-    >
-      Cancel
-    </Button>
-    <button
-      type="submit"
-      form="question-form"
-      disabled={!isFormValid}
-      className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              {/* Sticky Footer with Buttons */}
+              <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setShowEditModal(false);
+                      setEditingQuestion(null);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <button
+                    type="submit"
+                    form="question-form"
+                    disabled={!isFormValid}
+                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
         shadow-md transition-all duration-300 ease-in-out 
         hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
         disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {showCreateModal ? "Create Question" : "Update Question"}
-    </button>
-  </div>
-</div>
+                  >
+                    {showCreateModal ? "Create Question" : "Update Question"}
+                  </button>
+                </div>
+              </div>
             </Card>
           </div>
         </div>
@@ -890,13 +890,7 @@ const GroupDetailsPage: React.FC = () => {
                 ? This action cannot be undone.
               </p>
               <div className="flex gap-3 flex-wrap">
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteQuestion}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -906,6 +900,13 @@ const GroupDetailsPage: React.FC = () => {
                   className="flex-1"
                 >
                   Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </CardContent>

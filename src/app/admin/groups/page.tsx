@@ -487,7 +487,7 @@ const GroupsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader className=" px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-popup-heading">Create New Group</CardTitle>
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">Create New Group</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreateGroup} className="space-y-4">
@@ -584,10 +584,10 @@ const GroupsPage: React.FC = () => {
                       setNewEscalationGroupLeadId(undefined);
                     }}
                     variant="outline"
-      //               className="transition-all duration-300 ease-in-out 
-      //  hover:-translate-y-0.5 active:translate-y-0 
-      // disabled:opacity-50 disabled:cursor-not-allowed"
-       >
+                  //               className="transition-all duration-300 ease-in-out 
+                  //  hover:-translate-y-0.5 active:translate-y-0 
+                  // disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Cancel
                   </Button>
                   <button
@@ -612,7 +612,7 @@ const GroupsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader className=" px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-popup-heading">Edit Group</CardTitle>
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">Edit Group</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleEditGroup} className="space-y-4">

@@ -105,7 +105,7 @@ const AcknowledgementPage: React.FC = () => {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="table-heading-bg">
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Task ID</TableHead>
                 <TableHead>Employee Name</TableHead>
                 <TableHead>Group ID</TableHead>
