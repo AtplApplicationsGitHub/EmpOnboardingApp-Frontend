@@ -341,16 +341,10 @@ const GroupsPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div>
-                    Created:{" "}
-                    {group.createdTime
-                      ? new Date(group.createdTime).toLocaleDateString()
-                      : "-"}
+                    Created:{group.createdTime}
                   </div>
                   <div>
-                    Last Updated:{" "}
-                    {group.updatedTime
-                      ? new Date(group.updatedTime).toLocaleDateString()
-                      : "-"}
+                    Last Updated:{group.updatedTime}
                   </div>
                 </div>
                 <div className="space-y-2">

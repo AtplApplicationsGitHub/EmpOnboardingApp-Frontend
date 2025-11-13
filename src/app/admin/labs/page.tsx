@@ -316,13 +316,7 @@ const LabsPage: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
                   Labs
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[18%]">
-                  Created
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[18%]">
-                  Updated
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[9%]">
+                <th className="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider w-[9%]">
                   Actions
                 </th>
               </tr>
@@ -363,12 +357,6 @@ const LabsPage: React.FC = () => {
                       ) : (
                         <span className="text-sm text-gray-500">-</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">{lab.createdTime}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">{lab.updatedTime}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center">
