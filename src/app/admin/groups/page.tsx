@@ -268,12 +268,12 @@ const GroupsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Manage Groups</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-[17px] font-bold tracking-wide text-[#4c51bf]">Manage Groups</h1>
+          <p className="text-[15px] text-muted-foreground mt-2">
             Create and manage department groups for the onboarding process
           </p>
         </div>
@@ -305,8 +305,8 @@ const GroupsPage: React.FC = () => {
           <Card key={group.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users size={20} className="text-primary" />
+                <CardTitle className="text-[17px] flex items-center gap-2">
+                  <Users size={18} className="text-primary" />
                   {group.name}
                 </CardTitle>
                 <div className="flex items-center gap-3">
