@@ -151,27 +151,22 @@ const ArchivedEmployeesPage: React.FC = () => {
 
 
     return (
-        <div className="p-8 space-y-6">
-            {/* Header / Search */}
-            <Card>
-
-                <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={searchFilter}
-                            onChange={(e) => {
-                                setSearchFilter(e.target.value);
-                                setCurrentPage(0);
-                            }}
-                            placeholder="Search…"
-                            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
-                            aria-label="Search archived employees"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={searchFilter}
+                        onChange={(e) => {
+                            setSearchFilter(e.target.value);
+                            setCurrentPage(0);
+                        }}
+                        placeholder="Search…"
+                        className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+                        aria-label="Search archived employees"
+                    />
+                </div>
+            </div>
             {/* Archived Employees Table */}
             <Card>
                 <CardContent className="p-0">
