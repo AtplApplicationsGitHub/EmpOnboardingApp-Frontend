@@ -15,20 +15,21 @@ import { adminService, employeeService } from "../../services/api";
 import { DropDownDTO, Questionnaire } from "../../types";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import Button from "../../components/ui/button";
-
-
+import {
+    CardTitle,
+} from "../../components/ui/card";
 const PAGE_SIZE = 10;
 
 type FormState = {
     question: string;
     responseType: "yes_no" | "text" | "";
-    level: string;
+    level: string[];
 };
 
 const emptyForm: FormState = {
     question: "",
     responseType: "",
-    level: "",
+    level: [],
 };
 
 
@@ -117,9 +118,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
             setForm({
                 question: questionnaire.question,
                 responseType: questionnaire.responseType as "yes_no" | "text",
-                level: questionnaire.level || "",
+                level: questionnaire.levels || [],
             });
-
             setSelectedQuestionnaireId(questionnaireId);
             setEditMode(true);
             setShowModal(true);
@@ -129,7 +129,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
             }, 100);
         }
     };
-
     const closeModal = () => {
         setShowModal(false);
         setEditMode(false);
@@ -138,34 +137,50 @@ const EmployeeQuestionnairePage: React.FC = () => {
     };
 
     // Handle form submission for create/update
+    // Handle form submission for create/update
     const handleSubmit = async () => {
-        if (!form.question.trim() || !form.responseType || !form.level) {
+        if (!form.question.trim() || !form.responseType || form.level.length === 0) {
             alert("Please fill all required fields");
             return;
         }
 
         try {
-            // Prepare data for API
-            const saveData = {
-                ...(editMode && selectedQuestionnaireId ? { id: selectedQuestionnaireId } : {}),
-                question: form.question.trim(),
-                responseType: form.responseType,
-                level: form.level
-            };
+            if (editMode && selectedQuestionnaireId) {
+                const updateData = {
+                    id: selectedQuestionnaireId,
+                    question: form.question.trim(),
+                    responseType: form.responseType,
+                    levels: form.level, 
+                };
 
-            const success = await employeeService.saveMasterEQuestions(saveData);
+                const success = await employeeService.updateMasterEQuestions(updateData);
 
-            if (success) {
-                console.log(editMode ? "Updated questionnaire:" : "Created questionnaire:", saveData);
-                // Refresh the list after successful create/update
-                await fetchQuestionnaires();
-                closeModal();
+                if (success) {
+                    console.log("Updated questionnaire:", updateData);
+                    await fetchQuestionnaires();
+                    closeModal();
+                }
+            } else {
+                const saveData = {
+                    question: form.question.trim(),
+                    responseType: form.responseType,
+                    levels: form.level,
+                };
+
+                const success = await employeeService.saveMasterEQuestions(saveData);
+
+                if (success) {
+                    console.log("Created questionnaire:", saveData);
+                    await fetchQuestionnaires();
+                    closeModal();
+                }
             }
         } catch (error) {
-            console.error("Failed to save questionnaire:", error);
-            alert("Failed to save questionnaire. Please try again.");
+            console.error("Failed to save/update questionnaire:", error);
+            alert("Failed to save/update questionnaire. Please try again.");
         }
     };
+
 
     const handlePageChange = (page: number) => {
         if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -240,7 +255,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%]">
                                     Level
                                 </th>
-                                
+
                                 <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                                     Actions
                                 </th>
@@ -273,13 +288,13 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${questionnaire.level === "Basic"
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${questionnaire.levels?.[0] === "Basic"
                                                 ? "bg-green-50 text-green-700 border border-green-100"
-                                                : questionnaire.level === "Intermediate"
+                                                : questionnaire.levels?.[0] === "Intermediate"
                                                     ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
                                                     : "bg-red-50 text-red-700 border border-red-100"
                                                 }`}>
-                                                {questionnaire.level}
+                                                {questionnaire.levels?.[0] || 'N/A'}
                                             </span>
                                         </td>
 
@@ -302,11 +317,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            {/* {questionnaires.length > 0 && (
-                <div className="mb-4 text-sm text-gray-600">
-                    Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} questionnaires
-                </div>
-            )} */}
+            
             {totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
                     <div className="flex items-center gap-2">
@@ -368,9 +379,9 @@ const EmployeeQuestionnairePage: React.FC = () => {
                     <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
                         {/* Gradient Header */}
                         <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
-                            <h2 className="text-1xl font-semibold text-popup-heading">
+                            <CardTitle className="text-1xl font-semibold text-popup-heading">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
-                            </h2>
+                            </CardTitle>
                         </div>
 
                         {/* Scrollable Body */}
@@ -425,23 +436,31 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                     </label>
                                     <SearchableDropdown
                                         options={levelOptions}
-                                        value={
-                                            levelOptions.find(
-                                                (option) => option.value === form.level
-                                            )?.id
+                                        value={levelOptions
+                                            .filter(option => form.level.includes(option.value))
+                                            .map(option => option.id)
                                         }
-                                        onChange={(id) => {
-                                            const selectedLevel = levelOptions.find(
-                                                (option) => option.id === id
-                                            )?.value;
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                level: selectedLevel || "",
-                                            }));
+                                        onChange={(ids) => {
+                                            if (!editMode) {
+                                                if (Array.isArray(ids)) {
+                                                    const selectedLevels = levelOptions
+                                                        .filter(option => ids.includes(option.id))
+                                                        .map(option => option.value);
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        level: selectedLevels,
+                                                    }));
+                                                } else {
+                                                    setForm((prev) => ({ ...prev, level: [] }));
+                                                }
+                                            }
                                         }}
-                                        placeholder="Select Level"
+                                        placeholder="Select Levels"
                                         displayFullValue={false}
                                         isEmployeePage={true}
+                                        isMultiSelect={true}
+                                        disabled={editMode}
+                                        showSelectAll={true}
                                     />
                                 </div>
                             </div>
@@ -450,20 +469,19 @@ const EmployeeQuestionnairePage: React.FC = () => {
                         {/* Footer */}
                         <div className="flex-shrink-0 flex justify-end items-center px-8 py-6 bg-gray-50 border-t border-gray-200">
                             <div className="flex items-center gap-3">
-                                <button
+                                <Button
+                                    variant="outline"
                                     type="button"
                                     onClick={closeModal}
-                                    className="px-6 py-2.5 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={handleSubmit}
                                     disabled={!form.question.trim() || !form.responseType || !form.level}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] text-white rounded-lg text-sm font-semibold shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {editMode ? "Update Question" : "Create Question"}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

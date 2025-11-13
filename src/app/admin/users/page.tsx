@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
 import { User, DropDownDTO } from "../../types";
-import { Card, CardContent } from "../../components/ui/card";
+import { Card, CardContent, CardTitle } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
 import {
@@ -452,7 +452,7 @@ const UsersPage: React.FC = () => {
           
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg">
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
@@ -595,10 +595,11 @@ const UsersPage: React.FC = () => {
       {/* Create/Update User Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
+          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md ">
+            
+            <CardTitle  className="text-1xl font-semibold text-popup-heading">
               {editMode ? "Update User" : "Create New User"}
-            </h2>
+            </CardTitle>
             <form
               onSubmit={editMode ? handleUpdateUser : handleCreateUser}
               className="space-y-4"
