@@ -185,20 +185,20 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   }, [fetchTasks, checkIfFirstTaskForEmployee]);
 
   // Load group leads
- const fetchGroupLeads = useCallback(async () => {
-  try {
-    const groupLeadsData = await adminService.getAllGroupLeads();
-    setGroupLeads(groupLeadsData || []);
-  } catch (err: any) {
-    setError(err.response?.data?.message || "Failed to load group leads");
-  }
-}, []);
+  const fetchGroupLeads = useCallback(async () => {
+    try {
+      const groupLeadsData = await adminService.getAllGroupLeads();
+      setGroupLeads(groupLeadsData || []);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load group leads");
+    }
+  }, []);
 
- useEffect(() => {
-  fetchGroupLeads();
-}, [fetchGroupLeads]);
+  useEffect(() => {
+    fetchGroupLeads();
+  }, [fetchGroupLeads]);
 
- 
+
 
   const getLeadIdByName = (name?: string) => {
     if (!name) return undefined;
@@ -680,49 +680,61 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       })}
 
       {showReassignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Reassign Task</h2>
-
-            <div className="pt-4">
-              <label className="block text-sm font-medium mb-2">
-                Primary Group Lead
-              </label>
-              <SearchableDropdown
-                options={groupLeads}
-                value={primaryGroupLeadId}
-                onChange={(value) => {
-                  const id = Array.isArray(value) ? value[0] : value;
-                  setPrimaryGroupLeadId(id);
-                }}
-                placeholder="Select a group lead"
-                required
-                maxDisplayItems={4}
-                className="w-full"
-               
-              />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <h2 className="text-1xl font-semibold text-primary-gradient">
+                Reassign Task
+              </h2>
             </div>
 
-            <div className="flex gap-3 pt-8">
-              <Button
-                type="button"
-                className="flex-1"
-                onClick={reassignTask}
-                disabled={!primaryGroupLeadId}
-              >
-                Reassign Task
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowReassignModal(false);
-                  setPrimaryGroupLeadId(undefined);
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
+            {/* Body */}
+            <div className="flex-1 px-8 py-6">
+              <div>
+                <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  Primary Group Lead <span className="text-red-500">*</span>
+                </label>
+                <SearchableDropdown
+                  options={groupLeads}
+                  value={primaryGroupLeadId}
+                  onChange={(value) => {
+                    const id = Array.isArray(value) ? value[0] : value;
+                    setPrimaryGroupLeadId(id);
+                  }}
+                  placeholder="Select a group lead"
+                  required
+                  maxDisplayItems={4}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Footer with gradient button */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowReassignModal(false);
+                    setPrimaryGroupLeadId(undefined);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="button"
+                  onClick={reassignTask}
+                  disabled={!primaryGroupLeadId}
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Reassign Task
+                </button>
+              </div>
             </div>
           </div>
         </div>
