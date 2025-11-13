@@ -37,7 +37,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <div 
         className={`flex-1 transition-all duration-300 ${
           isCollapsed ? 'ml-20' : 'ml-56'
-        }`} // Dynamic margin based on sidebar state
+        }`}
       >
         <main className="p-6">
           {children}

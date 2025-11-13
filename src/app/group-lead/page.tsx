@@ -62,10 +62,10 @@ const GroupLeadTaskPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">My Tasks</h1>
+        <h1 className="text-[17px] font-bold text-[#4c51bf]">My Tasks</h1>
       </div>
 
       {/* Task Statistics */}
