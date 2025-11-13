@@ -245,7 +245,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="table-heading-bg">
+                            <tr className="table-heading-bg text-primary-gradient">
                                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
                                     Question
                                 </th>
@@ -379,7 +379,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                     <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
                         {/* Gradient Header */}
                         <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
-                            <CardTitle className="text-1xl font-semibold text-popup-heading">
+                            <CardTitle className="text-1xl font-semibold text-primary-gradient">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
                             </CardTitle>
                         </div>
@@ -467,7 +467,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex-shrink-0 flex justify-end items-center px-8 py-6 bg-gray-50 border-t border-gray-200">
+                        <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
                             <div className="flex items-center gap-3">
                                 <Button
                                     variant="outline"

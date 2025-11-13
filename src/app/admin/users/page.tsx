@@ -449,16 +449,16 @@ const UsersPage: React.FC = () => {
       {/* Users Table */}
       <Card>
         <CardContent className="p-0">
-          
+
           <Table>
             <TableHeader>
-              <TableRow className="table-heading-bg">
-                <TableHead className="w-12"></TableHead>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Last Updated</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -474,21 +474,7 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-3">
-                      {user.role === "admin" ? (
-                        <Shield size={18} className="text-red-500" />
-                      ) : (
-                        <UserCheck size={18} className="text-blue-500" />
-                      )}
-                      <button
-                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
-                        onClick={() => handleEditUser(user.id)}
-                        title="Edit User"
-                      >
-                        <Edit size={18} />
-                      </button>
 
-                    </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
@@ -508,6 +494,21 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.updatedTime}
+                    </TableCell>
+                    <TableCell className="flex items-center gap-3">
+                      {user.role === "admin" ? (
+                        <Shield size={18} className="text-red-500" />
+                      ) : (
+                        <UserCheck size={18} className="text-blue-500" />
+                      )}
+                      <button
+                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                        onClick={() => handleEditUser(user.id)}
+                        title="Edit User"
+                      >
+                        <Edit size={18} />
+                      </button>
+
                     </TableCell>
                   </TableRow>
                 ))
@@ -596,8 +597,8 @@ const UsersPage: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md ">
-            
-            <CardTitle  className="text-1xl font-semibold text-popup-heading">
+
+            <CardTitle className="text-1xl font-semibold text-primary-gradient">
               {editMode ? "Update User" : "Create New User"}
             </CardTitle>
             <form

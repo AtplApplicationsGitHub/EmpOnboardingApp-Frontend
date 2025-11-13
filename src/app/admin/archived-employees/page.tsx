@@ -183,7 +183,7 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                     <Table >
                         <TableHeader>
-                            <TableRow className="table-heading-bg">
+                            <TableRow className="table-heading-bg text-primary-gradient">
                                 <TableHead>Employee</TableHead>
                                 <TableHead>Level</TableHead>
                                 <TableHead>Role & Department</TableHead>
