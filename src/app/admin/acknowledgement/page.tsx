@@ -84,7 +84,7 @@ const AcknowledgementPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-9xl mx-auto">
+    <div className="space-y-2">
       <Card>
         <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">

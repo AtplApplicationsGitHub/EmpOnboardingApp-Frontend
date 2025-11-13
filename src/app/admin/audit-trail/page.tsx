@@ -189,7 +189,7 @@ const AuditTrailPage = () => {
     const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
     return (
-        <div className="p-6 max-w-9xl mx-auto space-y-6">
+        <div className="space-y-2">
 
             <div className="flex items-end gap-2">
                 {/* From Date Input */}

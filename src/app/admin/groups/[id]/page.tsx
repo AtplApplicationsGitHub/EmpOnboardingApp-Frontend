@@ -377,32 +377,33 @@ const GroupDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/groups")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Back to Groups
-          </Button>
           <div>
-            <h1 className="text-3xl font-bold">{group.name} Questions</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-[17px] font-bold text-[#4c51bf]">{group.name} Questions</h1>
+            <p className="text-[15px] text-muted-foreground mt-2">
               Manage onboarding questions for the {group.name} department
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Question
-        </Button>
+        <div className="flex items-right gap-2">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center">
+            <Plus size={16} />
+            Add Question
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/admin/groups")}
+            className="flex items-center">
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+       
       </div>
 
       {/* Error Display */}
