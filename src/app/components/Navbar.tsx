@@ -96,23 +96,35 @@ export default function Navbar() {
                   active={pathname === "/admin"}
                   Icon={Home}
                 />
+                 <NavItem
+                  href="/admin/users"
+                  label="Users"
+                  active={pathname === "/admin/users"}
+                  Icon={Settings}
+                />
                 <NavItem
                   href="/admin/groups"
-                  label="Manage Groups"
+                  label="Groups"
                   active={pathname === "/admin/groups"}
                   Icon={Users}
                 />
                 <NavItem
+                  href="/admin/departments"
+                  label="Departments"
+                  active={pathname === "/admin/departments"}
+                  Icon={Building2}
+                />
+                <NavItem
                   href="/admin/labs"
-                  label="Manage Labs"
+                  label="Labs"
                   active={pathname === "/admin/labs"}
                   Icon={FlaskConical}
                 />
                 <NavItem
-                  href="/admin/departments"
-                  label="Manage Departments"
-                  active={pathname === "/admin/departments"}
-                  Icon={Building2}
+                  href="/admin/employee-questionnaire"
+                  label="Employee Questionnaire"
+                  active={pathname === "/admin/employee-questionnaire"}
+                  Icon={FileQuestion}
                 />
 
                 <NavItem
@@ -122,34 +134,22 @@ export default function Navbar() {
                   Icon={UserPlus}
                 />
                 <NavItem
-                  href="/admin/archived-employees"
-                  label="Archived Employees"
-                  active={pathname === "/admin/archived-employees"}
-                  Icon={Archive}
-                />
-                <NavItem
                   href="/admin/tasks"
-                  label="Manage Tasks"
+                  label="Tasks"
                   active={pathname === "/admin/tasks"}
                   Icon={ClipboardListIcon}
                 />
                 <NavItem
-                  href="/admin/users"
-                  label="Manage Users"
-                  active={pathname === "/admin/users"}
-                  Icon={Settings}
-                />
-                <NavItem
                   href="/admin/engineer-verification"
-                  label="Engineer Verification"
+                  label="Verification"
                   active={pathname === "/admin/engineer-verification"}
                   Icon={FileCheck}
                 />
                 <NavItem
-                  href="/admin/employee-questionnaire"
-                  label="Employee Questionnaire"
-                  active={pathname === "/admin/employee-questionnaire"}
-                  Icon={FileQuestion}
+                  href="/admin/archived-employees"
+                  label="Archived Employees"
+                  active={pathname === "/admin/archived-employees"}
+                  Icon={Archive}
                 />
               </>
             )}
@@ -164,13 +164,13 @@ export default function Navbar() {
                 />
                 <NavItem
                   href="/group-lead/tasks"
-                  label="Manage Tasks"
+                  label="Tasks"
                   active={pathname === "/group-lead/tasks"}
                   Icon={Settings}
                 />
                 <NavItem
                   href="/group-lead/engineer-verification"
-                  label="Engineer Verification"
+                  label="Verification"
                   active={pathname === "/group-lead/engineer-verification"}
                   Icon={FileCheck}
                 />
