@@ -23,18 +23,14 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-
 const PAGE_SIZE = 10;
-
 
 const GroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0); // Zero-based index
-  const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
-  const [escalationGroupLeads, setEscalationGroupLeads] = useState<DropDownDTO[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -42,33 +38,18 @@ const GroupsPage: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [editGroupName, setEditGroupName] = useState("");
-  const [newPrimaryGroupLeadId, setNewPrimaryGroupLeadId] = useState<
-    number | undefined
-  >();
-  const [newEscalationGroupLeadId, setNewEscalationGroupLeadId] = useState<
-    number | undefined
-  >();
-  const [editPrimaryGroupLeadId, setEditPrimaryGroupLeadId] = useState<
-    number | undefined
-  >();
-  const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<
-    number | undefined
-  >();
+  const [newPrimaryGroupLeadId, setNewPrimaryGroupLeadId] = useState<number | undefined>();
+  const [newEscalationGroupLeadId, setNewEscalationGroupLeadId] = useState<number | undefined>();
+  const [editPrimaryGroupLeadId, setEditPrimaryGroupLeadId] = useState<number | undefined>();
+  const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<number | undefined>();
   const [newAutoAssign, setNewAutoAssign] = useState<string>("Yes");
   const [editAutoAssign, setEditAutoAssign] = useState<string>("Yes");
-  const [groupLeadsPage, setGroupLeadsPage] = useState(0);
-  const [groupLeadsTotalPages, setGroupLeadsTotalPages] = useState(0);
-  const [escalationGroupLeadsPage, setEscalationGroupLeadsPage] = useState(0);
-  const [escalationGroupLeadsTotalPages, setEscalationGroupLeadsTotalPages] = useState(0);
 
-
-  const getOptId = (opt: DropDownDTO) =>
-    Number((opt as any).id ?? (opt as any).value);
-  const filterLeads = (excludeId?: number) =>
-    excludeId == null
-      ? groupLeads
-      : groupLeads.filter((o) => getOptId(o) !== excludeId);
-
+  // Store selected options for each dropdown separately
+  const [newPrimarySelectedOptions, setNewPrimarySelectedOptions] = useState<DropDownDTO[]>([]);
+  const [newEscalationSelectedOptions, setNewEscalationSelectedOptions] = useState<DropDownDTO[]>([]);
+  const [editPrimarySelectedOptions, setEditPrimarySelectedOptions] = useState<DropDownDTO[]>([]);
+  const [editEscalationSelectedOptions, setEditEscalationSelectedOptions] = useState<DropDownDTO[]>([]);
 
   // Auto assign dropdown options
   const autoAssignOptions: DropDownDTO[] = [
@@ -76,60 +57,58 @@ const GroupsPage: React.FC = () => {
     { id: 0, key: "No", value: "No" }
   ];
 
-  // Fetch paginated groups and group leads
-  const getLeadIdByName = (name?: string) => {
-    if (!name) return undefined;
-    const found = groupLeads.find((lead) => lead.key === name);
-    return found ? Number(found.id) : undefined;
+  // Async search function for group leads
+  const searchGroupLeads = async (searchTerm: string): Promise<DropDownDTO[]> => {
+    try {
+      // Call your API with the search term
+      // Assuming your API supports search parameter
+      const results = await adminService.searchGroupLeads(searchTerm);
+      return results;
+    } catch (err: any) {
+      console.error("Failed to search group leads:", err);
+      return [];
+    }
   };
 
-  const fetchPage = useCallback(
-    async (page: number) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const groupsResponse = await adminService.getGroups(page);
-        setGroups(groupsResponse.commonListDto || []);
-        setTotal(groupsResponse.totalElements || 0);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [] // no deps; pass page explicitly
-  );
+  // Filter out the already selected lead from the other dropdown
+  const getFilteredSearchFunction = (excludeId?: number) => {
+    return async (searchTerm: string): Promise<DropDownDTO[]> => {
+      const results = await searchGroupLeads(searchTerm);
+      if (excludeId == null) return results;
+      return results.filter((opt) => opt.id !== excludeId);
+    };
+  };
 
-  const fetchGroupLeads = useCallback(async () => {
+  const fetchPage = useCallback(async (page: number) => {
     try {
-      const leads = await adminService.getAllGroupLeads();
-      console.log("Fetched group leads:", leads);
-      setGroupLeads(leads);
+      setLoading(true);
+      setError(null);
+      const groupsResponse = await adminService.getGroups(page);
+      setGroups(groupsResponse.commonListDto || []);
+      setTotal(groupsResponse.totalElements || 0);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load group leads");
+      setError(err.response?.data?.message || "Failed to load data");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const fetchEscalationGroupLeads = useCallback(async (page: number = 0) => {
+  // Fetch lead details by name (for edit mode initialization)
+  const fetchLeadByName = async (name?: string): Promise<DropDownDTO | null> => {
+    if (!name) return null;
     try {
-      const leads = await adminService.getAllGroupLeads();
-      setEscalationGroupLeads(leads);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load escalation group leads");
+      // Search for the lead by name to get the full object
+      const results = await searchGroupLeads(name);
+      return results.find((lead) => lead.key === name) || null;
+    } catch (err) {
+      console.error("Failed to fetch lead details:", err);
+      return null;
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchPage(currentPage);
   }, [currentPage, fetchPage]);
-
-  useEffect(() => {
-    fetchGroupLeads();
-  }, [groupLeadsPage, fetchGroupLeads]);
-
-  useEffect(() => {
-    fetchEscalationGroupLeads(escalationGroupLeadsPage);
-  }, [escalationGroupLeadsPage, fetchEscalationGroupLeads]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -159,8 +138,11 @@ const GroupsPage: React.FC = () => {
       setNewPrimaryGroupLeadId(undefined);
       setNewEscalationGroupLeadId(undefined);
       setNewAutoAssign("Yes");
+      setNewPrimarySelectedOptions([]);
+      setNewEscalationSelectedOptions([]);
       setCurrentPage(0);
       await fetchPage(0);
+      toast.success("Group created successfully");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create group");
     }
@@ -186,7 +168,6 @@ const GroupsPage: React.FC = () => {
       autoAssign: editAutoAssign,
     };
 
-
     try {
       await adminService.updateGroup(payload);
       setShowEditModal(false);
@@ -195,12 +176,14 @@ const GroupsPage: React.FC = () => {
       setEditPrimaryGroupLeadId(undefined);
       setEditEscalationGroupLeadId(undefined);
       setEditAutoAssign("Yes");
+      setEditPrimarySelectedOptions([]);
+      setEditEscalationSelectedOptions([]);
       await fetchPage(currentPage);
+      toast.success("Group updated successfully");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to update group");
     }
   };
-
 
   // Delete Group
   const handleDeleteGroup = async () => {
@@ -210,18 +193,38 @@ const GroupsPage: React.FC = () => {
       await fetchPage(currentPage);
       setShowDeleteModal(false);
       setGroupToDelete(null);
+      toast.success("Group deleted successfully");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete group");
     }
   };
 
-  // Open Edit Modal
-  const openEditModal = (group: Group) => {
+  // Open Edit Modal - fetch lead details
+  const openEditModal = async (group: Group) => {
     setEditingGroup(group);
     setEditGroupName(group.name);
-    setEditPrimaryGroupLeadId(getLeadIdByName(group.pgLead));
-    setEditEscalationGroupLeadId(getLeadIdByName(group.egLead));
     setEditAutoAssign(group.autoAssign ?? "Yes");
+
+    // Fetch primary lead details
+    const primaryLead = await fetchLeadByName(group.pgLead);
+    if (primaryLead) {
+      setEditPrimaryGroupLeadId(primaryLead.id);
+      setEditPrimarySelectedOptions([primaryLead]);
+    } else {
+      setEditPrimaryGroupLeadId(undefined);
+      setEditPrimarySelectedOptions([]);
+    }
+
+    // Fetch escalation lead details
+    const escalationLead = await fetchLeadByName(group.egLead);
+    if (escalationLead) {
+      setEditEscalationGroupLeadId(escalationLead.id);
+      setEditEscalationSelectedOptions([escalationLead]);
+    } else {
+      setEditEscalationGroupLeadId(undefined);
+      setEditEscalationSelectedOptions([]);
+    }
+
     setShowEditModal(true);
   };
 
@@ -234,10 +237,9 @@ const GroupsPage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to clone group");
     }
+  };
 
-  }
-
-  // Pagination numbers (with ellipsis if you wish; here's a simple version)
+  // Pagination numbers
   const generatePageNumbers = () => {
     const pages: (number | string)[] = [];
     if (totalPages <= 7) {
@@ -318,8 +320,7 @@ const GroupsPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => clone(group)}
-                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6]hover:bg-[rgba(124,58,237,0.08)]"
-                  //  title="clone"
+                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)]"
                   >
                     <Copy size={18} />
                   </button>
@@ -340,12 +341,8 @@ const GroupsPage: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <div>
-                    Created:{group.createdTime}
-                  </div>
-                  <div>
-                    Last Updated:{group.updatedTime}
-                  </div>
+                  <div>Created: {group.createdTime}</div>
+                  <div>Last Updated: {group.updatedTime}</div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
@@ -486,14 +483,12 @@ const GroupsPage: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md">
               <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 Create New Group
               </CardTitle>
             </div>
 
-            {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
               <form onSubmit={handleCreateGroup} id="createGroupForm" className="space-y-5">
                 <div>
@@ -516,18 +511,17 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={filterLeads(newEscalationGroupLeadId)}
                     value={newPrimaryGroupLeadId}
-                    onChange={setNewPrimaryGroupLeadId}
-                    placeholder="Select a group lead (Required)"
+                    onChange={(val) => {
+                      setNewPrimaryGroupLeadId(val as number | undefined);
+                    }}
+                    placeholder="Type 3+ characters to search..."
                     required={true}
                     maxDisplayItems={10}
                     className="w-full"
-                    onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
-                    onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
-                    currentPage={groupLeadsPage}
-                    totalPages={groupLeadsTotalPages}
-                    hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
+                    onSearch={getFilteredSearchFunction(newEscalationGroupLeadId)}
+                    minSearchLength={3}
+                    initialSelectedOptions={newPrimarySelectedOptions}
                   />
                 </div>
 
@@ -537,18 +531,17 @@ const GroupsPage: React.FC = () => {
                     <span className="text-sm text-gray-500 font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
-                    options={filterLeads(newPrimaryGroupLeadId)}
                     value={newEscalationGroupLeadId}
-                    onChange={setNewEscalationGroupLeadId}
-                    placeholder="Select a group lead (Optional)"
+                    onChange={(val) => {
+                      setNewEscalationGroupLeadId(val as number | undefined);
+                    }}
+                    placeholder="Type 3+ characters to search..."
                     required={false}
                     maxDisplayItems={10}
                     className="w-full"
-                    onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
-                    onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}
-                    currentPage={escalationGroupLeadsPage}
-                    totalPages={escalationGroupLeadsTotalPages}
-                    hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
+                    onSearch={getFilteredSearchFunction(newPrimaryGroupLeadId)}
+                    minSearchLength={3}
+                    initialSelectedOptions={newEscalationSelectedOptions}
                   />
                 </div>
 
@@ -580,7 +573,6 @@ const GroupsPage: React.FC = () => {
               </form>
             </div>
 
-            {/* Footer with gradient button */}
             <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center gap-3">
                 <Button
@@ -590,6 +582,8 @@ const GroupsPage: React.FC = () => {
                     setNewGroupName("");
                     setNewPrimaryGroupLeadId(undefined);
                     setNewEscalationGroupLeadId(undefined);
+                    setNewPrimarySelectedOptions([]);
+                    setNewEscalationSelectedOptions([]);
                   }}
                   variant="outline"
                 >
@@ -615,14 +609,12 @@ const GroupsPage: React.FC = () => {
       {showEditModal && editingGroup && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md">
               <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 Edit Group
               </CardTitle>
             </div>
 
-            {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
               <form onSubmit={handleEditGroup} id="editGroupForm" className="space-y-5">
                 <div>
@@ -645,18 +637,17 @@ const GroupsPage: React.FC = () => {
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
-                    options={filterLeads(editEscalationGroupLeadId)}
                     value={editPrimaryGroupLeadId}
-                    onChange={setEditPrimaryGroupLeadId}
-                    placeholder="Select a group lead (Required)"
+                    onChange={(val) => {
+                      setEditPrimaryGroupLeadId(val as number | undefined);
+                    }}
+                    placeholder="Type 3+ characters to search..."
                     required={true}
                     maxDisplayItems={10}
                     className="w-full"
-                    onNextPage={() => setGroupLeadsPage((prev) => prev + 1)}
-                    onPrevPage={() => setGroupLeadsPage((prev) => Math.max(0, prev - 1))}
-                    currentPage={groupLeadsPage}
-                    totalPages={groupLeadsTotalPages}
-                    hasNextPage={groupLeadsPage < groupLeadsTotalPages - 1}
+                    onSearch={getFilteredSearchFunction(editEscalationGroupLeadId)}
+                    minSearchLength={3}
+                    initialSelectedOptions={editPrimarySelectedOptions}
                   />
                 </div>
 
@@ -666,18 +657,17 @@ const GroupsPage: React.FC = () => {
                     <span className="text-sm text-gray-500 font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
-                    options={filterLeads(editPrimaryGroupLeadId)}
                     value={editEscalationGroupLeadId}
-                    onChange={setEditEscalationGroupLeadId}
-                    placeholder="Select a group lead (Optional)"
+                    onChange={(val) => {
+                      setEditEscalationGroupLeadId(val as number | undefined);
+                    }}
+                    placeholder="Type 3+ characters to search..."
                     required={false}
                     maxDisplayItems={10}
                     className="w-full"
-                    onNextPage={() => setEscalationGroupLeadsPage((prev) => prev + 1)}
-                    onPrevPage={() => setEscalationGroupLeadsPage((prev) => Math.max(0, prev - 1))}
-                    currentPage={escalationGroupLeadsPage}
-                    totalPages={escalationGroupLeadsTotalPages}
-                    hasNextPage={escalationGroupLeadsPage < escalationGroupLeadsTotalPages - 1}
+                    onSearch={getFilteredSearchFunction(editPrimaryGroupLeadId)}
+                    minSearchLength={3}
+                    initialSelectedOptions={editEscalationSelectedOptions}
                   />
                 </div>
 
@@ -709,7 +699,6 @@ const GroupsPage: React.FC = () => {
               </form>
             </div>
 
-            {/* Footer with gradient button */}
             <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center gap-3">
                 <Button
@@ -720,6 +709,8 @@ const GroupsPage: React.FC = () => {
                     setEditGroupName("");
                     setEditPrimaryGroupLeadId(undefined);
                     setEditEscalationGroupLeadId(undefined);
+                    setEditPrimarySelectedOptions([]);
+                    setEditEscalationSelectedOptions([]);
                   }}
                   variant="outline"
                 >
@@ -740,6 +731,7 @@ const GroupsPage: React.FC = () => {
           </div>
         </div>
       )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && groupToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -754,7 +746,6 @@ const GroupsPage: React.FC = () => {
                 This action cannot be undone.
               </p>
               <div className="flex gap-3">
-               
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -765,7 +756,7 @@ const GroupsPage: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                 <Button
+                <Button
                   variant="destructive"
                   onClick={handleDeleteGroup}
                   className="flex-1"

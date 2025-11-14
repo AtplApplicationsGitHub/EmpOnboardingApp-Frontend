@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 
-import { adminService, taskService, } from "@/app/services/api";
+import { adminService, taskService } from "@/app/services/api";
 import { DropDownDTO, Task, TaskQuestions } from "@/app/types";
 
 import {
@@ -51,7 +51,6 @@ const getInitialResp = (q: TaskQuestions) =>
   (q as any).answer ??
   "";
 
-
 // Determine if question expects text vs yes/no
 // Based on your logic: q.response === "text" ? Text : Yes/No
 const isTextType = (q: TaskQuestions) =>
@@ -67,24 +66,41 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
   // Reassign modal
   const [showReassignModal, setShowReassignModal] = useState(false);
-  const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
-  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<
-    number | undefined
-  >(undefined);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<number | undefined>(undefined);
+  const [primaryGroupLeadSelectedOption, setPrimaryGroupLeadSelectedOption] = useState<DropDownDTO[]>([]);
   const [reAssignTask, setReAssignTask] = useState<string>();
-  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
-    null
-  );
+  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(null);
 
   // Params
   const taskId = params.id as string;
 
   // Lab allocation UI
-  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
-    undefined
-  );
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
+
+  // Async search function for group leads
+  const searchGroupLeads = async (searchTerm: string): Promise<DropDownDTO[]> => {
+    try {
+      const results = await adminService.searchGroupLeads(searchTerm);
+      return results;
+    } catch (err: any) {
+      console.error("Failed to search group leads:", err);
+      return [];
+    }
+  };
+
+  // Fetch group lead details by name
+  const fetchGroupLeadDetails = async (name?: string): Promise<DropDownDTO | null> => {
+    if (!name) return null;
+    try {
+      const results = await searchGroupLeads(name);
+      return results.find((lead) => lead.key === name) || null;
+    } catch (err) {
+      console.error("Failed to fetch group lead details:", err);
+      return null;
+    }
+  };
 
   // Fetch labs for a department
   const fetchLabsByDepartment = useCallback(
@@ -146,33 +162,27 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   }, [taskId]);
 
-  //  Check if first task for employee
+  // Check if first task for employee
   const checkIfFirstTaskForEmployee = useCallback(async () => {
     if (!taskId) return;
 
     try {
-      // Get all tasks for the group leader to check ordering
       const response = await taskService.getTaskForGL({
         page: 0
-        // Get all tasks by not specifying size limit, or using a large page
       });
       const allTasks = response.commonListDto ?? [];
 
-      // Get current task details
       const currentTask = allTasks.find((task: any) => String(task.id) === String(taskId));
       if (!currentTask) return;
 
       const currentEmployeeId = (currentTask as any).employeeId;
 
-      // Find all tasks for this employee, sorted by task ID (assuming lower ID = earlier task)
-      const employeeTasks = allTasks.filter((task: any) =>
-        (task as any).employeeId === currentEmployeeId
-      ).sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)));
+      const employeeTasks = allTasks
+        .filter((task: any) => (task as any).employeeId === currentEmployeeId)
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)));
 
-      // Check if current task is the first one for this employee
       const isFirst = employeeTasks.length > 0 && String(employeeTasks[0].id) === String(taskId);
       setIsFirstTaskForEmployee(isFirst);
-
     } catch (error) {
       console.error("Error checking task order:", error);
       setIsFirstTaskForEmployee(false);
@@ -184,29 +194,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     checkIfFirstTaskForEmployee();
   }, [fetchTasks, checkIfFirstTaskForEmployee]);
 
-  // Load group leads
-  const fetchGroupLeads = useCallback(async () => {
-    try {
-      const groupLeadsData = await adminService.getAllGroupLeads();
-      setGroupLeads(groupLeadsData || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load group leads");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchGroupLeads();
-  }, [fetchGroupLeads]);
-
-
-
-  const getLeadIdByName = (name?: string) => {
-    if (!name) return undefined;
-    const found = groupLeads.find((lead) => lead.key === name);
-    return found ? Number(found.id) : undefined;
-  };
-
-  const reassignTask = () => {
+  const reassignTask = async () => {
     if (!reAssignTask) {
       setError("Missing task id to reassign.");
       return;
@@ -215,17 +203,18 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       setError("Please select a group lead.");
       return;
     }
-    taskService
-      .reassignTask(reAssignTask, primaryGroupLeadId)
-      .then(() => {
-        setShowReassignModal(false);
-        setPrimaryGroupLeadId(undefined);
-        toast.success("Task reassigned successfully");
-        fetchTasks();
-      })
-      .catch((err: any) => {
-        setError(err.response?.data?.message || "Failed to reassign tasks");
-      });
+    
+    try {
+      await taskService.reassignTask(reAssignTask, primaryGroupLeadId);
+      setShowReassignModal(false);
+      setPrimaryGroupLeadId(undefined);
+      setPrimaryGroupLeadSelectedOption([]);
+      toast.success("Task reassigned successfully");
+      await fetchTasks();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to reassign tasks");
+      toast.error("Failed to reassign task");
+    }
   };
 
   // Top-of-page fields
@@ -313,17 +302,36 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   };
 
-  //view all button handler
+  // View all button handler
   const handleViewAll = () => {
     if (!employeeId) {
       toast.error("Missing employee id.");
       return;
     }
-
     window.open(`/group-lead/tasks/all/${employeeId}`, "_blank");
   };
 
-
+  // Open reassign modal and fetch current assignee details
+  const openReassignModal = async (task: Task) => {
+    setReAssignTask(task.id.toString());
+    
+    // Fetch current assignee details
+    if (task.assignedTo) {
+      const assigneeDetails = await fetchGroupLeadDetails(task.assignedTo);
+      if (assigneeDetails) {
+        setPrimaryGroupLeadId(assigneeDetails.id);
+        setPrimaryGroupLeadSelectedOption([assigneeDetails]);
+      } else {
+        setPrimaryGroupLeadId(undefined);
+        setPrimaryGroupLeadSelectedOption([]);
+      }
+    } else {
+      setPrimaryGroupLeadId(undefined);
+      setPrimaryGroupLeadSelectedOption([]);
+    }
+    
+    setShowReassignModal(true);
+  };
 
   const overall = useMemo(() => {
     const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
@@ -466,7 +474,6 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {t.groupName} - {t.id} - {t.assignedTo}
                       </span>
                     </CardTitle>
-
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -480,15 +487,15 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                              }`}
+                            className={`w-4 h-4 ${
+                              star <= Number(t?.efstar ?? 0)
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
                           />
                         ))}
                       </button>
                     </div>
-
                   </div>
                 </div>
 
@@ -500,17 +507,12 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                     <div className="text-xs text-muted-foreground">
                       Questions
                     </div>
-
                   </div>
                   <Button
                     variant="outline"
                     className="gap-2"
                     disabled={freezeTask === "Y"}
-                    onClick={() => {
-                      setShowReassignModal(true);
-                      setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
-                      setReAssignTask(t.id.toString());
-                    }}
+                    onClick={() => openReassignModal(t)}
                   >
                     <RefreshCw size={16} />
                     Reassign
@@ -520,7 +522,6 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             </CardHeader>
 
             <CardContent className="pt-0">
-              {/* <div className="overflow-x-auto"> Horizontal scroll for small screens */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -539,12 +540,13 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 6 : 4} className="text-center py-12">                        <div className="flex flex-col items-center gap-2">
-                        <Users size={48} className="text-muted-foreground" />
-                        <p className="text-muted-foreground">
-                          No questions found for this task.
-                        </p>
-                      </div>
+                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 6 : 4} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={48} className="text-muted-foreground" />
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -673,12 +675,12 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   )}
                 </TableBody>
               </Table>
-              {/* </div> */}
             </CardContent>
           </Card>
         );
       })}
 
+      {/* Reassign Task Modal with Async Search */}
       {showReassignModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
@@ -696,16 +698,18 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   Primary Group Lead <span className="text-red-500">*</span>
                 </label>
                 <SearchableDropdown
-                  options={groupLeads}
                   value={primaryGroupLeadId}
                   onChange={(value) => {
                     const id = Array.isArray(value) ? value[0] : value;
-                    setPrimaryGroupLeadId(id);
+                    setPrimaryGroupLeadId(id as number | undefined);
                   }}
-                  placeholder="Select a group lead"
+                  placeholder="Type 3+ characters to search..."
                   required
-                  maxDisplayItems={4}
+                  maxDisplayItems={10}
                   className="w-full"
+                  onSearch={searchGroupLeads}
+                  minSearchLength={3}
+                  initialSelectedOptions={primaryGroupLeadSelectedOption}
                 />
               </div>
             </div>
@@ -719,6 +723,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   onClick={() => {
                     setShowReassignModal(false);
                     setPrimaryGroupLeadId(undefined);
+                    setPrimaryGroupLeadSelectedOption([]);
                   }}
                 >
                   Cancel

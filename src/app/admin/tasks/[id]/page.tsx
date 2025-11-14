@@ -34,7 +34,6 @@ import {
   Trash2,
 } from "lucide-react";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
-import { set } from "react-hook-form";
 import toast from "react-hot-toast";
 
 // small progress pill
@@ -58,28 +57,16 @@ const TaskDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
-  const [groupLeads, setGroupLeads] = useState<DropDownDTO[]>([]);
-  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<
-    number | undefined
-  >(undefined);
+  const [primaryGroupLeadId, setPrimaryGroupLeadId] = useState<number | undefined>(undefined);
+  const [primaryGroupLeadSelectedOption, setPrimaryGroupLeadSelectedOption] = useState<DropDownDTO[]>([]);
   const [reAssignTask, setReAssignTask] = useState<string>();
   const taskId = params.id as string;
-  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
-    undefined
-  );
-  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(
-    null
-  );
+  const [selectedLabId, setSelectedLabId] = useState<number | undefined>(undefined);
+  const [openFeedbackTaskId, setOpenFeedbackTaskId] = useState<string | null>(null);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [questionToDelete, setQuestionToDelete] = useState<number | undefined>(
-    undefined
-  );
+  const [questionToDelete, setQuestionToDelete] = useState<number | undefined>(undefined);
   const [deleteReason, setDeleteReason] = useState("");
-  const [groupLeadPage, setGroupLeadPage] = useState(0);
-  const [groupLeadTotal, setGroupLeadTotal] = useState(0);
-  const [groupLeadSearch, setGroupLeadSearch] = useState("");
-
 
   useEffect(() => {
     fetchTasks();
@@ -101,23 +88,28 @@ const TaskDetailsPage: React.FC = () => {
     }
   }, [taskId]);
 
-  const fetchGroupLeads = useCallback(async (search?: string, page: number = 0) => {
+  // Async search function for group leads
+  const searchGroupLeads = async (searchTerm: string): Promise<DropDownDTO[]> => {
     try {
-      const groupLeadsData = await adminService.getAllGroupLeads();
-      setGroupLeads(groupLeadsData);
+      const results = await adminService.searchGroupLeads(searchTerm);
+      return results;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load group leads");
+      console.error("Failed to search group leads:", err);
+      return [];
     }
-  }, [groupLeadSearch]);
+  };
 
-  // const fetchLabs = useCallback(async () => {
-  //   try {
-  //     const labs = await adminService.getLookupItems("Lab");
-  //     setLabOptions(labs);
-  //   } catch (error) {
-  //     toast.error("Failed to load lab options.");
-  //   }
-  // }, []);
+  // Fetch group lead details by name
+  const fetchGroupLeadDetails = async (name?: string): Promise<DropDownDTO | null> => {
+    if (!name) return null;
+    try {
+      const results = await searchGroupLeads(name);
+      return results.find((lead) => lead.key === name) || null;
+    } catch (err) {
+      console.error("Failed to fetch group lead details:", err);
+      return null;
+    }
+  };
 
   const fetchLabsByDepartment = useCallback(
     async (department?: string, currentLab?: string) => {
@@ -151,14 +143,7 @@ const TaskDetailsPage: React.FC = () => {
     []
   );
 
-
-  const getLeadIdByName = (name?: string) => {
-    if (!name) return undefined;
-    const found = groupLeads.find((lead) => lead.key === name);
-    return found ? Number(found.id) : undefined;
-  };
-
-  const reassignTask = () => {
+  const reassignTask = async () => {
     if (!reAssignTask) {
       setError("Missing task id to reassign.");
       return;
@@ -167,33 +152,17 @@ const TaskDetailsPage: React.FC = () => {
       setError("Please select a group lead.");
       return;
     }
-    taskService
-      .reassignTask(reAssignTask, primaryGroupLeadId)
-      .then(() => {
-        setShowReassignModal(false);
-        setPrimaryGroupLeadId(undefined);
-        toast.success("Task Reassign successfully");
-        fetchTasks();
-      })
-      .catch((err: any) => {
-        setError(err.response?.data?.message || "Failed to reassign tasks");
-      });
-  };
-
-  useEffect(() => {
-    fetchGroupLeads(groupLeadSearch, groupLeadPage);
-  }, [groupLeadPage, groupLeadSearch, fetchGroupLeads]);
-
-  const handleGroupLeadNextPage = () => {
-    const totalPages = Math.ceil(groupLeadTotal / 10);
-    if (groupLeadPage < totalPages - 1) {
-      setGroupLeadPage(prev => prev + 1);
-    }
-  };
-
-  const handleGroupLeadPrevPage = () => {
-    if (groupLeadPage > 0) {
-      setGroupLeadPage(prev => prev - 1);
+    
+    try {
+      await taskService.reassignTask(reAssignTask, primaryGroupLeadId);
+      setShowReassignModal(false);
+      setPrimaryGroupLeadId(undefined);
+      setPrimaryGroupLeadSelectedOption([]);
+      toast.success("Task reassigned successfully");
+      await fetchTasks();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to reassign tasks");
+      toast.error("Failed to reassign task");
     }
   };
 
@@ -307,6 +276,28 @@ const TaskDetailsPage: React.FC = () => {
     );
   };
 
+  // Open reassign modal and fetch current assignee details
+  const openReassignModal = async (task: Task) => {
+    setReAssignTask(task.id.toString());
+    
+    // Fetch current assignee details
+    if (task.assignedTo) {
+      const assigneeDetails = await fetchGroupLeadDetails(task.assignedTo);
+      if (assigneeDetails) {
+        setPrimaryGroupLeadId(assigneeDetails.id);
+        setPrimaryGroupLeadSelectedOption([assigneeDetails]);
+      } else {
+        setPrimaryGroupLeadId(undefined);
+        setPrimaryGroupLeadSelectedOption([]);
+      }
+    } else {
+      setPrimaryGroupLeadId(undefined);
+      setPrimaryGroupLeadSelectedOption([]);
+    }
+    
+    setShowReassignModal(true);
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -354,7 +345,6 @@ const TaskDetailsPage: React.FC = () => {
           Back to Tasks
         </Button>
         <h3 className="text-xl font-semibold">
-          {" "}
           Tasks for {employeeName} ({employeeLevel})
         </h3>
         <div className="ml-auto flex items-end gap-3">
@@ -374,11 +364,6 @@ const TaskDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* <p className="text-muted-foreground">
-            Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
-            {tasks.length === 1 ? "" : "s"} • {overall.doneQ}/{overall.totalQ} done ({overall.pct}%)
-        </p> */}
 
       {/* one CARD per task */}
       {tasks.map((t) => {
@@ -416,10 +401,11 @@ const TaskDetailsPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                              }`}
+                            className={`w-4 h-4 ${
+                              star <= Number(t?.efstar ?? 0)
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
                           />
                         ))}
                       </button>
@@ -446,7 +432,7 @@ const TaskDetailsPage: React.FC = () => {
                           {/* Feedback text (from t.feedback) */}
                           <div className="text-sm whitespace-pre-wrap">
                             {t?.feedback &&
-                              String(t.feedback).trim().length > 0 ? (
+                            String(t.feedback).trim().length > 0 ? (
                               String(t.feedback)
                             ) : (
                               <span className="text-muted-foreground">
@@ -474,11 +460,7 @@ const TaskDetailsPage: React.FC = () => {
                     variant="outline"
                     className="gap-2"
                     disabled={freezeTask === "Y"}
-                    onClick={() => {
-                      setShowReassignModal(true);
-                      setPrimaryGroupLeadId(getLeadIdByName(t.assignedTo));
-                      setReAssignTask(t.id.toString());
-                    }}
+                    onClick={() => openReassignModal(t)}
                   >
                     <RefreshCw size={16} />
                     Reassign
@@ -507,12 +489,13 @@ const TaskDetailsPage: React.FC = () => {
                 <TableBody>
                   {qList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 7 : 5} className="text-center py-12">                        <div className="flex flex-col items-center gap-2">
-                        <Users size={48} className="text-muted-foreground" />
-                        <p className="text-muted-foreground">
-                          No questions found for this task.
-                        </p>
-                      </div>
+                      <TableCell colSpan={qList.some((q) => q.verificationStatus?.toLowerCase() === "completed") ? 7 : 5} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={48} className="text-muted-foreground" />
+                          <p className="text-muted-foreground">
+                            No questions found for this task.
+                          </p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -598,7 +581,7 @@ const TaskDetailsPage: React.FC = () => {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      )
+                      );
                     })
                   )}
                 </TableBody>
@@ -617,7 +600,7 @@ const TaskDetailsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Are you sure you want to delete the Question This action cannot
+                Are you sure you want to delete the Question? This action cannot
                 be undone.
               </p>
 
@@ -656,6 +639,7 @@ const TaskDetailsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Reassign Task Modal with Async Search */}
       {showReassignModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
@@ -673,16 +657,18 @@ const TaskDetailsPage: React.FC = () => {
                   Primary Group Lead <span className="text-red-500">*</span>
                 </label>
                 <SearchableDropdown
-                  options={groupLeads}
                   value={primaryGroupLeadId}
                   onChange={(value) => {
                     const id = Array.isArray(value) ? value[0] : value;
-                    setPrimaryGroupLeadId(id);
+                    setPrimaryGroupLeadId(id as number | undefined);
                   }}
-                  placeholder="Select a group lead"
+                  placeholder="Type 3+ characters to search..."
                   required
-                  maxDisplayItems={4}
+                  maxDisplayItems={10}
                   className="w-full"
+                  onSearch={searchGroupLeads}
+                  minSearchLength={3}
+                  initialSelectedOptions={primaryGroupLeadSelectedOption}
                 />
               </div>
             </div>
@@ -696,6 +682,7 @@ const TaskDetailsPage: React.FC = () => {
                   onClick={() => {
                     setShowReassignModal(false);
                     setPrimaryGroupLeadId(undefined);
+                    setPrimaryGroupLeadSelectedOption([]);
                   }}
                 >
                   Cancel
