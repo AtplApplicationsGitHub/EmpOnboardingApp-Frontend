@@ -33,8 +33,7 @@ export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "https://emp-onboard.sailife.com:8084/api",
+  baseURL: "https://emp-onboard.goval.app:8084/api",
   // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
@@ -255,14 +254,14 @@ export const adminService = {
     return response.data;
   },
 
-  // getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
-  //   const searchParam = search || "null";
-  //   const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
-  //   return {
-  //     leads: response.data.commonListDto || [],
-  //     total: response.data.totalElements || 0
-  //   };
-  // },
+ searchGroupLeads: async (search?: string): Promise<DropDownDTO[]> => {
+    const searchParam = search || "";
+    const response = await api.post<DropDownDTO[]>(`/group/searchGroupLeads`,
+      { search: searchParam }
+    );
+    return response.data
+  },
+  
   createGroup: async (data: {
     name: string;
     pgLead?: number;
@@ -326,7 +325,7 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -339,7 +338,7 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);

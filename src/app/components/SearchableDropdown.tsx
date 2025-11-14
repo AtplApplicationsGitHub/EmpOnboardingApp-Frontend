@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Search, X, Check } from 'lucide-react';
+import { ChevronDown, Search, X, Check, Loader2 } from 'lucide-react';
 
 interface SearchableDropdownProps {
-  options: Array<{ id: number; key: string; value: string }>;
+  options?: Array<{ id: number; key: string; value: string }>;
   value?: number | number[];
   onChange: (value: number | number[] | undefined) => void;
   placeholder?: string;
@@ -14,10 +14,15 @@ interface SearchableDropdownProps {
   displayFullValue?: boolean;
   isEmployeePage?: boolean;
   isMultiSelect?: boolean;
+  showSelectAll?: boolean;
+  // New props for async search
+  onSearch?: (searchTerm: string) => Promise<Array<{ id: number; key: string; value: string }>>;
+  minSearchLength?: number;
+  initialSelectedOptions?: Array<{ id: number; key: string; value: string }>;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
-  options,
+  options = [],
   value,
   onChange,
   placeholder = "Select an option...",
@@ -28,12 +33,20 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   displayFullValue = true,
   isEmployeePage = false,
   isMultiSelect = false,
+  showSelectAll = false,
+  onSearch,
+  minSearchLength = 3,
+  initialSelectedOptions = [],
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{ id: number; key: string; value: string }>>([]);
+  const [allLoadedOptions, setAllLoadedOptions] = useState<Array<{ id: number; key: string; value: string }>>(initialSelectedOptions);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Convert the value to an array of selected IDs
   const selectedValues = useMemo(() => {
@@ -43,18 +56,113 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return value !== undefined ? [value as number] : [];
   }, [value, isMultiSelect]);
 
-  // Find selected option
-  const selectedOptions = useMemo(() => {
-    return options.filter(option => selectedValues.includes(option.id));
-  }, [options, selectedValues]);
+  // Combine static options with loaded options for the pool
+  const allAvailableOptions = useMemo(() => {
+    const combined = [...allLoadedOptions];
+    
+    // If we have static options, add them to the pool
+    if (options.length > 0) {
+      options.forEach(opt => {
+        if (!combined.some(o => o.id === opt.id)) {
+          combined.push(opt);
+        }
+      });
+    }
+    
+    return combined;
+  }, [allLoadedOptions, options]);
 
-  // Filter options based on search term
+  // Find selected options from all available options
+  const selectedOptions = useMemo(() => {
+    return allAvailableOptions.filter(option => selectedValues.includes(option.id));
+  }, [allAvailableOptions, selectedValues]);
+
+  // Update allLoadedOptions when initialSelectedOptions changes
+  useEffect(() => {
+    if (initialSelectedOptions.length > 0) {
+      setAllLoadedOptions(prevOptions => {
+        const newOptions = [...prevOptions];
+        initialSelectedOptions.forEach(opt => {
+          if (!newOptions.some(o => o.id === opt.id)) {
+            newOptions.push(opt);
+          }
+        });
+        return newOptions;
+      });
+    }
+  }, [initialSelectedOptions]);
+
+  // Perform async search
+  useEffect(() => {
+    if (!onSearch || !isOpen) return;
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If search term is less than minimum length, clear results
+    if (searchTerm.length < minSearchLength) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    // Set searching state and debounce the search
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await onSearch(searchTerm);
+        
+        // Merge new results with already loaded options, avoiding duplicates
+        setAllLoadedOptions(prevOptions => {
+          const combined = [...prevOptions];
+          results.forEach(result => {
+            if (!combined.some(opt => opt.id === result.id)) {
+              combined.push(result);
+            }
+          });
+          return combined;
+        });
+        
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, onSearch, isOpen, minSearchLength]);
+
+  // Filter options based on search term (for static options or combined with search results)
   const filteredOptions = useMemo(() => {
-    return options.filter(option =>
+    // If using async search
+    if (onSearch) {
+      if (searchTerm.length < minSearchLength) {
+        // Show only selected options when search term is too short
+        return selectedOptions.slice(0, maxDisplayItems);
+      }
+      // Show search results
+      return searchResults.slice(0, maxDisplayItems);
+    }
+    
+    // Static filtering (original behavior with static options)
+    const filtered = allAvailableOptions.filter(option =>
       option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
       option.value.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, maxDisplayItems);
-  }, [options, searchTerm, maxDisplayItems]);
+    );
+    
+    // If no search term, show all options up to max
+    // If there's a search term, show filtered results
+    return filtered.slice(0, maxDisplayItems);
+  }, [allAvailableOptions, searchTerm, maxDisplayItems, onSearch, minSearchLength, searchResults, selectedOptions]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -132,6 +240,18 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setHighlightedIndex(-1);
   };
 
+  // Select all options (only for multi-select with static options)
+  const handleSelectAll = () => {
+    if (!isMultiSelect || onSearch) return;
+    const allIds = allAvailableOptions.map(opt => opt.id);
+    onChange(allIds);
+  };
+
+  // Deselect all options
+  const handleDeselectAll = () => {
+    onChange(undefined);
+  };
+
   // Removes a single selected item in multi-select mode
   const handleRemoveItem = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -178,7 +298,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Type to search..."
+            placeholder={onSearch ? `Type ${minSearchLength}+ characters to search...` : "Type to search..."}
             className="flex-1 bg-transparent outline-none"
             disabled={disabled}
             autoFocus
@@ -228,7 +348,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 e.stopPropagation();
                 handleClear();
               }}
-              className=" hover:bg-muted rounded-sm"
+              className="hover:bg-muted rounded-sm"
             >
               <X size={14} className="text-muted-foreground" />
             </button>
@@ -237,7 +357,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             size={16}
             className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}
              ${selectedOptions.length > 0 && !isOpen ? '' : 'opacity-0'}`}
-            
           />
         </div>
       </div>
@@ -246,10 +365,26 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       {isOpen && !disabled && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
           {/* Search hint when typing */}
-          {searchTerm && (
+          {onSearch && searchTerm && searchTerm.length < minSearchLength && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
               <Search size={12} className="inline mr-1" />
-              Searching for "{searchTerm}"...
+              Type {minSearchLength - searchTerm.length} more character{minSearchLength - searchTerm.length > 1 ? 's' : ''} to search...
+            </div>
+          )}
+
+          {/* Searching indicator */}
+          {isSearching && (
+            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50 flex items-center">
+              <Loader2 size={12} className="inline mr-2 animate-spin" />
+              Searching...
+            </div>
+          )}
+
+          {/* Search results info */}
+          {onSearch && searchTerm.length >= minSearchLength && !isSearching && (
+            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
+              <Search size={12} className="inline mr-1" />
+              Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
             </div>
           )}
 
@@ -268,6 +403,44 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               }}
             >
               <span className="italic">Clear selection</span>
+            </div>
+          )}
+
+          {/* Select All / Deselect All (only for multi-select with static options) */}
+          {showSelectAll && isMultiSelect && !onSearch && allAvailableOptions.length > 0 && (
+            <div
+              role="option"
+              tabIndex={0}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-primary font-medium border-b border-border"
+              onClick={() => {
+                if (selectedValues.length === allAvailableOptions.length) {
+                  handleDeselectAll();
+                } else {
+                  handleSelectAll();
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (selectedValues.length === allAvailableOptions.length) {
+                    handleDeselectAll();
+                  } else {
+                    handleSelectAll();
+                  }
+                }
+              }}
+            >
+              {selectedValues.length === allAvailableOptions.length ? (
+                <>
+                  <X size={14} className="inline mr-2" />
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <Check size={14} className="inline mr-2" />
+                  Select All ({allAvailableOptions.length})
+                </>
+              )}
             </div>
           )}
 
@@ -304,14 +477,24 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               );
             })
           ) : (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-              No options available
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              {onSearch && searchTerm.length < minSearchLength 
+                ? `Type ${minSearchLength}+ characters to search`
+                : isSearching 
+                ? 'Searching...'
+                : 'No options available'}
             </div>
           )}
 
-          {options.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
+          {onSearch && searchResults.length > maxDisplayItems && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing {maxDisplayItems} of {options.length} items. Type to filter more.
+              Showing first {maxDisplayItems} of {searchResults.length} results. Refine your search for more specific results.
+            </div>
+          )}
+          
+          {!onSearch && allAvailableOptions.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
+            <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
+              Showing {maxDisplayItems} of {allAvailableOptions.length} items. Type to filter more.
             </div>
           )}
         </div>
