@@ -411,17 +411,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/group-lead/tasks")}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back to Tasks
-        </Button>
-        <h3 className="text-xl font-semibold">
-          Tasks for {employeeName} ({employeeLevel}) — {tasks.length} task
-          {tasks.length === 1 ? "" : "s"} - {department} - {role} - {doj}
+        <h3 className="text-xl font-semibold text-[#4c51bf] ml-2">
+          Tasks for {employeeName} ({employeeLevel})
         </h3>
         <div className="ml-auto flex items-end gap-3">
           {isFirstTaskForEmployee && (
@@ -448,6 +439,14 @@ const GroupLeadTaskDetailPage: React.FC = () => {
           >
             View All
           </Button>
+               <Button
+          variant="outline"
+          onClick={() => router.push("/group-lead/tasks")}
+          className="flex items-center gap-1"
+        >
+          <ArrowLeft size={16} />
+          Back 
+        </Button>
         </div>
       </div>
 

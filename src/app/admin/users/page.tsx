@@ -502,7 +502,7 @@ const UsersPage: React.FC = () => {
                         <UserCheck size={18} className="text-blue-500" />
                       )}
                       <button
-                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
                         onClick={() => handleEditUser(user.id)}
                         title="Edit User"
                       >

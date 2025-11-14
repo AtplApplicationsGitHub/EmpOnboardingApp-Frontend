@@ -287,7 +287,7 @@ const MyTasksPage: React.FC = () => {
                   </div>
                   <div>
                     <CardTitle className="text-xl">
-                      <span className="font-semibold">
+                      <span className="font-semibold px-2 py-1 rounded">
                         {t?.groupName ?? "Group"} — {t?.id ?? "—"} —{" "}
                         {t?.assignedTo ?? "Unassigned"}  — {" "} {t?.lab ?? "—"}
                       </span>
@@ -329,10 +329,11 @@ const MyTasksPage: React.FC = () => {
             <CardContent className="pt-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow >
                     <TableHead>Question</TableHead>
                     <TableHead>Response</TableHead>
-                    {hasVerifiedQuestions && <TableHead>Verified By</TableHead>}                    <TableHead>Status</TableHead>
+                    {hasVerifiedQuestions && <TableHead>Verified By</TableHead>}
+                    <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -330,7 +330,7 @@ const GroupsPage: React.FC = () => {
                         setGroupToDelete(group);
                         setShowDeleteModal(true);
                       }}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                      className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                     >
                       <Trash2 size={18} />
                     </button>
