@@ -203,7 +203,7 @@ const LoginPage: React.FC = () => {
     <div className={`min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
       {/* Theme toggle in top right corner */}
       <div className={`absolute top-4 right-4 ${isVisible ? animationClasses.slideInRight : 'opacity-0'}`}>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
       </div>
 
       <Card className={`w-full max-w-md ${animationClasses.hoverLift} ${isVisible ? animationClasses.scaleIn : 'opacity-0'}`}>
