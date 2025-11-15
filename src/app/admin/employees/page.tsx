@@ -573,7 +573,7 @@ const EmployeesPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* <Button
+          <Button
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap flex-shrink-0"
@@ -582,7 +582,7 @@ const EmployeesPage: React.FC = () => {
                 <Download size={14} className="mr-1" />
                 <span className="hidden sm:inline">Download Template</span>
                 <span className="sm:hidden">Download</span>
-              </Button> */}
+              </Button>
           <button
             onClick={() => setShowImportModal(true)}
             disabled={processing}
