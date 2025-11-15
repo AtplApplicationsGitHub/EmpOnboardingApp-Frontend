@@ -169,10 +169,10 @@ const GroupDetailsPage: React.FC = () => {
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
-    
+
     try {
       const { defaultflag, verifiedBy, ...rest } = formData;
-      
+
       const dataToSend = {
         ...rest,
         ...(verifiedBy && { verifiedBy }),
@@ -310,13 +310,13 @@ const GroupDetailsPage: React.FC = () => {
   // Helper function to get verified by display name
   const getVerifiedByDisplayName = (email?: string) => {
     if (!email) return null;
-    
+
     // Try to find in the questions list first (from fetched data)
     const matchingQuestion = questions.find(q => q.verifiedByEmail === email);
     if (matchingQuestion?.verifiedBy) {
       return matchingQuestion.verifiedBy;
     }
-    
+
     return email;
   };
 
@@ -358,14 +358,14 @@ const GroupDetailsPage: React.FC = () => {
         <div className="flex items-right gap-2">
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center">
+            className="flex items-center gap-1">
             <Plus size={16} />
             Add Question
           </Button>
           <Button
             variant="outline"
             onClick={() => router.push("/admin/groups")}
-            className="flex items-center">
+            className="flex items-center gap-1">
             <ArrowLeft size={16} />
             Back
           </Button>
@@ -437,30 +437,33 @@ const GroupDetailsPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
+                    title="Edit Question"
                     onClick={() => openEditModal(question)}
-                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                    className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                   >
-                    <Edit size={16} />
+                    <Edit size={18} />
                   </button>
                   <button
                     onClick={() => handleCloneQuestion(question)}
-                    className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)]"
                     title="Clone Question"
                   >
-                    <Copy size={16} />
+                    <Copy size={18} />
                   </button>
                   {question.deleteFlag && questions.length > 1 && (
                     <button
+                      title="Delete Question"
                       onClick={() => {
                         setQuestionToDelete(question);
                         setShowDeleteModal(true);
                       }}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                      className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
+
                   )}
                 </div>
               </div>

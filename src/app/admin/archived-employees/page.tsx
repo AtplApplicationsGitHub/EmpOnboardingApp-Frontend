@@ -422,80 +422,80 @@ const ArchivedEmployeesPage: React.FC = () => {
                     </CardContent>
                 </Card>
             )}
-            {showQuestionsModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-                    <div className="bg-white dark:bg-black rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark:border">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                Employee Task Question
-                            </h2>
-                            <div className="flex-1 flex justify-end items-center">
-                                <div className="text-center">
-                                    <div className="text-xl font-bold text-primary dark:text-primary">
-                                        {completedQuestionCount} / {totalQuestionCount}
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Questions
-                                    </div>
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => {
-                                    setShowQuestionsModal(false);
-                                    setSelectedTaskQuestions([]);
-                                    setSelectedEmployeeName("");
-                                }}
-                                className="rounded-lg ml-4 dark:border dark:border-gray-700 dark:bg-black dark:hover:bg-gray-900"
-                            >
-                                <X size={16} className="dark:text-gray-100" />
-                            </Button>
-                        </div>
+          {showQuestionsModal && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="relative w-full max-w-4xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
-                        {/* Modal Content */}
-                        <div className="p-6 overflow-y-auto max-h-[70vh]">
-                            {selectedTaskQuestions.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        No questions found for this employee.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {selectedTaskQuestions.map((question, index) => (
-                                        <div
-                                            key={question.id || index}
-                                            className="border border-gray-200  rounded-lg p-4 bg-white dark:bg-black"
-                                        >
-                                            <div className="mb-3">
-                                                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                                    Question {index + 1}:
-                                                </h3>
-                                                <p className="text-gray-700 dark:text-gray-300">
-                                                    {question.question || "No question text available"}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                                    Response:
-                                                </h4>
-                                                <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
-                                                    <p className="text-gray-800 dark:text-gray-200">
-                                                        {question.response || "No response provided"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+      {/* Header */}
+      <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
+        <h2 className="text-1xl font-semibold text-primary-gradient">
+          Employee Questions - {selectedEmployeeName}
+        </h2>
+
+        {/* Progress */}
+        <div className="flex items-center gap-4">
+          <div className="text-center">
+            <div className="text-lg font-bold text-indigo-600">
+              {completedQuestionCount} / {totalQuestionCount}
+            </div>
+            <div className="text-[11px] text-gray-500">
+              Questions
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-8 py-6">
+        {selectedTaskQuestions.length === 0 ? (
+          <div className="text-center py-12">
+            <Users size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">
+              No questions found for this employee.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {selectedTaskQuestions.map((question, index) => (
+              <div key={question.id || index} className="space-y-2">
+
+                {/* Question text */}
+                <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                  {index + 1}. {question.question || "No question text available"}
+                </p>
+
+                {/* Response */}
+                <p className="text-[14px] text-gray-700 leading-relaxed pl-4">
+                  {question.response || "No response provided"}
+                </p>
+
+                {/* Divider */}
+                {index < selectedTaskQuestions.length - 1 && (
+                  <div className="border-b border-gray-200 pt-3"></div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+        <Button
+          type="button"
+          onClick={() => {
+            setShowQuestionsModal(false);
+            setSelectedTaskQuestions([]);
+            setSelectedEmployeeName("");
+          }}
+          variant="outline"
+        >
+          Close
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
 
         </div>
     );

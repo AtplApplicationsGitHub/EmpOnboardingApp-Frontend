@@ -263,7 +263,7 @@ const DepartmentsPage: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => openEditModal(dept.id)}
-                        className="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 hover:scale-110 transition-all"
+                        className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                         title="Edit Department"
                       >
                         <Edit size={18} />
@@ -383,6 +383,8 @@ const DepartmentsPage: React.FC = () => {
                   Cancel
                 </Button>
                 <Button
+                className="
+                shadow-md transition-all duration-300 ease-in-out hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                   onClick={editMode ? handleUpdate : handleCreate}
                 >
                   {editMode ? "Update Department" : "Create Department"}

@@ -362,7 +362,7 @@ const LabsPage: React.FC = () => {
                       <div className="flex items-center justify-center">
                         <button
                           onClick={() => openEditModal(lab.id)}
-                          className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                           title="Edit Lab"
                         >
                           <Edit size={18} />

@@ -238,14 +238,14 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3">
         <Button
           variant="outline"
           onClick={() => router.push("/group-lead/engineer-verification")}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1"
         >
           <ArrowLeft size={16} />
-          Back to Tasks
+          Back 
         </Button>
       </div>
 
@@ -255,10 +255,10 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
         return (
           <Card key={t.id}>
-            <CardContent className="pt-0">
+            <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
+                <TableHeader >
+                  <TableRow className="table-heading-bg text-primary-gradient">
                     <TableHead>Question</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>

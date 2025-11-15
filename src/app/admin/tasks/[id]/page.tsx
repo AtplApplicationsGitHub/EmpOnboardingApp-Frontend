@@ -152,7 +152,7 @@ const TaskDetailsPage: React.FC = () => {
       setError("Please select a group lead.");
       return;
     }
-    
+
     try {
       await taskService.reassignTask(reAssignTask, primaryGroupLeadId);
       setShowReassignModal(false);
@@ -279,7 +279,7 @@ const TaskDetailsPage: React.FC = () => {
   // Open reassign modal and fetch current assignee details
   const openReassignModal = async (task: Task) => {
     setReAssignTask(task.id.toString());
-    
+
     // Fetch current assignee details
     if (task.assignedTo) {
       const assigneeDetails = await fetchGroupLeadDetails(task.assignedTo);
@@ -294,7 +294,7 @@ const TaskDetailsPage: React.FC = () => {
       setPrimaryGroupLeadId(undefined);
       setPrimaryGroupLeadSelectedOption([]);
     }
-    
+
     setShowReassignModal(true);
   };
 
@@ -335,34 +335,38 @@ const TaskDetailsPage: React.FC = () => {
   return (
     <div className="space-y-2">
       {/* page header */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/admin/tasks")}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back to Tasks
-        </Button>
-        <h3 className="text-xl font-semibold">
+
+      <div className="flex items-center justify-between">
+
+        <h3 className="text-xl font-semibold ml-2 text-[#4c51bf]">
           Tasks for {employeeName} ({employeeLevel})
         </h3>
-        <div className="ml-auto flex items-end gap-3">
+
+        <div className="flex items-center gap-3">
+
+
           <div className="min-w-[240px]">
-            <div className="flex items-center gap-2">
-              <SearchableDropdown
-                options={labOptions}
-                value={selectedLabId}
-                disabled={freezeTask === "Y"}
-                onChange={handleLabChange}
-                placeholder="Select Lab"
-                displayFullValue={false}
-                isEmployeePage={true}
-                className="w-full"
-              />
-            </div>
+            <SearchableDropdown
+              options={labOptions}
+              value={selectedLabId}
+              disabled={freezeTask === "Y"}
+              onChange={handleLabChange}
+              placeholder="Select Lab"
+              displayFullValue={false}
+              isEmployeePage={true}
+              className="w-full"
+            />
           </div>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/admin/tasks")}
+            className="flex items-center gap-1"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
         </div>
+
       </div>
 
       {/* one CARD per task */}
@@ -401,11 +405,10 @@ const TaskDetailsPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${
-                              star <= Number(t?.efstar ?? 0)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                              }`}
                           />
                         ))}
                       </button>
@@ -432,7 +435,7 @@ const TaskDetailsPage: React.FC = () => {
                           {/* Feedback text (from t.feedback) */}
                           <div className="text-sm whitespace-pre-wrap">
                             {t?.feedback &&
-                            String(t.feedback).trim().length > 0 ? (
+                              String(t.feedback).trim().length > 0 ? (
                               String(t.feedback)
                             ) : (
                               <span className="text-muted-foreground">
@@ -567,10 +570,8 @@ const TaskDetailsPage: React.FC = () => {
                             </>
                           )}
                           <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-500"
+                            <button
+                              className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                               disabled={freezeTask === "Y"}
                               onClick={() => {
                                 setQuestionToDelete(q.id);
@@ -578,7 +579,7 @@ const TaskDetailsPage: React.FC = () => {
                               }}
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </button>
                           </TableCell>
                         </TableRow>
                       );

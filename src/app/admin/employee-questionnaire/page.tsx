@@ -299,7 +299,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => openEditModal(questionnaire.id)}
-                                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
+                                                className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                                                 title="Edit Question"
                                             >
                                                 <Edit size={16} />
