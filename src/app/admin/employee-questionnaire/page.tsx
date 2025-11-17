@@ -389,8 +389,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
 
             {/* Create / Edit Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
                         {/* Gradient Header */}
                         <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
                             <CardTitle className="text-1xl font-semibold text-primary-gradient">
@@ -476,6 +476,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         isMultiSelect={true}
                                         disabled={editMode}
                                         showSelectAll={true}
+                                        usePortal={true}
                                     />
                                 </div>
                             </div>

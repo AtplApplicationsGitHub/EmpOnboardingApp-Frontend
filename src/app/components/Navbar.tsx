@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 import { cn } from "../lib/utils";
-import ThemeToggle from "./ThemeToggle";
 import { useAnimation, animationClasses } from "../lib/animations";
 import { useSidebar } from "./SidebarContext";
 import {

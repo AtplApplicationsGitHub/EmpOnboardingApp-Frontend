@@ -514,6 +514,7 @@ const GroupLeadTasksPage: React.FC = () => {
                       className="w-full"
                       isEmployeePage={true}
                       displayFullValue={false}
+                      usePortal={true}
                     />
                   )}
                 </div>

@@ -517,11 +517,12 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={true}
-                    maxDisplayItems={10}
+                    maxDisplayItems={4}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(newEscalationGroupLeadId)}
                     minSearchLength={3}
                     initialSelectedOptions={newPrimarySelectedOptions}
+                    usePortal={true}
                   />
                 </div>
 
@@ -537,11 +538,12 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={false}
-                    maxDisplayItems={10}
+                    maxDisplayItems={4}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(newPrimaryGroupLeadId)}
                     minSearchLength={3}
                     initialSelectedOptions={newEscalationSelectedOptions}
+                    usePortal={true}
                   />
                 </div>
 
@@ -564,10 +566,11 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Select auto assign option"
                     required={false}
-                    maxDisplayItems={2}
+                    maxDisplayItems={4}
                     isEmployeePage={true}
                     displayFullValue={false}
                     className="w-full"
+                    usePortal={true}
                   />
                 </div>
               </form>
@@ -643,11 +646,12 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={true}
-                    maxDisplayItems={10}
+                    maxDisplayItems={4}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(editEscalationGroupLeadId)}
                     minSearchLength={3}
                     initialSelectedOptions={editPrimarySelectedOptions}
+                    usePortal={true}
                   />
                 </div>
 
@@ -663,11 +667,12 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={false}
-                    maxDisplayItems={10}
+                    maxDisplayItems={4}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(editPrimaryGroupLeadId)}
                     minSearchLength={3}
                     initialSelectedOptions={editEscalationSelectedOptions}
+                    usePortal={true}
                   />
                 </div>
 
@@ -690,10 +695,11 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Select auto assign option"
                     required={false}
-                    maxDisplayItems={2}
+                    maxDisplayItems={4}
                     className="w-full"
                     isEmployeePage={true}
                     displayFullValue={false}
+                    usePortal={true}
                   />
                 </div>
               </form>

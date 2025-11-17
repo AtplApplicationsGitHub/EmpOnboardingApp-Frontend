@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X, Check, Loader2 } from 'lucide-react';
 
 interface SearchableDropdownProps {
@@ -15,7 +16,7 @@ interface SearchableDropdownProps {
   isEmployeePage?: boolean;
   isMultiSelect?: boolean;
   showSelectAll?: boolean;
-  // New props for async search
+  usePortal?: boolean;
   onSearch?: (searchTerm: string) => Promise<Array<{ id: number; key: string; value: string }>>;
   minSearchLength?: number;
   initialSelectedOptions?: Array<{ id: number; key: string; value: string }>;
@@ -34,6 +35,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   isEmployeePage = false,
   isMultiSelect = false,
   showSelectAll = false,
+  usePortal = false,
   onSearch,
   minSearchLength = 3,
   initialSelectedOptions = [],
@@ -44,11 +46,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Array<{ id: number; key: string; value: string }>>([]);
   const [allLoadedOptions, setAllLoadedOptions] = useState<Array<{ id: number; key: string; value: string }>>(initialSelectedOptions);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const uniqueIdRef = useRef(`dropdown-${Math.random().toString(36).substr(2, 9)}`);
 
-  // Convert the value to an array of selected IDs
   const selectedValues = useMemo(() => {
     if (isMultiSelect) {
       return Array.isArray(value) ? value : [];
@@ -56,11 +61,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return value !== undefined ? [value as number] : [];
   }, [value, isMultiSelect]);
 
-  // Combine static options with loaded options for the pool
   const allAvailableOptions = useMemo(() => {
     const combined = [...allLoadedOptions];
     
-    // If we have static options, add them to the pool
     if (options.length > 0) {
       options.forEach(opt => {
         if (!combined.some(o => o.id === opt.id)) {
@@ -72,12 +75,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return combined;
   }, [allLoadedOptions, options]);
 
-  // Find selected options from all available options
   const selectedOptions = useMemo(() => {
     return allAvailableOptions.filter(option => selectedValues.includes(option.id));
   }, [allAvailableOptions, selectedValues]);
 
-  // Update allLoadedOptions when initialSelectedOptions changes
   useEffect(() => {
     if (initialSelectedOptions.length > 0) {
       setAllLoadedOptions(prevOptions => {
@@ -92,29 +93,84 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     }
   }, [initialSelectedOptions]);
 
-  // Perform async search
+  // Calculate and update dropdown position
+  const updateDropdownPosition = () => {
+    if (dropdownRef.current && usePortal && isOpen) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const newPosition = {
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      };
+      
+      // Only update if position actually changed (avoid infinite loops)
+      setDropdownPosition(prev => {
+        if (prev.top !== newPosition.top || prev.left !== newPosition.left || prev.width !== newPosition.width) {
+          return newPosition;
+        }
+        return prev;
+      });
+    }
+  };
+
+  // Update position when dropdown opens or on scroll/resize
+  useEffect(() => {
+    if (usePortal && isOpen) {
+      updateDropdownPosition();
+      
+      // Update position on scroll within modal or window
+      const handleScroll = (e: Event) => {
+        // Check if scrolling is happening in a modal
+        const target = e.target as HTMLElement;
+        if (target.classList?.contains('overflow-y-auto')) {
+          updateDropdownPosition();
+        }
+      };
+
+      const handleResize = () => {
+        updateDropdownPosition();
+      };
+
+      // Listen to both window scroll and all scroll events in capture phase
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+
+      // Use MutationObserver to detect DOM changes that might affect position
+      const observer = new MutationObserver(updateDropdownPosition);
+      if (dropdownRef.current) {
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true, 
+          attributes: true 
+        });
+      }
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+        observer.disconnect();
+      };
+    }
+  }, [usePortal, isOpen]);
+
   useEffect(() => {
     if (!onSearch || !isOpen) return;
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // If search term is less than minimum length, clear results
     if (searchTerm.length < minSearchLength) {
       setSearchResults([]);
       setIsSearching(false);
       return;
     }
 
-    // Set searching state and debounce the search
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const results = await onSearch(searchTerm);
         
-        // Merge new results with already loaded options, avoiding duplicates
         setAllLoadedOptions(prevOptions => {
           const combined = [...prevOptions];
           results.forEach(result => {
@@ -141,44 +197,50 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     };
   }, [searchTerm, onSearch, isOpen, minSearchLength]);
 
-  // Filter options based on search term (for static options or combined with search results)
   const filteredOptions = useMemo(() => {
-    // If using async search
     if (onSearch) {
       if (searchTerm.length < minSearchLength) {
-        // Show only selected options when search term is too short
-        return selectedOptions.slice(0, maxDisplayItems);
+        // When not searching, show selected options if they exist
+        if (selectedOptions.length > 0) {
+          return selectedOptions;
+        }
+        return [];
       }
-      // Show search results
       return searchResults.slice(0, maxDisplayItems);
     }
     
-    // Static filtering (original behavior with static options)
     const filtered = allAvailableOptions.filter(option =>
       option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
       option.value.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // If no search term, show all options up to max
-    // If there's a search term, show filtered results
     return filtered.slice(0, maxDisplayItems);
   }, [allAvailableOptions, searchTerm, maxDisplayItems, onSearch, minSearchLength, searchResults, selectedOptions]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setSearchTerm('');
-        setHighlightedIndex(-1);
+      const target = event.target as Node;
+      
+      // Check if click is on the main dropdown container
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
       }
+      
+      // Check if click is on the portal dropdown menu
+      if (usePortal && dropdownMenuRef.current && dropdownMenuRef.current.contains(target)) {
+        return;
+      }
+      
+      // Close dropdown if clicked outside
+      setIsOpen(false);
+      setSearchTerm('');
+      setHighlightedIndex(-1);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [usePortal]);
 
-  // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isOpen) return;
@@ -214,7 +276,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, highlightedIndex, filteredOptions]);
 
-  // Selects/deselects an option (multi = toggle, single = choose + close)
   const handleSelectOption = (option: { id: number; key: string; value: string }) => {
     if (isMultiSelect) {
       const newValues = Array.isArray(value) ? [...value] : [];
@@ -232,7 +293,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setHighlightedIndex(-1);
   };
 
-  // Clears all selected options
   const handleClear = () => {
     onChange(undefined);
     setSearchTerm('');
@@ -240,26 +300,22 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setHighlightedIndex(-1);
   };
 
-  // Select all options (only for multi-select with static options)
   const handleSelectAll = () => {
     if (!isMultiSelect || onSearch) return;
     const allIds = allAvailableOptions.map(opt => opt.id);
     onChange(allIds);
   };
 
-  // Deselect all options
   const handleDeselectAll = () => {
     onChange(undefined);
   };
 
-  // Removes a single selected item in multi-select mode
   const handleRemoveItem = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     const newValues = selectedValues.filter(val => val !== id);
     onChange(newValues.length > 0 ? newValues : undefined);
   };
 
-  // Opens dropdown when input is clicked
   const handleInputClick = () => {
     if (!disabled) {
       setIsOpen(true);
@@ -270,9 +326,138 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     }
   };
 
+  const dropdownContent = (
+    <div 
+      ref={dropdownMenuRef}
+      className="bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+      style={usePortal ? {
+        position: 'fixed',
+        top: `${dropdownPosition.top}px`,
+        left: `${dropdownPosition.left}px`,
+        width: `${dropdownPosition.width}px`,
+        zIndex: 9999,
+      } : undefined}
+    >
+      {onSearch && searchTerm && searchTerm.length < minSearchLength && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
+          <Search size={12} className="inline mr-1" />
+          Type {minSearchLength - searchTerm.length} more character{minSearchLength - searchTerm.length > 1 ? 's' : ''} to search...
+        </div>
+      )}
+
+      {isSearching && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50 flex items-center">
+          <Loader2 size={12} className="inline mr-2 animate-spin" />
+          Searching...
+        </div>
+      )}
+
+      {onSearch && searchTerm.length >= minSearchLength && !isSearching && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
+          <Search size={12} className="inline mr-1" />
+          Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
+        </div>
+      )}
+
+      {!required && (
+        <div
+          role="option"
+          tabIndex={0}
+          className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-muted-foreground border-b border-border"
+          onClick={handleClear}
+        >
+          <span className="italic">Clear selection</span>
+        </div>
+      )}
+
+      {showSelectAll && isMultiSelect && !onSearch && allAvailableOptions.length > 0 && (
+        <div
+          role="option"
+          tabIndex={0}
+          className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-primary font-medium border-b border-border"
+          onClick={() => {
+            if (selectedValues.length === allAvailableOptions.length) {
+              handleDeselectAll();
+            } else {
+              handleSelectAll();
+            }
+          }}
+        >
+          {selectedValues.length === allAvailableOptions.length ? (
+            <>
+              <X size={14} className="inline mr-2" />
+              Deselect All
+            </>
+          ) : (
+            <>
+              <Check size={14} className="inline mr-2" />
+              Select All ({allAvailableOptions.length})
+            </>
+          )}
+        </div>
+      )}
+
+      {filteredOptions.length > 0 ? (
+        filteredOptions.map((option, index) => {
+          const isSelected = selectedValues.includes(option.id);
+          return (
+            <div
+              key={option.id}
+              role="option"
+              tabIndex={0}
+              aria-selected={isSelected}
+              className={`
+                px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between
+                ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
+                ${isSelected ? 'bg-primary/5 font-medium' : ''}
+              `}
+              onClick={() => handleSelectOption(option)}
+              onMouseEnter={() => setHighlightedIndex(index)}
+            >
+              <div>
+                {isEmployeePage ? (
+                  <div className="font-medium">{option.key}</div>
+                ) : (
+                  <>
+                    <div className="font-medium">{option.key}</div>
+                    <div className="text-xs text-muted-foreground">{option.value}</div>
+                  </>
+                )}
+              </div>
+              {isSelected && <Check size={16} className="text-primary" />}
+            </div>
+          );
+        })
+      ) : (
+        <div className="px-3 py-2 text-sm text-muted-foreground">
+          {onSearch && searchTerm.length < minSearchLength 
+            ? selectedOptions.length > 0 
+              ? 'Type to search for more options'
+              : `Type ${minSearchLength}+ characters to search`
+            : isSearching 
+            ? 'Searching...'
+            : searchTerm.length >= minSearchLength
+            ? 'No results found'
+            : 'No options available'}
+        </div>
+      )}
+
+      {onSearch && searchResults.length > maxDisplayItems && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
+          Showing first {maxDisplayItems} of {searchResults.length} results. Refine your search for more specific results.
+        </div>
+      )}
+      
+      {!onSearch && allAvailableOptions.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
+          Showing {maxDisplayItems} of {allAvailableOptions.length} items. Type to filter more.
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* Input Field */}
+    <div ref={dropdownRef} className={`relative ${className}`} id={uniqueIdRef.current}>
       <div
         role="combobox"
         aria-expanded={isOpen}
@@ -308,7 +493,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             {selectedOptions.length > 0 ? (
               isMultiSelect ? (
                 <>
-                  {/* Display the first selected option */}
                   {selectedOptions[0] && (
                     <div key={selectedOptions[0].id} className="inline-flex items-center gap-1 bg-secondary rounded-full px-2 py-0.5 text-xs text-secondary-foreground font-medium">
                       {selectedOptions[0].value}
@@ -322,7 +506,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                     </div>
                   )}
 
-                  {/* Display the count of additional selected options */}
                   {selectedOptions.length > 1 && (
                     <span className="text-sm text-muted-foreground">
                       +{selectedOptions.length - 1}
@@ -361,143 +544,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         </div>
       </div>
 
-      {/* Dropdown Menu */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {/* Search hint when typing */}
-          {onSearch && searchTerm && searchTerm.length < minSearchLength && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
-              <Search size={12} className="inline mr-1" />
-              Type {minSearchLength - searchTerm.length} more character{minSearchLength - searchTerm.length > 1 ? 's' : ''} to search...
-            </div>
-          )}
-
-          {/* Searching indicator */}
-          {isSearching && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50 flex items-center">
-              <Loader2 size={12} className="inline mr-2 animate-spin" />
-              Searching...
-            </div>
-          )}
-
-          {/* Search results info */}
-          {onSearch && searchTerm.length >= minSearchLength && !isSearching && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/50">
-              <Search size={12} className="inline mr-1" />
-              Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
-            </div>
-          )}
-
-          {/* Clear option (if not required) */}
-          {!required && (
-            <div
-              role="option"
-              tabIndex={0}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-muted-foreground border-b border-border"
-              onClick={handleClear}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClear();
-                }
-              }}
-            >
-              <span className="italic">Clear selection</span>
-            </div>
-          )}
-
-          {/* Select All / Deselect All (only for multi-select with static options) */}
-          {showSelectAll && isMultiSelect && !onSearch && allAvailableOptions.length > 0 && (
-            <div
-              role="option"
-              tabIndex={0}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted text-primary font-medium border-b border-border"
-              onClick={() => {
-                if (selectedValues.length === allAvailableOptions.length) {
-                  handleDeselectAll();
-                } else {
-                  handleSelectAll();
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  if (selectedValues.length === allAvailableOptions.length) {
-                    handleDeselectAll();
-                  } else {
-                    handleSelectAll();
-                  }
-                }
-              }}
-            >
-              {selectedValues.length === allAvailableOptions.length ? (
-                <>
-                  <X size={14} className="inline mr-2" />
-                  Deselect All
-                </>
-              ) : (
-                <>
-                  <Check size={14} className="inline mr-2" />
-                  Select All ({allAvailableOptions.length})
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Options */}
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => {
-              const isSelected = selectedValues.includes(option.id);
-              return (
-                <div
-                  key={option.id}
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={isSelected}
-                  className={`
-                    px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between
-                    ${highlightedIndex === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}
-                    ${isSelected ? 'bg-primary/5 font-medium' : ''}
-                  `}
-                  onClick={() => handleSelectOption(option)}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                >
-                  <div>
-                    {isEmployeePage ? (
-                      <div className="font-medium">{option.key}</div>
-                    ) : (
-                      <>
-                        <div className="font-medium">{option.key}</div>
-                        <div className="text-xs text-muted-foreground">{option.value}</div>
-                      </>
-                    )}
-                  </div>
-                  {isSelected && <Check size={16} className="text-primary" />}
-                </div>
-              );
-            })
-          ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              {onSearch && searchTerm.length < minSearchLength 
-                ? `Type ${minSearchLength}+ characters to search`
-                : isSearching 
-                ? 'Searching...'
-                : 'No options available'}
-            </div>
-          )}
-
-          {onSearch && searchResults.length > maxDisplayItems && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing first {maxDisplayItems} of {searchResults.length} results. Refine your search for more specific results.
-            </div>
-          )}
-          
-          {!onSearch && allAvailableOptions.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
-              Showing {maxDisplayItems} of {allAvailableOptions.length} items. Type to filter more.
-            </div>
-          )}
-        </div>
+        usePortal && typeof document !== 'undefined' ? (
+          createPortal(dropdownContent, document.body)
+        ) : (
+          <div className="absolute z-50 w-full mt-1">
+            {dropdownContent}
+          </div>
+        )
       )}
     </div>
   );
