@@ -9,7 +9,6 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OtpInput from '../../components/OtpInput';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
-import ThemeToggle from '../../components/ThemeToggle';
 import { useAnimation, animationClasses } from '../../lib/animations';
 
 // Login step types

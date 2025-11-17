@@ -640,31 +640,31 @@ const EmployeesPage: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="table-heading-bg text-primary-gradient">
-                <th className="px-6 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
                   Name
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   Email
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
                   DOJ
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
                   Department
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Lab
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[8%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[8%]">
                   Level
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[11%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[11%]">
                   Role
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Compliance
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
+                <th className="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                   Actions
                 </th>
               </tr>

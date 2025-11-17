@@ -65,15 +65,6 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  interface MockLdapResponse {
-    successUserInfoList: Array<{
-      name: string;
-      email: string;
-
-    }>;
-    failedUserList: string[];
-  }
-
 
   // Fetch roles for dropdown
   const fetchRoles = async () => {
@@ -859,6 +850,7 @@ const UsersPage: React.FC = () => {
                                 className="w-full"
                                 isEmployeePage={true}
                                 displayFullValue={false}
+                                usePortal={true}
                               />
                             </TableCell>
                           </TableRow>

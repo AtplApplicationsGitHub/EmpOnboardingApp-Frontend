@@ -670,6 +670,7 @@ const TaskDetailsPage: React.FC = () => {
                   onSearch={searchGroupLeads}
                   minSearchLength={3}
                   initialSelectedOptions={primaryGroupLeadSelectedOption}
+                  usePortal={true}
                 />
               </div>
             </div>
