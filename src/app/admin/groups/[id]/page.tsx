@@ -407,7 +407,7 @@ const GroupDetailsPage: React.FC = () => {
                     <span>Due: Day {question.complainceDay}</span>
                     <span>Period: {question.period}</span>
 
-                    <div className="flex items-center gap-1">
+                    {/* <div className="flex items-center gap-1">
                       <span>Levels:</span>
                       {question.questionLevel.map((questionLevel) => (
                         <span
@@ -417,9 +417,9 @@ const GroupDetailsPage: React.FC = () => {
                           {questionLevel}
                         </span>
                       ))}
-                    </div>
+                    </div> */}
 
-                    <div className="flex items-center gap-1">
+                    {/* <div className="flex items-center gap-1">
                       <span>Departments:</span>
                       {question.questionDepartment.map((questionDepartment) => (
                         <span
@@ -429,7 +429,7 @@ const GroupDetailsPage: React.FC = () => {
                           {questionDepartment}
                         </span>
                       ))}
-                    </div>
+                    </div> */}
                     {question.verifiedByEmail && (
                       <span className="-ml-2 px-2 py-1 rounded">
                         Verified by: {getVerifiedByDisplayName(question.verifiedByEmail)}

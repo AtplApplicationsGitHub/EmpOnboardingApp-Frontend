@@ -33,7 +33,7 @@ const emptyForm: FormState = {
 
 
 const EmployeeQuestionnairePage: React.FC = () => {
-    const questionInputRef = useRef<HTMLInputElement>(null);
+    const questionInputRef = useRef<HTMLTextAreaElement>(null);
 
     const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
     const [total, setTotal] = useState(0);
@@ -135,7 +135,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
     };
 
     // Handle form submission for create/update
-    // Handle form submission for create/update
     const handleSubmit = async () => {
         if (!form.question.trim() || !form.responseType || form.level.length === 0) {
             alert("Please fill all required fields");
@@ -178,6 +177,10 @@ const EmployeeQuestionnairePage: React.FC = () => {
             alert("Failed to save/update questionnaire. Please try again.");
         }
     };
+
+    setTimeout(() => {
+        questionInputRef.current?.focus();
+    }, 100);
 
 
     const handlePageChange = (page: number) => {
@@ -404,6 +407,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         Question <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
+                                        ref={questionInputRef}
                                         value={form.question}
                                         onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                                         placeholder="Enter the question here..."

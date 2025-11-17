@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Table,
   TableHeader,
@@ -57,6 +57,8 @@ const formatDateForInput = (dateString: string | undefined | null) => {
 };
 
 const EmployeesPage: React.FC = () => {
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
@@ -277,6 +279,9 @@ const EmployeesPage: React.FC = () => {
       setShowAddModal(true);
       setEmailExists(false);
       setCheckingEmail(false);
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 150);
     } catch (err: any) {
       toast.error("Failed to load employee data");
     }
@@ -554,7 +559,7 @@ const EmployeesPage: React.FC = () => {
   // };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 ">
       {/* Header Section */}
       <div className="flex items-center justify-between">
         {/* Search Box */}
@@ -574,15 +579,15 @@ const EmployeesPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <Button
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-                onClick={handleDownloadTemplate}
-              >
-                <Download size={14} className="mr-1" />
-                <span className="hidden sm:inline">Download Template</span>
-                <span className="sm:hidden">Download</span>
-              </Button>
+            variant="outline"
+            size="sm"
+            className="whitespace-nowrap flex-shrink-0"
+            onClick={handleDownloadTemplate}
+          >
+            <Download size={14} className="mr-1" />
+            <span className="hidden sm:inline">Download Template</span>
+            <span className="sm:hidden">Download</span>
+          </Button>
           <button
             onClick={() => setShowImportModal(true)}
             disabled={processing}
@@ -616,7 +621,11 @@ const EmployeesPage: React.FC = () => {
                 email: "",
                 group: "",
               });
+              setTimeout(() => {
+                nameInputRef.current?.focus();
+              }, 150);
             }}
+
             className="flex items-center gap-2"
           >
             <Plus size={16} />
@@ -721,7 +730,7 @@ const EmployeesPage: React.FC = () => {
                             setEmployeeToDelete(emp);
                             setShowDeleteModal(true);
                           }}
-                      className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
+                          className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                           title="Delete Employee"
                         >
                           <Trash2 size={18} />
@@ -809,6 +818,7 @@ const EmployeesPage: React.FC = () => {
                     Candidate Name <span className="text-red-500">*</span>
                   </label>
                   <input
+                    ref={nameInputRef}
                     type="text"
                     value={(newEmployee.name as string) ?? ""}
                     onChange={(e) =>
