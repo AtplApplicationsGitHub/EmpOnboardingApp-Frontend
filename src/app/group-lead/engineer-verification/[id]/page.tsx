@@ -263,8 +263,8 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead className="min-w-[150px]">Verification</TableHead>
-                    <TableHead className="min-w-[250px]">Comments</TableHead>
+                    <TableHead>Verification</TableHead>
+                    <TableHead>Comments</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
