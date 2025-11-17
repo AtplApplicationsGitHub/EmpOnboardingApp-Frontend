@@ -199,8 +199,8 @@ const GroupDetailsPage: React.FC = () => {
         complainceDay: question.complainceDay || "1",
         questionDepartment: question.questionDepartment,
         questionLevel: question.questionLevel,
+        verifiedBy:question.verifiedById,
         groupId: question.groupId.toString(),
-        ...(question.verifiedByEmail && { verifiedByEmail: question.verifiedByEmail }),
         ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
       };
       await adminService.createQuestion(dataToSend);

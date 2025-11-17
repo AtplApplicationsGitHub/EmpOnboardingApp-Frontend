@@ -468,6 +468,24 @@ export const adminService = {
     );
     return response.data;
   },
+
+  saveTaskVerification: async (
+    id: number,
+    field: string,
+    value: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/saveTaskVerification/${id}/${field}`,
+      value,
+      {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      }
+    );
+    return response.data;
+  },
+
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },

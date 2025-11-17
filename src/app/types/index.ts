@@ -104,6 +104,7 @@ export interface Question {
   deleteFlag?: boolean;
   verifiedBy?: string;
   verifiedByEmail?: string;
+  verifiedById?:number;
 }
 
 export interface GLDashboard {
