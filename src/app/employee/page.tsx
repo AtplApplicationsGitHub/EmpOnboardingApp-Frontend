@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Users, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/app/auth/AuthContext";
 import Button from "@/app/components/Button";
@@ -56,9 +56,8 @@ const Dashboard: React.FC = () => {
         : [];
 
       setQuestions(list);
-      // console.log(list.map(q => ({ id: q.id, completedflag: q.completedFlag, response: q.response }))); //debug log
 
-// Initialize saved and draft values
+      // Initialize saved and draft values
       const initSaved: RespMap = {};
       const initDraft: RespMap = {};
       for (const q of list) {
@@ -137,7 +136,6 @@ const Dashboard: React.FC = () => {
     );
   }
 
-
   // Total questions
   const totalQuestions = questions.length;
 
@@ -146,7 +144,6 @@ const Dashboard: React.FC = () => {
 
   // Pending questions = total - completed
   const pendingQuestions = totalQuestions - completedQuestions;
-
 
   return (
     <div className="space-y-2">
@@ -191,21 +188,28 @@ const Dashboard: React.FC = () => {
 
       {/* Employee Questions Table */}
       <Card>
-        <CardContent className="pt-0">
+        <CardContent className="p-0">
+          {error && (
+            <div className="px-4 py-2 text-sm text-red-500" role="alert">
+              {error}
+            </div>
+          )}
+
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Question</TableHead>
                 <TableHead>Response</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {questions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={2} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">No questions found.</p>
+                      <p className="text-muted-foreground">No questions found</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -219,9 +223,11 @@ const Dashboard: React.FC = () => {
 
                   return (
                     <TableRow key={key}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-semibold min-w-[140px]">
                         {questionText}
-                        <div className="text-xs text-muted-foreground">{isTextType(q) ? "Text" : "Yes/No"}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {isTextType(q) ? "Text" : "Yes/No"}
+                        </div>
                       </TableCell>
                       <TableCell className="min-w-[260px]">
                         {isTextType(q) ? (

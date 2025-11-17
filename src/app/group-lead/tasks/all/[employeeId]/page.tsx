@@ -173,12 +173,13 @@ const EmployeeTasksPage: React.FC = () => {
                     <ArrowLeft size={16} />
                     Back
                 </Button> */}
-                <h3 className="text-xl font-semibold">
-                    Tasks for {employeeName} {employeeLevel && `(${employeeLevel})`} — {tasks.length} task
+                <h3 className="text-xl font-semibold ml-2 text-[#4c51bf]">
+                    Tasks for {employeeName} {employeeLevel && `(${employeeLevel})`}
+                     {/* — {tasks.length} task
                     {tasks.length === 1 ? "" : "s"}
                     {department && ` - ${department}`}
                     {role && ` - ${role}`}
-                    {doj && ` - ${doj}`}
+                    {doj && ` - ${doj}`} */}
                 </h3>
             </div>
 

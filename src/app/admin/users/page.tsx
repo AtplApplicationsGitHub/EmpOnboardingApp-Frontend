@@ -65,15 +65,6 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  interface MockLdapResponse {
-    successUserInfoList: Array<{
-      name: string;
-      email: string;
-
-    }>;
-    failedUserList: string[];
-  }
-
 
   // Fetch roles for dropdown
   const fetchRoles = async () => {
@@ -502,7 +493,7 @@ const UsersPage: React.FC = () => {
                         <UserCheck size={18} className="text-blue-500" />
                       )}
                       <button
-                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
                         onClick={() => handleEditUser(user.id)}
                         title="Edit User"
                       >
@@ -859,6 +850,7 @@ const UsersPage: React.FC = () => {
                                 className="w-full"
                                 isEmployeePage={true}
                                 displayFullValue={false}
+                                usePortal={true}
                               />
                             </TableCell>
                           </TableRow>

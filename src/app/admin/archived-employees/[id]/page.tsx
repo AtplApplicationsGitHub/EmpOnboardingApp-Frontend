@@ -123,7 +123,13 @@ const ArchivedTaskDetails: React.FC = () => {
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
+
+        <h3 className="text-xl font-semibold text-[#4c51bf] ml-2">
+          Archived Tasks — {firstTask.employeeName} ({firstTask.level}) — {tasks.length} task
+          {tasks.length === 1 ? "" : "s"} - {firstTask.department} - {firstTask.role} - {firstTask.doj}
+        </h3>
+
         <Button
           variant="outline"
           onClick={() => router.push("/admin/archived-employees")}
@@ -132,11 +138,9 @@ const ArchivedTaskDetails: React.FC = () => {
           <ArrowLeft size={16} />
           Back
         </Button>
-        <h3 className="text-xl font-semibold">
-          Archived Tasks — {firstTask.employeeName} ({firstTask.level}) — {tasks.length} task
-          {tasks.length === 1 ? "" : "s"} - {firstTask.department} - {firstTask.role} - {firstTask.doj}
-        </h3>
+
       </div>
+
 
       {/* Task Cards */}
       {tasks.map((task) => {

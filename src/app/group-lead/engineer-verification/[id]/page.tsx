@@ -26,9 +26,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Users,
-  CheckCircle,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 const qKey = (
   tId: string | number | undefined,
@@ -105,7 +103,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const freezeTask = tasks[0]?.freezeTask;
 
   useEffect(() => {
     const map: Record<string, string> = {};
@@ -124,49 +121,20 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       [questionId]: value,
     }));
   };
+  const handleCommentSave = (questionId: string, value: string) => {
+    setComments((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }));
+    adminService.saveTaskVerification(Number(questionId), "comments", value);
+  };
 
   const handleVerificationChange = (questionId: string, value: "yes" | "no") => {
     setVerifications((prev) => ({
       ...prev,
       [questionId]: value,
     }));
-  };
-
-  const handleVerify = async (questionId: string) => {
-    try {
-      const comment = comments[questionId];
-      const verification = verifications[questionId];
-
-      if (!comment || comment.trim() === "") {
-        toast.error("Please enter a comment before verifying");
-        return;
-      }
-
-      if (verification === null || verification === undefined) {
-        toast.error("Please select Yes or No before verifying");
-        return;
-      }
-
-
-      setLoading(true);
-
-      const answer = verification.toUpperCase();
-      // Debug logs
-      console.log("Question ID being sent:", questionId);
-      console.log("Comment being sent to BE:", comment);
-      console.log("Verification being sent to BE:", answer);
-
-      await adminService.saveVerificationComment(answer, Number(questionId), comment);
-
-      setVerifiedQuestions(prev => new Set([...prev, questionId]));
-      toast.success("Question verified successfully");
-
-      fetchTasks();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to verify question");
-    } finally {
-      setLoading(false);
-    }
+    adminService.saveTaskVerification(Number(questionId), "answer", value.toUpperCase());
   };
 
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
@@ -238,14 +206,14 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3">
         <Button
           variant="outline"
           onClick={() => router.push("/group-lead/engineer-verification")}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1"
         >
           <ArrowLeft size={16} />
-          Back to Tasks
+          Back
         </Button>
       </div>
 
@@ -255,17 +223,16 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
         return (
           <Card key={t.id}>
-            <CardContent className="pt-0">
+            <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
+                <TableHeader >
+                  <TableRow className="table-heading-bg text-primary-gradient">
                     <TableHead>Question</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead className="min-w-[150px]">Verification</TableHead>
-                    <TableHead className="min-w-[250px]">Comments</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Verification</TableHead>
+                    <TableHead>Comments</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -285,7 +252,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                       const questionId = String(q.id);
                       const key = qKey(t.id, q.id);
                       const initial = getInitialResp(q);
-                      const value = respValues[key] ?? initial;
 
                       return (
                         <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
@@ -337,31 +303,13 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                               value={comments[questionId] || ""}
                               onChange={(e) => handleCommentChange(questionId, e.target.value)}
                               disabled={verifiedQuestions.has(questionId)}
+                              onBlur={(e) => handleCommentSave(questionId, e.target.value)}
                               placeholder="Enter comments..."
                               className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
                                 ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
                                 : 'bg-background border-input'
                                 }`}
                             />
-                          </TableCell>
-
-                          <TableCell>
-                            {comments[questionId] &&
-                              comments[questionId].trim() !== "" &&
-                              verifications[questionId] !== null &&
-                              verifications[questionId] !== undefined && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleVerify(questionId)}
-                                  disabled={verifiedQuestions.has(questionId)}
-                                  className="rounded-lg bg-green-500 hover:bg-green-600 text-white"
-                                  aria-label="Verify question"
-                                >
-                                  <CheckCircle size={16} className="mr-1" />
-                                  {verifiedQuestions.has(questionId) ? "Verified" : "Verify"}
-                                </Button>
-                              )}
                           </TableCell>
                         </TableRow>
                       );

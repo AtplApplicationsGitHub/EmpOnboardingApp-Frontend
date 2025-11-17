@@ -9,7 +9,6 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OtpInput from '../../components/OtpInput';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
-import ThemeToggle from '../../components/ThemeToggle';
 import { useAnimation, animationClasses } from '../../lib/animations';
 
 // Login step types
@@ -90,44 +89,6 @@ const LoginPage: React.FC = () => {
     }
   }, [currentStep]);
 
-  // Handle email submission (Step 1)
-  // const onEmailSubmit = async (data: EmailFormInputs) => {
-  //   try {
-  //     setLoginError(null);
-  //     setIsEmailLoading(true);
-
-  //     // TODO: API - Check user role and existence
-  //     // POST /api/auth/check-user-role
-  //     const roleResponse = await authService.checkUserRole(data.emailOrUsername);
-
-  //     if (!roleResponse.exists) {
-  //       setLoginError('Email or Username not found. Please check your credentials.');
-  //       return;
-  //     }
-
-  //     setUserEmail(data.emailOrUsername);
-
-  //     if (roleResponse.role === 'admin' || roleResponse.role === 'group_lead') {
-  //       setCurrentStep('password');
-  //     } else {
-  //       // TODO: API - Send OTP to employee email
-  //       // POST /api/auth/send-otp
-  //       try {
-  //         const otpResponse = await authService.sendOtp(data.emailOrUsername);
-  //         setOtpMessage(otpResponse.message);
-  //         setOtpSent(true);
-  //         setCurrentStep('otp');
-  //       } catch (error: any) {
-  //         setLoginError(error.message || 'Failed to send OTP');
-  //       }
-  //     }
-  //   } catch (error: any) {
-  //     setLoginError(error.message || 'Failed to verify email');
-  //   }
-  //   finally {
-  //     setIsEmailLoading(false);
-  //   }
-  // };
 
   const onEmailSubmit = async (data: EmailFormInputs) => {
   try {
@@ -241,11 +202,19 @@ const LoginPage: React.FC = () => {
     <div className={`min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
       {/* Theme toggle in top right corner */}
       <div className={`absolute top-4 right-4 ${isVisible ? animationClasses.slideInRight : 'opacity-0'}`}>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
       </div>
 
       <Card className={`w-full max-w-md ${animationClasses.hoverLift} ${isVisible ? animationClasses.scaleIn : 'opacity-0'}`}>
         <CardHeader className="text-center pb-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/assets/Logo_Login.jpg" 
+              alt="Company Logo" 
+              className="h-16 w-auto object-contain"
+            />
+          </div>
           <CardTitle className="text-3xl font-bold">Employee Onboarding</CardTitle>
           <p className="mt-2 text-muted-foreground">
             {currentStep === 'email' && 'Enter your email or username to continue'}

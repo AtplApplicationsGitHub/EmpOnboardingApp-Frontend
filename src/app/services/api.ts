@@ -11,8 +11,6 @@ import {
   PdfDto,
   EmployeeImportResult,
   TaskProjection,
-  EmployeeTaskFilter,
-  EmployeeTaskResponse,
   EmployeeFeedback,
   EmployeeQuestions,
   MultiSelectDropDownDTO,
@@ -25,16 +23,88 @@ import {
   Department,
   Questionnaire
 } from "../types";
-import { group } from "console";
-import AcknowledgementPage from "../admin/acknowledgement/page";
 
-// Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
+
+
+class LoadingManager {
+  private activeRequests = 0;
+  private loadingElement: HTMLElement | null = null;
+
+  show() {
+    this.activeRequests++;
+    if (this.activeRequests === 1) {
+      this.createLoadingElement();
+    }
+  }
+
+  hide() {
+    this.activeRequests--;
+    if (this.activeRequests <= 0) {
+      this.activeRequests = 0;
+      this.removeLoadingElement();
+    }
+  }
+
+  forceHide() {
+    this.activeRequests = 0;
+    this.removeLoadingElement();
+  }
+
+  private createLoadingElement() {
+    if (this.loadingElement) return;
+
+    const spinner = document.createElement('div');
+    spinner.id = 'global-api-loading';
+    spinner.innerHTML = `
+      <div style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-in;
+      ">
+        <div style="
+          width: 48px;
+          height: 48px;
+          border: 4px solid #e5e7eb;
+          border-top-color: #4f46e5;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+      </div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      </style>
+    `;
+
+    document.body.appendChild(spinner);
+    this.loadingElement = spinner;
+  }
+
+  private removeLoadingElement() {
+    if (this.loadingElement) {
+      this.loadingElement.remove();
+      this.loadingElement = null;
+    }
+  }
+}
+
+const loadingManager = new LoadingManager();
+export { loadingManager };
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "https://emp-onboard.sailife.com:8084/api",
+   baseURL: "https://emp-onboard.goval.app:8084/api",
   // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
@@ -44,6 +114,7 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
+    loadingManager.show();
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -51,18 +122,23 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    loadingManager.hide();
     return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
 
 // Handle token expiration
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    loadingManager.hide();
+    return response;
+  },
   (error) => {
+    loadingManager.hide();
+
+    // Your existing error handling code
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem("token");
-      // Redirect to login if we're not already there
       if (
         typeof window !== "undefined" &&
         !window.location.pathname.includes("/auth/login")
@@ -255,14 +331,14 @@ export const adminService = {
     return response.data;
   },
 
-  // getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
-  //   const searchParam = search || "null";
-  //   const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
-  //   return {
-  //     leads: response.data.commonListDto || [],
-  //     total: response.data.totalElements || 0
-  //   };
-  // },
+ searchGroupLeads: async (search?: string): Promise<DropDownDTO[]> => {
+    const searchParam = search || "";
+    const response = await api.post<DropDownDTO[]>(`/group/searchGroupLeads`,
+      { search: searchParam }
+    );
+    return response.data
+  },
+  
   createGroup: async (data: {
     name: string;
     pgLead?: number;
@@ -326,7 +402,7 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -339,7 +415,7 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
@@ -392,6 +468,24 @@ export const adminService = {
     );
     return response.data;
   },
+
+  saveTaskVerification: async (
+    id: number,
+    field: string,
+    value: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/saveTaskVerification/${id}/${field}`,
+      value,
+      {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      }
+    );
+    return response.data;
+  },
+
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },
