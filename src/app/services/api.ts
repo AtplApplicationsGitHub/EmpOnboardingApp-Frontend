@@ -104,6 +104,8 @@ export { loadingManager };
 
 // Create axios instance
 const api = axios.create({
+   baseURL: "https://emp-onboard.goval.app:8084/api",
+  // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -134,6 +136,7 @@ api.interceptors.response.use(
   (error) => {
     loadingManager.hide();
 
+    // Your existing error handling code
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       if (
