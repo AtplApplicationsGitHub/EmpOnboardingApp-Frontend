@@ -481,8 +481,8 @@ const GroupLeadTasksPage: React.FC = () => {
       </Card>
 
       {showLabChangeModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md">
@@ -670,9 +670,8 @@ const GroupLeadTasksPage: React.FC = () => {
 
       {/* Questions Modal */}
       {showQuestionsModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-4xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-
+         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
               <h2 className="text-1xl font-semibold text-primary-gradient">
