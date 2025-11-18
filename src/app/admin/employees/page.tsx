@@ -549,14 +549,6 @@ const EmployeesPage: React.FC = () => {
     return pages;
   };
 
-  // Get initials for avatar
-  // const getInitials = (name: string) => {
-  //   const parts = name.split(' ');
-  //   if (parts.length >= 2) {
-  //     return (parts[0][0] + parts[1][0]).toUpperCase();
-  //   }
-  //   return name.substring(0, 2).toUpperCase();
-  // };
 
   return (
     <div className="space-y-2 ">
@@ -646,10 +638,10 @@ const EmployeesPage: React.FC = () => {
                 <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   Email
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
                   DOJ
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Department
                 </th>
                 <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
@@ -684,39 +676,39 @@ const EmployeesPage: React.FC = () => {
                 employees.map((emp) => (
                   <tr key={emp.id}>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm font-medium text-gray-900">{emp.name}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600">{emp.email}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600 font-medium">{emp.date}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                         {emp.department || "N/A"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-500">
                         {emp.labAllocation || "-"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
                         {emp.level || "L1"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600">{emp.role || "N/A"}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm font-medium text-gray-700">
                         {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-5">
                         <button
                           onClick={() => handleEditEmployee(emp.id)}
@@ -747,58 +739,73 @@ const EmployeesPage: React.FC = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(0)}
-              disabled={page === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsLeft size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={18} />
-            </button>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </div>
 
-            {generatePageNumbers().map((pageNum, idx) =>
-              typeof pageNum === "number" ? (
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {employees.length > 0 ? page * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements} employees
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
-                  key={idx}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  onClick={() => handlePageChange(0)}
+                  disabled={page === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {pageNum + 1}
+                  <ChevronsLeft size={18} />
                 </button>
-              ) : (
-                <span key={idx} className="px-2 text-gray-400">
-                  {pageNum}
-                </span>
-              )
-            )}
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={18} />
+                </button>
 
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(totalPages - 1)}
-              disabled={page >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsRight size={18} />
-            </button>
-          </div>
-        </div>
+                {generatePageNumbers().map((pageNum, idx) =>
+                  typeof pageNum === "number" ? (
+                    <button
+                      key={idx}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  ) : (
+                    <span key={idx} className="px-2 text-gray-400">
+                      {pageNum}
+                    </span>
+                  )
+                )}
+
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages - 1)}
+                  disabled={page >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

@@ -104,7 +104,7 @@ export interface Question {
   deleteFlag?: boolean;
   verifiedBy?: string;
   verifiedByEmail?: string;
-  verifiedById?:number;
+  verifiedById?: number;
 }
 
 export interface GLDashboard {
@@ -155,6 +155,8 @@ export interface EmployeeQuestions {
   responseType: string;
   response: string;
   completedFlag: boolean;
+  freezeFlag: boolean;
+
 }
 
 export interface TaskQuestions {
