@@ -23,6 +23,7 @@ import {
   Department,
   Questionnaire
 } from "../types";
+import { Search } from "lucide-react";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
@@ -331,14 +332,14 @@ export const adminService = {
     return response.data;
   },
 
- searchGroupLeads: async (search?: string): Promise<DropDownDTO[]> => {
+  searchGroupLeads: async (search?: string): Promise<DropDownDTO[]> => {
     const searchParam = search || "";
     const response = await api.post<DropDownDTO[]>(`/group/searchGroupLeads`,
       { search: searchParam }
     );
     return response.data
   },
-  
+
   createGroup: async (data: {
     name: string;
     pgLead?: number;
@@ -855,7 +856,7 @@ export const labService = {
       commonListDto: Lab[];
       totalElements: number;
     }>(`/location/findFilteredLocation/${page}`,
-      {search:searchTerm}
+      { search: searchTerm }
     );
     return response.data;
   },
@@ -934,6 +935,18 @@ export const EQuestions = {
     return response.data;
   },
 
+  submitEmployeeQuestions: async (
+    empId: string,
+    questionIds: number[]
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/eQuestions/submitEmployeeQuestions/${empId}`,
+      questionIds
+    );
+    return response.data;
+  },
+
+
 
   getEmployeesArchWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(
@@ -978,6 +991,7 @@ export const auditService = {
     }>(`/audit/findFilteredData/${pageNo}`, searchParams);
     return response.data;
   },
+
 };
 
 //Achieve Services
@@ -1026,6 +1040,31 @@ export const taskService = {
       };
       totalElements: number;
     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
+    return response.data;
+  },
+  getTasksWithFilter: async (params?: {
+    search?: string;
+    department?: string;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: TaskProjection[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredTaskForAdminWithFilter/${page}`,
+      { search: search, department: department, level: level }
+    );
     return response.data;
   },
   getTaskForGL: async (params?: {
@@ -1103,6 +1142,13 @@ export const taskService = {
     const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
     return response.data;
   },
+
+  // Check if assigned freeze task grouplead
+   assignedFreezeTask: async (taskId: string): Promise<boolean> => {
+  const response = await api.get<boolean>(`/task/assignedFreezeTask/${taskId}`);
+  return response.data;
+},
+
 };
 
 // Helper function to convert TaskProjection to Task
@@ -1452,10 +1498,15 @@ export const employeeService = {
   //department service
 
   createDepartment: async (data: {
-    id?:string;
+    id?: string;
     location: string;
   }): Promise<boolean> => {
     const response = await api.post<boolean>("/department/saveDepartment", data);
+    return response.data;
+  },
+
+  deleteDepartment: async (id: any): Promise<boolean> => {
+    const response = await api.get<boolean>(`/department/deleteDepartment/${id}`);
     return response.data;
   },
 
@@ -1467,11 +1518,13 @@ export const employeeService = {
     totalElements: number;
   }> => {
     const page = pageNo ?? 0;
-    const searchTerm = department || null;
+    const searchTerm = department || "";
     const response = await api.post<{
       commonListDto: Department[];
       totalElements: number;
-    }>(`/department/findFilteredDepartment/${searchTerm}/${page}`);
+    }>(`/department/findFilteredDepartment/${page}`,
+      { search: searchTerm }
+    );
     return response.data;
   },
 
@@ -1508,16 +1561,16 @@ export const employeeService = {
   },
 
   updateMasterEQuestions: async (data: {
-  id: string;
-  question: string;
-  responseType: "yes_no" | "text";
-  levels: string[];
-}): Promise<boolean> => {
-  const response = await api.post<boolean>(
-    "/eQuestions/updateMasterEQuestions",
-    data
-  );
-  return response.data;
-},
+    id: string;
+    question: string;
+    responseType: "yes_no" | "text";
+    levels: string[];
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      "/eQuestions/updateMasterEQuestions",
+      data
+    );
+    return response.data;
+  },
 
 };
