@@ -67,11 +67,34 @@ const TasksPage: React.FC = () => {
   const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
   const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
   const [totalQuestionCount, setTotalQuestionCount] = useState(0);
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
     [totalElements]
   );
+
+  useEffect(() => {
+    const fetchLookupData = async () => {
+      try {
+        const levels = await adminService.getLookupItems("Level");
+        setLevelOptions(levels);
+
+        const departments = await adminService.findAllDepartment();
+        const transformedDepartments = departments.map(dept => ({
+          ...dept,
+          value: dept.value || dept.key
+        }));
+        setDepartmentOptions(transformedDepartments);
+      } catch (error) {
+        toast.error("Failed to load dropdown options.");
+      }
+    };
+    fetchLookupData();
+  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -80,14 +103,30 @@ const TasksPage: React.FC = () => {
         page: currentPage,
         size: PAGE_SIZE,
       };
-      const search = searchFilter.trim();
-      if (search) params.search = search;
-      const response = await taskService.getTask(params);
+
+      if (searchFilter.trim()) {
+        params.search = searchFilter.trim();
+      }
+
+      if (selectedDepartment && departmentOptions.length > 0) {
+        const dept = departmentOptions.find(d => d.id === selectedDepartment);
+        if (dept) {
+          params.department = dept.value;
+        }
+      }
+
+      if (selectedLevel && levelOptions.length > 0) {
+        const lvl = levelOptions.find(l => l.id === selectedLevel);
+        if (lvl) {
+          params.level = lvl.value;
+        }
+      }
+
+      const response = await taskService.getTasksWithFilter(params);
       const taskList = response.commonListDto.content ?? [];
       setTasks(taskList);
       setTotalElements(response.totalElements ?? 0);
 
-      // Get list of employees who have questions assigned (from employee_question table)
       try {
         const employeesWithQuestionsArray =
           await EQuestions.getEmployeesWithQuestions();
@@ -96,19 +135,14 @@ const TasksPage: React.FC = () => {
         setEmployeesWithQuestions(new Set());
       }
 
-      const [tasksResponse, formatResponse] = await Promise.all([
-        taskService.getTask(params),
-        taskService.getDateFormat(),
-      ]);
-      setTasks(tasksResponse.commonListDto.content ?? []);
-      setTotalElements(tasksResponse.totalElements ?? 0);
-      setDateFormat(formatResponse); // Store the fetched format string
+      const formatResponse = await taskService.getDateFormat();
+      setDateFormat(formatResponse);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setTasks([]);
       setTotalElements(0);
     }
-  }, [currentPage, searchFilter]);
+  }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
   useEffect(() => {
     fetchTasks();
@@ -271,6 +305,28 @@ const TasksPage: React.FC = () => {
       {/* Header / Search */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <SearchableDropdown
+            options={departmentOptions}
+            value={selectedDepartment}
+            onChange={(department) => {
+              if (department !== undefined && !Array.isArray(department)) {
+                setSelectedDepartment(department as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select department"
+          />
+          <SearchableDropdown
+            options={levelOptions}
+            value={selectedLevel}
+            onChange={(level) => {
+              if (level !== undefined && !Array.isArray(level)) {
+                setSelectedLevel(level as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select level"
+          />
           <input
             type="text"
             value={searchFilter}
@@ -627,7 +683,7 @@ const TasksPage: React.FC = () => {
         </div>
       )}
       {showLabChangeModal && (
-       <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             <div className="flex-shrink-0 px-5 py-4 shadow-md">
               <CardTitle className="text-1xl font-semibold text-primary-gradient">

@@ -23,6 +23,7 @@ import {
   Department,
   Questionnaire
 } from "../types";
+import { Search } from "lucide-react";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
@@ -1028,6 +1029,31 @@ export const taskService = {
     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
     return response.data;
   },
+  getTasksWithFilter: async (params?: {
+    search?: string;
+    department?: string;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: TaskProjection[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredTaskForAdminWithFilter/${page}`,
+      { search: search, department:department, level:level }
+    );
+    return response.data;
+  },
   getTaskForGL: async (params?: {
     search?: string;
     page?: number;
@@ -1459,6 +1485,11 @@ export const employeeService = {
     return response.data;
   },
 
+   deleteDepartment: async (id:any): Promise<boolean> => {
+    const response = await api.get<boolean>(`/department/deleteDepartment/${id}`);
+    return response.data;
+  },
+
   getDepartments: async (
     pageNo: number,
     department?: string
@@ -1467,11 +1498,13 @@ export const employeeService = {
     totalElements: number;
   }> => {
     const page = pageNo ?? 0;
-    const searchTerm = department || null;
+    const searchTerm = department || "";
     const response = await api.post<{
       commonListDto: Department[];
       totalElements: number;
-    }>(`/department/findFilteredDepartment/${searchTerm}/${page}`);
+    }>(`/department/findFilteredDepartment/${page}`,
+      {search:searchTerm}
+    );
     return response.data;
   },
 
