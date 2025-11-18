@@ -8,7 +8,14 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { TaskProjection, DropDownDTO } from "@/app/types";
+import {
+  TaskProjection,
+  DropDownDTO,
+  Task,
+  TaskQuestions,
+  OwnerRow,
+  VerifiedRow,
+} from "@/app/types";
 import {
   Table,
   TableBody,
@@ -42,18 +49,22 @@ const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<TaskProjection[]>([]);
+  const [tasksByEmp, setTasksByEmp] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
+    null
+  );
   const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
     Set<number>
   >(new Set());
   const [dateFormat, setDateFormat] = useState<string | null>(null);
   const [showLabChangeModal, setShowLabChangeModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] =
     useState<any>(null);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
@@ -114,7 +125,67 @@ const TasksPage: React.FC = () => {
     fetchTasks();
   }, [fetchTasks]);
 
-  // Function to fetch labs based on department
+  const fetchTasksById = async (taskId: string) => {
+    try {
+      setError(null);
+      const t = await taskService.getTaskById(taskId);
+      console.log("Fetched task:", t);
+      const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
+      setTasksByEmp(list);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
+      setTasksByEmp([]);
+    } finally {
+    }
+  };
+
+  type TaskRow = OwnerRow | VerifiedRow;
+
+  const buildTaskRows = (tasksByEmp: Task): TaskRow[] => {
+    const ownerRow: OwnerRow = {
+      type: "owner",
+      name: tasksByEmp.assignedTo,
+      completed: tasksByEmp.completedQuestions,
+      total: tasksByEmp.totalQuestions,
+      status: tasksByEmp.status,
+    };
+
+    const users: Record<string, VerifiedRow> = {};
+
+    tasksByEmp.questionList?.forEach((q) => {
+      if (!q.verifiedBy) return;
+
+      if (!users[q.verifiedBy]) {
+        users[q.verifiedBy] = {
+          type: "verified",
+          verifiedBy: q.verifiedBy,
+          completed: 0,
+          total: 0,
+          status: "In Progress",
+        };
+      }
+
+      users[q.verifiedBy].total++;
+      if (q.status === "completed") users[q.verifiedBy].completed++;
+      if (q.overDueFlag) users[q.verifiedBy].status = "Overdue";
+      else if (q.status === "completed")
+        users[q.verifiedBy].status = "Completed";
+    });
+
+    const userRows = Object.values(users);
+
+    return [ownerRow, ...userRows];
+  };
+
+  const handleOpenStatusModal = async (taskIds: any) => {
+    setShowStatusModal(true);
+    if (taskIds) {
+      await fetchTasksById(taskIds);
+    } else {
+      setSelectedLabId(undefined);
+    }
+  };
+
   const fetchLabsByDepartment = async (
     department: string,
     currentLab?: string
@@ -166,7 +237,6 @@ const TasksPage: React.FC = () => {
       setQuestionsLoading(false);
     }
   };
-  // Open Lab Change Modal
   const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
@@ -234,7 +304,7 @@ const TasksPage: React.FC = () => {
       if (shouldArchive) {
         await Promise.all([
           taskService.freezeTask(selectedTaskId),
-          adminService.achiveEmployees(selectedEmployeeId)
+          adminService.achiveEmployees(selectedEmployeeId),
         ]);
         toast.success("Employee archived and tasks frozen successfully");
       } else {
@@ -247,12 +317,12 @@ const TasksPage: React.FC = () => {
       setSelectedTaskId("");
       setSelectedEmployeeId(null);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "Failed to complete operation";
+      const errorMessage =
+        err.response?.data?.message || "Failed to complete operation";
       setError(errorMessage);
       toast.error(errorMessage);
     }
   };
-
 
   const ProgressBar: React.FC<{ value: number; color: string }> = ({
     value,
@@ -265,6 +335,52 @@ const TasksPage: React.FC = () => {
       />
     </div>
   );
+
+  const renderStatus = (status: string) => {
+    const baseClass =
+      "px-3 py-1 rounded-full text-xs font-semibold inline-block";
+
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return (
+          <span className={`${baseClass} bg-green-100 text-green-600`}>
+            Completed
+          </span>
+        );
+
+      case "in progress":
+        return (
+          <span className={`${baseClass} bg-blue-100 text-blue-600`}>
+            In Progress
+          </span>
+        );
+
+      case "overdue":
+        return (
+          <span className={`${baseClass} bg-red-100 text-red-600`}>
+            Overdue
+          </span>
+        );
+
+      default:
+        return (
+          <span className={`${baseClass} bg-gray-200 text-gray-600`}>
+            Unknown
+          </span>
+        );
+    }
+  };
+
+  const groupByGroupName = (tasks: Task[]) => {
+    const map: Record<string, Task[]> = {};
+
+    tasks.forEach((t) => {
+      if (!map[t.groupName]) map[t.groupName] = [];
+      map[t.groupName].push(t);
+    });
+
+    return map;
+  };
 
   return (
     <div className="space-y-2">
@@ -406,15 +522,19 @@ const TasksPage: React.FC = () => {
                         </div>
                       </TableCell>
                       {/* Status */}
-                      <TableCell className="min-w-[100px]">
+                      <TableCell className="min-w-[100px] cursor-pointer">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
-
+                          const handleClick = () => {
+                            setSelectedTaskId(task.taskIds);
+                            handleOpenStatusModal(task.taskIds);
+                          };
                           if (status === "overdue") {
                             return (
                               <span
+                                onClick={handleClick}
                                 className={`${base} bg-red-600/20 text-red-600`}
                               >
                                 Overdue
@@ -425,6 +545,7 @@ const TasksPage: React.FC = () => {
                           if (status === "completed") {
                             return (
                               <span
+                                onClick={handleClick}
                                 className={`${base} bg-green-600/20 text-green-600`}
                               >
                                 Completed
@@ -434,6 +555,7 @@ const TasksPage: React.FC = () => {
 
                           return (
                             <span
+                              onClick={handleClick}
                               className={`${base} bg-amber-500/20 text-amber-600`}
                             >
                               In Progress
@@ -446,7 +568,9 @@ const TasksPage: React.FC = () => {
                         <div className="flex items-center gap-5">
                           <button
                             className="rounded-lg p-2 text-[#474BDD]  "
-                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
+                            onClick={() =>
+                              (window.location.href = `/admin/tasks/${task.taskIds}`)
+                            }
                             aria-label="View details"
                           >
                             <Eye size={18} />
@@ -464,12 +588,17 @@ const TasksPage: React.FC = () => {
                           )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
-                          {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
+                          {employeesWithQuestions.has(
+                            parseInt(task.employeeId, 10)
+                          ) && (
                             <button
                               className="rounded-lg text-[#3b82f6]"
                               onClick={() => {
                                 const firstTaskId = task.taskIds.split(",")[0];
-                                handleViewQuestions(firstTaskId, (task as any).name);
+                                handleViewQuestions(
+                                  firstTaskId,
+                                  (task as any).name
+                                );
                               }}
                               disabled={questionsLoading}
                               aria-label="View answers"
@@ -490,7 +619,9 @@ const TasksPage: React.FC = () => {
                                 title="Archive Employee"
                                 onClick={() => {
                                   setSelectedTaskId(task.taskIds);
-                                  setSelectedEmployeeId(parseInt(task.employeeId, 10));
+                                  setSelectedEmployeeId(
+                                    parseInt(task.employeeId, 10)
+                                  );
                                   setShowFreezeModal(true);
                                 }}
                               >
@@ -602,9 +733,7 @@ const TasksPage: React.FC = () => {
               <CardTitle>Archive Employee</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4">
-                Do you want to archive this employee?
-              </p>
+              <p className="mb-4">Do you want to archive this employee?</p>
               <div className="flex flex-col gap-3">
                 <Button
                   variant="default"
@@ -620,7 +749,6 @@ const TasksPage: React.FC = () => {
                 >
                   No
                 </Button>
-
               </div>
             </CardContent>
           </Card>
@@ -761,9 +889,104 @@ const TasksPage: React.FC = () => {
                 </div>
               )}
             </div>
-
-
           </div>
+        </div>
+      )}
+
+      {/* Status Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 rounded-xl shadow-xl">
+            <CardContent className="flex-1 overflow-hidden py-6 space-y-4">
+              {/* Modal Title */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Task Status Details
+                </h2>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setSelectedTaskId("");
+                  }}
+                  className="rounded-lg ml-4"
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+
+              {/* Table container with scroll */}
+              <div className="overflow-hidden border rounded-lg">
+                {Object.entries(groupByGroupName(tasksByEmp)).map(
+                  ([groupName, tasks]) => (
+                    <div key={groupName} className="mb-6">
+                      {/* 🔵 Group Heading */}
+                      <div className="px-4 py-2 bg-gray-100 font-semibold text-gray-800 border-b">
+                        {groupName}
+                      </div>
+
+                      {/* 🔵 Table – with its own header */}
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Assigned / Verified By</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Progress</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                          {tasks.map((task) => {
+                            const rows = buildTaskRows(task);
+
+                            return rows.map((row, idx) => (
+                              <TableRow key={`${task.id}-${idx}`}>
+                                {/* Owner Row */}
+                                {row.type === "owner" && (
+                                  <>
+                                    <TableCell className="font-semibold text-gray-900">
+                                      {row.name}
+                                    </TableCell>
+                                    <TableCell colSpan={2}></TableCell>
+                                    <TableCell className="font-medium">
+                                      {row.completed}/{row.total}
+                                    </TableCell>
+                                    <TableCell>
+                                      {renderStatus(row.status)}
+                                    </TableCell>
+                                  </>
+                                )}
+
+                                {/* Verified Row */}
+                                {row.type === "verified" && (
+                                  <>
+                                    <TableCell className="font-semibold text-gray-900">
+                                      {row.verifiedBy}
+                                    </TableCell>
+                                    <TableCell colSpan={2}></TableCell>
+                                    <TableCell className="font-medium">
+                                      {row.completed}/{row.total}
+                                    </TableCell>
+                                    <TableCell>
+                                      {renderStatus(row.status)}
+                                    </TableCell>
+                                  </>
+                                )}
+                              </TableRow>
+                            ));
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
