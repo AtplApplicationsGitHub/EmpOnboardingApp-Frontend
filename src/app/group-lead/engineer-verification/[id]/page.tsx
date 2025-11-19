@@ -147,7 +147,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
     }
   };
   // Check if submit button should be enabled
-  // Check if submit button should be enabled
   const isSubmitEnabled = () => {
     // Check if task is already frozen/verified
     const isTaskFrozen = tasks.some((task: any) => task.verifiedFreezeTask === true);
@@ -380,15 +379,18 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
         );
       })}
       {/* Submit Button */}
-      <div className="flex justify-center py-6">
-        <Button
-          onClick={() => setShowSubmitModal(true)}
-          disabled={!isSubmitEnabled()}
-          className="px-8"
-        >
-          Submit
-        </Button>
-      </div>
+
+      {!tasks.some((task: any) => task.verifiedFreezeTask === true) && (
+        <div className="flex justify-center py-6">
+          <Button
+            onClick={() => setShowSubmitModal(true)}
+            disabled={!isSubmitEnabled()}
+            className="px-8"
+          >
+            Submit
+          </Button>
+        </div>
+      )}
 
       {/* Submit Confirmation Modal */}
       {showSubmitModal && (
