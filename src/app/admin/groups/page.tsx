@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   HelpCircle,
   Copy,
+  Search,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -279,13 +280,23 @@ const GroupsPage: React.FC = () => {
             Create and manage department groups for the onboarding process
           </p>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add New Group
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus size={16} />
+            Add New Group
+          </Button>
+          <Button
+             onClick={() =>
+                      (window.location.href = `/admin/groups/search`)
+                    }
+          >
+            <Search size={16} />
+            Search
+          </Button>
+        </div>
+        
       </div>
 
       {/* Error Display */}

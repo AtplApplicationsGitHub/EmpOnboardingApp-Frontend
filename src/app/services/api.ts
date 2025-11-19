@@ -23,7 +23,6 @@ import {
   Department,
   Questionnaire
 } from "../types";
-import { Search } from "lucide-react";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
@@ -430,12 +429,14 @@ export const adminService = {
     commonListDto: Task[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/findFilteredTaskAck/${search}/${page}`);
+    }>(`/task/findFilteredTaskAck/${page}`,
+      {search : search}
+    );
     return response.data;
   },
 
@@ -556,6 +557,39 @@ export const adminService = {
   findAllDepartment: async (): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/department/findAllDepartment`
+    );
+    return response.data;
+  },
+
+  findAllGroups: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/group/getAllGroupsDropdown`
+    );
+    return response.data;
+  },
+
+  findQuestionsByFilters: async (params?: {
+    group?: number;
+    department?: number;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: Question[];
+    };
+    totalElements: number;
+  }> => {
+    const group = params?.group ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: Question[];
+      };
+      totalElements: number;
+    }>(`/question/findQuestionsByFilters/${page}`,
+      { group: group, department: department, level: level }
     );
     return response.data;
   },
@@ -1079,7 +1113,9 @@ export const taskService = {
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/findFilteredTask/${search}/${page}`);
+    }>(`/task/findFilteredTask/${page}`,
+      {search : search}
+    );
     return response.data;
   },
   getDashboardForGL: async (): Promise<GLDashboard> => {
@@ -1216,7 +1252,7 @@ export const groupLeadService = {
         content: TaskProjection[];
       };
       totalElements: number;
-    }>("/task/filteredTaskForAdmin/null/0");
+    }>("/task/filteredTaskForAdmin/0");
 
     // Convert TaskProjection[] to Task[] for compatibility
     return response.data.commonListDto.content.map(convertTaskProjectionToTask);
