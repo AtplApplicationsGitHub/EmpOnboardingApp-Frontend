@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [savedValues, setSavedValues] = useState<RespMap>({});
   const [draftValues, setDraftValues] = useState<RespMap>({});
   const [savingByKey, setSavingByKey] = useState<BoolMap>({});
@@ -97,13 +97,13 @@ const Dashboard: React.FC = () => {
         setSavingByKey((s) => ({ ...s, [key]: true }));
         await EQuestions.saveResponse(q.id, value);
         setSavedValues((sv) => ({ ...sv, [key]: value }));
-         setQuestions((prevQuestions) =>
-        prevQuestions.map((question) =>
-          question.id === q.id
-            ? { ...question, completedFlag: true }
-            : question
-        )
-      );
+        setQuestions((prevQuestions) =>
+          prevQuestions.map((question) =>
+            question.id === q.id
+              ? { ...question, completedFlag: true }
+              : question
+          )
+        );
         toast.success("Response saved");
       } catch (e: any) {
         toast.error(e?.response?.data?.message ?? "Failed to save response");
@@ -126,6 +126,7 @@ const Dashboard: React.FC = () => {
   // Submit All Questions Handler
   const handleSubmitQuestions = useCallback(async () => {
     try {
+      setShowSubmitModal(false);
       setSubmitting(true);
       setError(null);
 
@@ -340,9 +341,9 @@ const Dashboard: React.FC = () => {
 
       {/* Submit Button */}
       {showSubmitButton && (
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-center pt-4">
           <Button
-            onClick={handleSubmitQuestions}
+            onClick={() => setShowSubmitModal(true)}
             disabled={submitting}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -353,10 +354,38 @@ const Dashboard: React.FC = () => {
               </>
             ) : (
               <>
-                <span>Submit All Questions</span>
+                <span>Submit</span>
               </>
             )}
           </Button>
+        </div>
+      )}
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardContent className="pt-6">
+              <p className="mb-4 text-md">
+                Are you sure you want to submit all questions? This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitQuestions}
+                  className="flex-1 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1]"
+                >
+                  Yes, Submit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

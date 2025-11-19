@@ -79,6 +79,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [isFirstTaskForEmployee, setIsFirstTaskForEmployee] = useState<boolean>(false);
 
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+
   // Async search function for group leads
   const searchGroupLeads = async (searchTerm: string): Promise<DropDownDTO[]> => {
     try {
@@ -136,6 +138,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     },
     []
   );
+
+  // Check if all questions in all tasks are completed
+  const allQuestionsCompleted = useMemo(() => {
+    return tasks.every((task) => {
+      const qList = task.questionList ?? [];
+      return qList.length > 0 && qList.every((q) =>
+        (q.status || "").toLowerCase() === "completed"
+      );
+    });
+  }, [tasks]);
 
   // Toggle feedback tooltip
   const toggleFeedbackTooltip = useCallback((taskId: string) => {
@@ -203,7 +215,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       setError("Please select a group lead.");
       return;
     }
-    
+
     try {
       await taskService.reassignTask(reAssignTask, primaryGroupLeadId);
       setShowReassignModal(false);
@@ -226,6 +238,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask; // 'Y' | 'N'
+  const assignedFreezeTask = tasks[0]?.assignedFreezeTask;
 
   // Fetch labs when department changes
   useEffect(() => {
@@ -295,6 +308,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       await taskService.updateResponse(q.id, value);
       setRespValues((v) => ({ ...v, [key]: value }));
       toast.success("Response saved");
+      if (!isTextType(q)) {
+        await fetchTasks();
+      }
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? "Failed to save response");
     } finally {
@@ -314,7 +330,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   // Open reassign modal and fetch current assignee details
   const openReassignModal = async (task: Task) => {
     setReAssignTask(task.id.toString());
-    
+
     // Fetch current assignee details
     if (task.assignedTo) {
       const assigneeDetails = await fetchGroupLeadDetails(task.assignedTo);
@@ -329,8 +345,21 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       setPrimaryGroupLeadId(undefined);
       setPrimaryGroupLeadSelectedOption([]);
     }
-    
+
     setShowReassignModal(true);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const result = await taskService.assignedFreezeTask(taskId);
+      console.log('Freeze Task Result:', result);
+      toast.success("Task submitted successfully");
+      setShowSubmitModal(false);
+      // Refresh the task data to reflect the freeze status
+      await fetchTasks();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to submit task");
+    }
   };
 
   const overall = useMemo(() => {
@@ -421,7 +450,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                 <SearchableDropdown
                   options={labOptions}
                   value={selectedLabId}
-                  disabled={freezeTask === "Y"}
+                  disabled={false}
                   onChange={handleLabChange}
                   placeholder="Select Lab"
                   displayFullValue={false}
@@ -433,20 +462,19 @@ const GroupLeadTaskDetailPage: React.FC = () => {
           )}
           <Button
             variant="outline"
-            size="sm"
             onClick={handleViewAll}
             className="mt-2"
           >
             View All
           </Button>
-               <Button
-          variant="outline"
-          onClick={() => router.push("/group-lead/tasks")}
-          className="flex items-center gap-1"
-        >
-          <ArrowLeft size={16} />
-          Back 
-        </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/group-lead/tasks")}
+            className="flex items-center gap-1"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
         </div>
       </div>
 
@@ -486,11 +514,10 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${
-                              star <= Number(t?.efstar ?? 0)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
+                            className={`w-4 h-4 ${star <= Number(t?.efstar ?? 0)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                              }`}
                           />
                         ))}
                       </button>
@@ -510,7 +537,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={freezeTask === "Y"}
+                    disabled={assignedFreezeTask === "Y"}
                     onClick={() => openReassignModal(t)}
                   >
                     <RefreshCw size={16} />
@@ -587,14 +614,15 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                     [key]: e.target.value,
                                   }))
                                 }
-                                onBlur={(e) => {
+                                onBlur={async (e) => {
                                   const newVal = e.target.value.trim();
                                   if (newVal === (initial ?? "")) return;
                                   if (saving) return;
-                                  if (freezeTask === "Y") return;
-                                  saveQuestionResponse(t.id, q, newVal);
+                                  if (assignedFreezeTask === "Y") return;
+                                  await saveQuestionResponse(t.id, q, newVal);
+                                  await fetchTasks();
                                 }}
-                                disabled={saving || freezeTask === "Y"}
+                                disabled={saving || assignedFreezeTask === "Y"}
                               />
                             ) : (
                               <div className="flex items-center gap-2">
@@ -608,7 +636,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                       <Button
                                         type="button"
                                         variant={isYes ? "default" : "outline"}
-                                        disabled={saving || freezeTask === "Y"}
+                                        disabled={saving || assignedFreezeTask === "Y"}
                                         onClick={() => saveQuestionResponse(t.id, q, "YES")}
                                       >
                                         Yes
@@ -616,7 +644,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                       <Button
                                         type="button"
                                         variant={isNo ? "default" : "outline"}
-                                        disabled={saving || freezeTask === "Y"}
+                                        disabled={saving || assignedFreezeTask === "Y"}
                                         onClick={() => saveQuestionResponse(t.id, q, "NO")}
                                       >
                                         No
@@ -676,6 +704,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
               </Table>
             </CardContent>
           </Card>
+
         );
       })}
 
@@ -743,6 +772,49 @@ const GroupLeadTaskDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardContent className="pt-6">
+              <p className="mb-4 text-md">
+                Are you sure you want to submit this task for{" "}
+                <span className="font-semibold">{employeeName}</span>? This action
+                cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  className="flex-1 bg-primary-gradient"
+                >
+                  Yes, Submit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <div className="flex justify-center py-6">
+        <Button
+          onClick={() => setShowSubmitModal(true)}
+          disabled={!allQuestionsCompleted || assignedFreezeTask === "Y"}
+          className="px-8 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+      shadow-md transition-all duration-300 ease-in-out 
+      hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+      disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Submit
+        </Button>
+      </div>
     </div>
   );
 };
