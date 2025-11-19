@@ -12,7 +12,7 @@ RUN apk add --no-cache nodejs npm dumb-init
 RUN apk upgrade --no-cache
 WORKDIR /app
 COPY --from=builder /app /app
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80 443
 
