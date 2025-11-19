@@ -435,7 +435,7 @@ export const adminService = {
       commonListDto: Task[];
       totalElements: number;
     }>(`/task/findFilteredTaskAck/${page}`,
-      {search : search}
+      { search: search }
     );
     return response.data;
   },
@@ -1114,7 +1114,7 @@ export const taskService = {
       commonListDto: Task[];
       totalElements: number;
     }>(`/task/findFilteredTask/${page}`,
-      {search : search}
+      { search: search }
     );
     return response.data;
   },
@@ -1180,8 +1180,13 @@ export const taskService = {
   },
 
   // Check if assigned freeze task grouplead
-   assignedFreezeTask: async (taskId: string): Promise<boolean> => {
-  const response = await api.get<boolean>(`/task/assignedFreezeTask/${taskId}`);
+  assignedFreezeTask: async (taskId: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/task/assignedFreezeTask/${taskId}`);
+    return response.data;
+  },
+
+  verifiedFreezeTask: async (taskId: string): Promise<boolean> => {
+  const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
   return response.data;
 },
 

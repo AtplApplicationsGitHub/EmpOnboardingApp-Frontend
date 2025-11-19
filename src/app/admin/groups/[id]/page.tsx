@@ -323,7 +323,7 @@ const GroupDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-start justify-center py-12">
           <div className="text-muted-foreground">Loading group data...</div>
         </div>
       </div>
@@ -393,10 +393,10 @@ const GroupDetailsPage: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-4 text-lg">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
+                    <span className=" flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
                       {questionPage * PAGE_SIZE + index + 1}
                     </span>
-                    {question.text}
+                    <span className="flex-1 break-words">{question.text}</span>
                   </CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded">

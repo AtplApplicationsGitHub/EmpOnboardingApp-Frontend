@@ -537,7 +537,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={assignedFreezeTask === "Y"}
+                    disabled={assignedFreezeTask === true}
                     onClick={() => openReassignModal(t)}
                   >
                     <RefreshCw size={16} />
@@ -618,11 +618,11 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                   const newVal = e.target.value.trim();
                                   if (newVal === (initial ?? "")) return;
                                   if (saving) return;
-                                  if (assignedFreezeTask === "Y") return;
+                                  if (assignedFreezeTask === true) return;
                                   await saveQuestionResponse(t.id, q, newVal);
                                   await fetchTasks();
                                 }}
-                                disabled={saving || assignedFreezeTask === "Y"}
+                                disabled={saving || assignedFreezeTask === true}
                               />
                             ) : (
                               <div className="flex items-center gap-2">
@@ -636,7 +636,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                       <Button
                                         type="button"
                                         variant={isYes ? "default" : "outline"}
-                                        disabled={saving || assignedFreezeTask === "Y"}
+                                        disabled={saving || assignedFreezeTask === true}
                                         onClick={() => saveQuestionResponse(t.id, q, "YES")}
                                       >
                                         Yes
@@ -644,7 +644,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                                       <Button
                                         type="button"
                                         variant={isNo ? "default" : "outline"}
-                                        disabled={saving || assignedFreezeTask === "Y"}
+                                        disabled={saving || assignedFreezeTask === true}
                                         onClick={() => saveQuestionResponse(t.id, q, "NO")}
                                       >
                                         No
@@ -806,7 +806,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       <div className="flex justify-center py-6">
         <Button
           onClick={() => setShowSubmitModal(true)}
-          disabled={!allQuestionsCompleted || assignedFreezeTask === "Y"}
+          disabled={!allQuestionsCompleted || assignedFreezeTask === true}
           className="px-8 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
       shadow-md transition-all duration-300 ease-in-out 
       hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
