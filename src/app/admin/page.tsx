@@ -76,67 +76,6 @@ const AdminDashboard: React.FC = () => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  //unused refreshhhh
-  // const handleManualRefresh = async () => {
-  //   try {
-  //     setLoading(true);
-      
-  //     const totalGroups = await adminService.getGroupsCount();
-  //     const totalQuestions = await adminService.getQuestionsCount();
-  //     const totalUsers = await adminService.getUserCount();
-      
-  //     // Fetch tasks count and recent tasks
-  //     const tasks = await adminService.getTasks();
-  //     const totalTasks = tasks.length;
-      
-  //     // Sort tasks by created_at and updated_at to get recent actions
-  //     const sortedTasks = tasks.sort((a, b) => {
-  //       const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-  //       const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-  //       return bTime - aTime;
-  //     });
-      
-  //     // Get all recent actions (don't limit to 10 here since we'll paginate)
-  //     const recentActions = sortedTasks;
-  //     setRecentTasks(recentActions);
-      
-  //     setStats({
-  //       totalGroups,
-  //       totalUsers,
-  //       totalTasks,
-  //       totalQuestions
-  //     });
-      
-  //     console.log('Manual refresh completed successfully');
-  //   } catch (err: any) {
-  //     setError(err.response?.data?.message || 'Failed to refresh dashboard data');
-  //     console.error('Manual refresh error', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // Reassignment handlers
-  // const handleReassignTask = (task: any) => {
-  //   // Only allow reassignment of pending tasks
-  //   if (task.status !== 'pending') {
-  //     return;
-  //   }
-    
-  //   setSelectedTasksForReassign([task]);
-  //   setIsReassignModalOpen(true);
-  // };
-
-  // const handleReassignSuccess = async () => {
-  //   // Refresh the tasks data after successful reassignment
-  //   await handleManualRefresh();
-  // };
-
-  // const handleCloseReassignModal = () => {
-  //   setIsReassignModalOpen(false);
-  //   setSelectedTasksForReassign([]);
-  // };
-
   if (loading) {
     return (
       <div className={`p-8 ${animationClasses.fadeIn}`}>
