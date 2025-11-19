@@ -104,8 +104,8 @@ export { loadingManager };
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "https://emp-onboard.goval.app:8084/api",
-  //baseURL: "http://localhost:8084/api",
+   baseURL: "https://emp-onboard.sailife.com:8084/api",
+  // baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
