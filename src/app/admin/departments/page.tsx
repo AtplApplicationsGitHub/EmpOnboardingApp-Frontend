@@ -27,7 +27,7 @@ type Department = {
   lab?: string;
   createdTime: string;
   updatedTime: string;
-  disableDelete:boolean;
+  disableDelete: boolean;
 };
 
 type FormState = {
@@ -435,16 +435,9 @@ const DepartmentsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Are you sure you want to delete
+                Are you sure you want to delete?
               </p>
               <div className="flex gap-3">
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteDepartment}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -454,6 +447,13 @@ const DepartmentsPage: React.FC = () => {
                   className="flex-1"
                 >
                   Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteDepartment}
+                  className="flex-1"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </CardContent>

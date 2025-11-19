@@ -308,8 +308,14 @@ const TasksPage: React.FC = () => {
           <SearchableDropdown
             options={departmentOptions}
             value={selectedDepartment}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
             onChange={(department) => {
-              if (department !== undefined && !Array.isArray(department)) {
+              if (department === undefined) {
+                setSelectedDepartment(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(department)) {
                 setSelectedDepartment(department as number);
                 setCurrentPage(0);
               }
@@ -319,8 +325,14 @@ const TasksPage: React.FC = () => {
           <SearchableDropdown
             options={levelOptions}
             value={selectedLevel}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
             onChange={(level) => {
-              if (level !== undefined && !Array.isArray(level)) {
+              if (level === undefined) {
+                setSelectedLevel(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(level)) {
                 setSelectedLevel(level as number);
                 setCurrentPage(0);
               }
