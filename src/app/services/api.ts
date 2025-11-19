@@ -105,7 +105,7 @@ export { loadingManager };
 // Create axios instance
 const api = axios.create({
   baseURL: "https://emp-onboard.goval.app:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  //baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -649,7 +649,7 @@ export const adminService = {
     const response = await api.post<{
       commonListDto: User[];
       totalElements: number;
-    }>(`/user/findFilteredPatient/${page}`,
+    }>(`/user/findFilteredUsers/${page}`,
       { search: search }
     );
     return response.data;
@@ -676,6 +676,16 @@ export const adminService = {
 
   findById: async (id: number): Promise<User> => {
     const response = await api.get<User>(`/user/findById/${id}`);
+    return response.data;
+  },
+
+  canDeactivateUser: async (id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/user/canDeactivateUser/${id}`);
+    return response.data;
+  },
+
+  deactivateUser: async (id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/user/deactivateUser/${id}`);
     return response.data;
   },
 

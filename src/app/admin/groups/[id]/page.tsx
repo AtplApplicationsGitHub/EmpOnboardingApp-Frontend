@@ -392,7 +392,7 @@ const GroupDetailsPage: React.FC = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="flex items-center gap-4 text-lg">
+                  <CardTitle className="flex items-center gap-4 text-md">
                     <span className=" flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
                       {questionPage * PAGE_SIZE + index + 1}
                     </span>
@@ -407,29 +407,6 @@ const GroupDetailsPage: React.FC = () => {
                     <span>Due: Day {question.complainceDay}</span>
                     <span>Period: {question.period}</span>
 
-                    {/* <div className="flex items-center gap-1">
-                      <span>Levels:</span>
-                      {question.questionLevel.map((questionLevel) => (
-                        <span
-                          key={questionLevel}
-                          className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
-                        >
-                          {questionLevel}
-                        </span>
-                      ))}
-                    </div> */}
-
-                    {/* <div className="flex items-center gap-1">
-                      <span>Departments:</span>
-                      {question.questionDepartment.map((questionDepartment) => (
-                        <span
-                          key={questionDepartment}
-                          className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
-                        >
-                          {questionDepartment}
-                        </span>
-                      ))}
-                    </div> */}
                     {question.verifiedByEmail && (
                       <span className="-ml-2 px-2 py-1 rounded">
                         Verified by: {getVerifiedByDisplayName(question.verifiedByEmail)}
@@ -437,7 +414,7 @@ const GroupDetailsPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="ml-5 flex items-center gap-3">
                   <button
                     title="Edit Question"
                     onClick={() => openEditModal(question)}

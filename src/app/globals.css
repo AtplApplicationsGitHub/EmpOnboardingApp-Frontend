@@ -48,6 +48,10 @@
     .text-primary-gradient {
       color: rgb(76 81 191 / var(--tw-text-opacity, 1));
     }
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+      display: none;
+}
   }
 
   .dark {

@@ -366,7 +366,7 @@ const Dashboard: React.FC = () => {
           <Card className="w-full max-w-sm mx-4">
             <CardContent className="pt-6">
               <p className="mb-4 text-md">
-                Are you sure you want to submit all questions? This action cannot be undone.
+                Are you sure you want to submit? This action cannot be undone.
               </p>
 
               <div className="flex gap-3">

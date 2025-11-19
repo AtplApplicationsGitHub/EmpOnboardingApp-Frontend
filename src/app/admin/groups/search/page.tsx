@@ -208,6 +208,7 @@ const GroupsSearchPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow className="table-heading-bg text-primary-gradient">
+                <TableHead className="w-[60px]">S.No</TableHead>
                 <TableHead className="w-[40%]">Question</TableHead>
                 <TableHead>Response</TableHead>
                 <TableHead>Due</TableHead>
@@ -227,8 +228,12 @@ const GroupsSearchPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                questions.map((question) => (
+                questions.map((question, index) => (
                   <TableRow key={question.id}>
+                      {/* S.No */}
+                    <TableCell className="font-medium">
+                      {currentPage * PAGE_SIZE + index + 1}
+                    </TableCell>
                     {/* Question - wider column */}
                     <TableCell className="font-medium w-[40%]">
                       {question.text}
