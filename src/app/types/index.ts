@@ -141,7 +141,7 @@ export interface Task {
   createdTime: string;
   updatedTime: string;
   answer?: "yes" | "no"
-  assignedFreezeTask?: string;
+  assignedFreezeTask?: boolean;
 
   // Additional fields that might come from API
   // mock_employee_id?: string;
