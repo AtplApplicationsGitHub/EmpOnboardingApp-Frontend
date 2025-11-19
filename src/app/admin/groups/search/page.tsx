@@ -142,6 +142,7 @@ const GroupsSearchPage: React.FC = () => {
             value={selectedGroup}
             required={false}
             displayFullValue={false}
+            isEmployeePage={true}
             onChange={(group) => {
               if (group === undefined) {
                 setSelectedGroup(undefined);
@@ -158,6 +159,7 @@ const GroupsSearchPage: React.FC = () => {
             value={selectedDepartment}
             required={false}
             displayFullValue={false}
+            isEmployeePage={true}
             onChange={(department) => {
               if (department === undefined) {
                 setSelectedDepartment(undefined);
@@ -173,6 +175,8 @@ const GroupsSearchPage: React.FC = () => {
             options={levelOptions}
             value={selectedLevel}
             required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
             onChange={(level) => {
               if (level === undefined) {
                 setSelectedLevel(undefined);

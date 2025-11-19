@@ -309,6 +309,8 @@ const TasksPage: React.FC = () => {
             options={departmentOptions}
             value={selectedDepartment}
             required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
             onChange={(department) => {
               if (department === undefined) {
                 setSelectedDepartment(undefined);
@@ -324,6 +326,8 @@ const TasksPage: React.FC = () => {
             options={levelOptions}
             value={selectedLevel}
             required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
             onChange={(level) => {
               if (level === undefined) {
                 setSelectedLevel(undefined);
