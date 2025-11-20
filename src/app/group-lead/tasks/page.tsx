@@ -8,7 +8,13 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { Task, EmployeeQuestions, DropDownDTO } from "@/app/types";
+import {
+  Task,
+  EmployeeQuestions,
+  DropDownDTO,
+  OwnerRow,
+  VerifiedRow,
+} from "@/app/types";
 import {
   Table,
   TableBody,
@@ -85,6 +91,9 @@ const GroupLeadTasksPage: React.FC = () => {
   const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
     undefined
   );
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [tasksByEmp, setTasksByEmp] = useState<Task[]>([]);
+
   const [loadingLabs, setLoadingLabs] = useState(false);
 
   const totalPages = useMemo(
@@ -125,6 +134,113 @@ const GroupLeadTasksPage: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  const fetchTasksById = async (taskId: string) => {
+    try {
+      setError(null);
+      const t = await taskService.getTaskById(taskId);
+      console.log("Fetched task:", t);
+      const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
+      setTasksByEmp(list);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load task(s)");
+      setTasksByEmp([]);
+    } finally {
+    }
+  };
+
+  type TaskRow = OwnerRow | VerifiedRow;
+
+  const buildTaskRows = (tasksByEmp: Task): TaskRow[] => {
+    const ownerRow: OwnerRow = {
+      type: "owner",
+      name: tasksByEmp.assignedTo,
+      completed: tasksByEmp.completedQuestions,
+      total: tasksByEmp.totalQuestions,
+      status: tasksByEmp.status,
+    };
+
+    const users: Record<string, VerifiedRow> = {};
+
+    tasksByEmp.questionList?.forEach((q) => {
+      if (!q.verifiedBy) return;
+
+      if (!users[q.verifiedBy]) {
+        users[q.verifiedBy] = {
+          type: "verified",
+          verifiedBy: q.verifiedBy,
+          completed: 0,
+          total: 0,
+          status: "In Progress",
+        };
+      }
+
+      users[q.verifiedBy].total++;
+      if (q.status === "completed") users[q.verifiedBy].completed++;
+      if (q.overDueFlag) users[q.verifiedBy].status = "Overdue";
+      else if (q.status === "completed")
+        users[q.verifiedBy].status = "Completed";
+    });
+
+    const userRows = Object.values(users);
+
+    return [ownerRow, ...userRows];
+  };
+
+  const handleOpenStatusModal = async (taskIds: any) => {
+    setShowStatusModal(true);
+    if (taskIds) {
+      await fetchTasksById(taskIds);
+    } else {
+      setSelectedLabId(undefined);
+    }
+  };
+
+  const renderStatus = (status: string) => {
+    const baseClass =
+      "px-3 py-1 rounded-full text-xs font-semibold inline-block";
+
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return (
+          <span className={`${baseClass} bg-green-100 text-green-600`}>
+            Completed
+          </span>
+        );
+
+      case "in progress":
+        return (
+          <span className={`${baseClass} bg-blue-100 text-blue-600`}>
+            In Progress
+          </span>
+        );
+
+      case "overdue":
+        return (
+          <span className={`${baseClass} bg-red-100 text-red-600`}>
+            Overdue
+          </span>
+        );
+
+      default:
+        return (
+          <span className={`${baseClass} bg-gray-200 text-gray-600`}>
+            Unknown
+          </span>
+        );
+    }
+  };
+
+  const groupByGroupName = (tasks: Task[]) => {
+    const map: Record<string, Task[]> = {};
+
+    tasks.forEach((t) => {
+      if (!map[t.groupName]) map[t.groupName] = [];
+      map[t.groupName].push(t);
+    });
+
+    return map;
+  };
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -339,7 +455,7 @@ const GroupLeadTasksPage: React.FC = () => {
                   (() => {
                     const seenEmployees = new Set<string>();
                     return allTasks.map((task) => {
-                      console.log('fetched task from be:', allTasks);
+                      console.log("fetched task from be:", allTasks);
                       console.log("Task Data:", task);
                       const completed =
                         (task as any).completedQuetions ??
@@ -388,15 +504,18 @@ const GroupLeadTasksPage: React.FC = () => {
                           </TableCell>
 
                           {/* Status */}
-                          <TableCell >
+                          <TableCell className="cursor-pointer">
                             {(() => {
                               const status = (task.status || "").toLowerCase();
                               const base =
                                 "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ";
-
+                              const handleClick = () => {
+                                handleOpenStatusModal(task.id);
+                              };
                               if (status === "overdue") {
                                 return (
                                   <span
+                                    onClick={handleClick}
                                     className={`${base} bg-red-600/20 text-red-600`}
                                   >
                                     Overdue
@@ -407,6 +526,7 @@ const GroupLeadTasksPage: React.FC = () => {
                               if (status === "completed") {
                                 return (
                                   <span
+                                    onClick={handleClick}
                                     className={`${base} bg-green-600/20 text-green-600`}
                                   >
                                     Completed
@@ -416,6 +536,7 @@ const GroupLeadTasksPage: React.FC = () => {
 
                               return (
                                 <span
+                                  onClick={handleClick}
                                   className={`${base} bg-amber-500/20 text-amber-600`}
                                 >
                                   In Progress
@@ -739,7 +860,102 @@ const GroupLeadTasksPage: React.FC = () => {
         </div>
       )}
 
+      {/* Status Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 rounded-xl shadow-xl">
+            <CardContent className="flex-1 overflow-hidden py-6 space-y-4">
+              {/* Modal Title */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Task Status Details
+                </h2>
 
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setSelectedTaskId("");
+                  }}
+                  className="rounded-lg ml-4"
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+
+              {/* Table container with scroll */}
+              <div className="overflow-hidden border rounded-lg">
+                {Object.entries(groupByGroupName(tasksByEmp)).map(
+                  ([groupName, tasks]) => (
+                    <div key={groupName} className="mb-6">
+                      {/* 🔵 Group Heading */}
+                      <div className="px-4 py-2 bg-gray-100 font-semibold text-gray-800 border-b">
+                        {groupName}
+                      </div>
+
+                      {/* 🔵 Table – with its own header */}
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Assigned / Verified By</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Progress</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                          {tasks.map((task) => {
+                            const rows = buildTaskRows(task);
+
+                            return rows.map((row, idx) => (
+                              <TableRow key={`${task.id}-${idx}`}>
+                                {/* Owner Row */}
+                                {row.type === "owner" && (
+                                  <>
+                                    <TableCell className="font-semibold text-gray-900">
+                                      {row.name}
+                                    </TableCell>
+                                    <TableCell colSpan={2}></TableCell>
+                                    <TableCell className="font-medium">
+                                      {row.completed}/{row.total}
+                                    </TableCell>
+                                    <TableCell>
+                                      {renderStatus(row.status)}
+                                    </TableCell>
+                                  </>
+                                )}
+
+                                {/* Verified Row */}
+                                {row.type === "verified" && (
+                                  <>
+                                    <TableCell className="font-semibold text-gray-900">
+                                      {row.verifiedBy}
+                                    </TableCell>
+                                    <TableCell colSpan={2}></TableCell>
+                                    <TableCell className="font-medium">
+                                      {row.completed}/{row.total}
+                                    </TableCell>
+                                    <TableCell>
+                                      {renderStatus(row.status)}
+                                    </TableCell>
+                                  </>
+                                )}
+                              </TableRow>
+                            ));
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

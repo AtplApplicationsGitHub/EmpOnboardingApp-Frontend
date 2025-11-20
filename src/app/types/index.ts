@@ -150,6 +150,23 @@ export interface Task {
   // completed_at?: string;
 }
 
+export interface OwnerRow {
+  type: "owner";
+  name: string;
+  completed: number;
+  total: number;
+  status: string;
+}
+
+export interface VerifiedRow {
+  type: "verified";
+  verifiedBy: string;
+  completed: number;
+  total: number;
+  status: string;
+}
+
+
 export interface EmployeeQuestions {
   id: number;
   question: string;
