@@ -317,10 +317,8 @@ const GroupLeadTasksPage: React.FC = () => {
                 <TableRow className="table-heading-bg text-primary-gradient">
                   <TableHead>Task ID</TableHead>
                   <TableHead>Employee Name</TableHead>
-                  <TableHead>Group ID</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Role</TableHead>
                   <TableHead>Department</TableHead>
+                  <TableHead>Level</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -373,10 +371,8 @@ const GroupLeadTasksPage: React.FC = () => {
                             {(task as any).id}
                           </TableCell>
                           <TableCell>{(task as any).employeeName}</TableCell>
-                          <TableCell>{(task as any).groupName}</TableCell>
-                          <TableCell>{(task as any).level}</TableCell>
-                          <TableCell>{(task as any).role}</TableCell>
                           <TableCell>{(task as any).department}</TableCell>
+                          <TableCell>{(task as any).level}</TableCell>
                           <TableCell className="">
                             <div className="flex flex-col gap-2">
                               <div className="flex items-center gap-2 text-sm">
@@ -688,19 +684,6 @@ const GroupLeadTasksPage: React.FC = () => {
                     Questions
                   </div>
                 </div>
-
-                {/* <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setShowQuestionsModal(false);
-                    setSelectedTaskQuestions([]);
-                    setSelectedEmployeeName("");
-                  }}
-                  className="rounded-lg"
-                >
-                  <X size={16} />
-                </Button> */}
               </div>
             </div>
 
