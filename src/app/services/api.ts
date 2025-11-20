@@ -1138,6 +1138,11 @@ export const taskService = {
     return response.data;
   },
 
+   getTaskByIdForVerification: async (id?: string): Promise<Task[]> => {
+    const response = await api.get<Task[]>(`/task/findByIdForVerification/${id}`);
+    return response.data;
+  },
+
   reassignTask: async (taskId: string, id: number): Promise<boolean> => {
     const response = await api.get<boolean>(
       `/task/reassignTask/${taskId}/${id}`
