@@ -11,8 +11,6 @@ import {
   PdfDto,
   EmployeeImportResult,
   TaskProjection,
-  EmployeeTaskFilter,
-  EmployeeTaskResponse,
   EmployeeFeedback,
   EmployeeQuestions,
   MultiSelectDropDownDTO,
@@ -25,17 +23,89 @@ import {
   Department,
   Questionnaire
 } from "../types";
-import { group } from "console";
-import AcknowledgementPage from "../admin/acknowledgement/page";
 
-// Re-export types for easier access
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
+
+
+class LoadingManager {
+  private activeRequests = 0;
+  private loadingElement: HTMLElement | null = null;
+
+  show() {
+    this.activeRequests++;
+    if (this.activeRequests === 1) {
+      this.createLoadingElement();
+    }
+  }
+
+  hide() {
+    this.activeRequests--;
+    if (this.activeRequests <= 0) {
+      this.activeRequests = 0;
+      this.removeLoadingElement();
+    }
+  }
+
+  forceHide() {
+    this.activeRequests = 0;
+    this.removeLoadingElement();
+  }
+
+  private createLoadingElement() {
+    if (this.loadingElement) return;
+
+    const spinner = document.createElement('div');
+    spinner.id = 'global-api-loading';
+    spinner.innerHTML = `
+      <div style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-in;
+      ">
+        <div style="
+          width: 48px;
+          height: 48px;
+          border: 4px solid #e5e7eb;
+          border-top-color: #4f46e5;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+      </div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      </style>
+    `;
+
+    document.body.appendChild(spinner);
+    this.loadingElement = spinner;
+  }
+
+  private removeLoadingElement() {
+    if (this.loadingElement) {
+      this.loadingElement.remove();
+      this.loadingElement = null;
+    }
+  }
+}
+
+const loadingManager = new LoadingManager();
+export { loadingManager };
 
 // Create axios instance
 const api = axios.create({
-  // baseURL: 'https://dev.goval.app:2083/api',
-  baseURL: "https://emp-onboard.sailife.com:8084/api",
-  // baseURL: "http://localhost:8084/api",
+  baseURL: "https://emp-onboard.goval.app:8084/api",
+  //baseURL: "http://localhost:8084/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -44,6 +114,7 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
+    loadingManager.show();
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -51,18 +122,23 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    loadingManager.hide();
     return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
 
 // Handle token expiration
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    loadingManager.hide();
+    return response;
+  },
   (error) => {
+    loadingManager.hide();
+
+    // Your existing error handling code
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem("token");
-      // Redirect to login if we're not already there
       if (
         typeof window !== "undefined" &&
         !window.location.pathname.includes("/auth/login")
@@ -255,14 +331,14 @@ export const adminService = {
     return response.data;
   },
 
-  // getAllGroupLeads: async (search?: string, pageNo: number = 0) => {
-  //   const searchParam = search || "null";
-  //   const response = await api.get(`/group/loadGL/${searchParam}/${pageNo}`);
-  //   return {
-  //     leads: response.data.commonListDto || [],
-  //     total: response.data.totalElements || 0
-  //   };
-  // },
+  searchGroupLeads: async (search?: string): Promise<DropDownDTO[]> => {
+    const searchParam = search || "";
+    const response = await api.post<DropDownDTO[]>(`/group/searchGroupLeads`,
+      { search: searchParam }
+    );
+    return response.data
+  },
+
   createGroup: async (data: {
     name: string;
     pgLead?: number;
@@ -326,7 +402,7 @@ export const adminService = {
     questionLevel: string[];
     questionDepartment: string[];
     groupId: string;
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/saveQuestion`, data);
@@ -339,7 +415,7 @@ export const adminService = {
     response?: "yes_no" | "text";
     complainceDay?: string;
     questionLevel?: string[];
-    verifiedBy?: string;
+    verifiedBy?: any;
     defaultFlag?: "yes" | "no";
   }): Promise<Question> => {
     const response = await api.post<Question>(`/question/updateQuestion`, data);
@@ -353,12 +429,14 @@ export const adminService = {
     commonListDto: Task[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/findFilteredTaskAck/${search}/${page}`);
+    }>(`/task/findFilteredTaskAck/${page}`,
+      { search: search }
+    );
     return response.data;
   },
 
@@ -392,6 +470,24 @@ export const adminService = {
     );
     return response.data;
   },
+
+  saveTaskVerification: async (
+    id: number,
+    field: string,
+    value: string
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/task/saveTaskVerification/${id}/${field}`,
+      value,
+      {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      }
+    );
+    return response.data;
+  },
+
   deleteQuestion: async (questionId: number): Promise<void> => {
     await api.delete(`/question/deleteQuestion/${questionId}`);
   },
@@ -465,6 +561,39 @@ export const adminService = {
     return response.data;
   },
 
+  findAllGroups: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/group/getAllGroupsDropdown`
+    );
+    return response.data;
+  },
+
+  findQuestionsByFilters: async (params?: {
+    group?: number;
+    department?: number;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: Question[];
+    };
+    totalElements: number;
+  }> => {
+    const group = params?.group ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: Question[];
+      };
+      totalElements: number;
+    }>(`/question/findQuestionsByFilters/${page}`,
+      { group: group, department: department, level: level }
+    );
+    return response.data;
+  },
+
   // New admin reassignment methods
   reassignTaskToUser: async (
     taskId: number,
@@ -520,7 +649,7 @@ export const adminService = {
     const response = await api.post<{
       commonListDto: User[];
       totalElements: number;
-    }>(`/user/findFilteredPatient/${page}`,
+    }>(`/user/findFilteredUsers/${page}`,
       { search: search }
     );
     return response.data;
@@ -547,6 +676,16 @@ export const adminService = {
 
   findById: async (id: number): Promise<User> => {
     const response = await api.get<User>(`/user/findById/${id}`);
+    return response.data;
+  },
+
+  canDeactivateUser: async (id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/user/canDeactivateUser/${id}`);
+    return response.data;
+  },
+
+  deactivateUser: async (id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/user/deactivateUser/${id}`);
     return response.data;
   },
 
@@ -761,7 +900,7 @@ export const labService = {
       commonListDto: Lab[];
       totalElements: number;
     }>(`/location/findFilteredLocation/${page}`,
-      {search:searchTerm}
+      { search: searchTerm }
     );
     return response.data;
   },
@@ -840,6 +979,18 @@ export const EQuestions = {
     return response.data;
   },
 
+  submitEmployeeQuestions: async (
+    empId: string,
+    questionIds: number[]
+  ): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/eQuestions/submitEmployeeQuestions/${empId}`,
+      questionIds
+    );
+    return response.data;
+  },
+
+
 
   getEmployeesArchWithQuestions: async (): Promise<number[]> => {
     const response = await api.get<number[]>(
@@ -884,6 +1035,7 @@ export const auditService = {
     }>(`/audit/findFilteredData/${pageNo}`, searchParams);
     return response.data;
   },
+
 };
 
 //Achieve Services
@@ -934,6 +1086,31 @@ export const taskService = {
     }>(`/task/filteredTaskForAdmin/${search}/${page}`);
     return response.data;
   },
+  getTasksWithFilter: async (params?: {
+    search?: string;
+    department?: string;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: {
+      content: TaskProjection[];
+    };
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: {
+        content: TaskProjection[];
+      };
+      totalElements: number;
+    }>(`/task/filteredTaskForAdminWithFilter/${page}`,
+      { search: search, department: department, level: level }
+    );
+    return response.data;
+  },
   getTaskForGL: async (params?: {
     search?: string;
     page?: number;
@@ -946,7 +1123,9 @@ export const taskService = {
     const response = await api.post<{
       commonListDto: Task[];
       totalElements: number;
-    }>(`/task/findFilteredTask/${search}/${page}`);
+    }>(`/task/findFilteredTask/${page}`,
+      { search: search }
+    );
     return response.data;
   },
   getDashboardForGL: async (): Promise<GLDashboard> => {
@@ -1009,6 +1188,18 @@ export const taskService = {
     const response = await api.get<Task[]>(`/task/findByEmpId/${empId}`);
     return response.data;
   },
+
+  // Check if assigned freeze task grouplead
+  assignedFreezeTask: async (taskId: string): Promise<boolean> => {
+    const response = await api.get<boolean>(`/task/assignedFreezeTask/${taskId}`);
+    return response.data;
+  },
+
+  verifiedFreezeTask: async (taskId: string): Promise<boolean> => {
+  const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
+  return response.data;
+},
+
 };
 
 // Helper function to convert TaskProjection to Task
@@ -1076,7 +1267,7 @@ export const groupLeadService = {
         content: TaskProjection[];
       };
       totalElements: number;
-    }>("/task/filteredTaskForAdmin/null/0");
+    }>("/task/filteredTaskForAdmin/0");
 
     // Convert TaskProjection[] to Task[] for compatibility
     return response.data.commonListDto.content.map(convertTaskProjectionToTask);
@@ -1358,10 +1549,15 @@ export const employeeService = {
   //department service
 
   createDepartment: async (data: {
-    id?:string;
+    id?: string;
     location: string;
   }): Promise<boolean> => {
     const response = await api.post<boolean>("/department/saveDepartment", data);
+    return response.data;
+  },
+
+  deleteDepartment: async (id: any): Promise<boolean> => {
+    const response = await api.get<boolean>(`/department/deleteDepartment/${id}`);
     return response.data;
   },
 
@@ -1373,11 +1569,13 @@ export const employeeService = {
     totalElements: number;
   }> => {
     const page = pageNo ?? 0;
-    const searchTerm = department || null;
+    const searchTerm = department || "";
     const response = await api.post<{
       commonListDto: Department[];
       totalElements: number;
-    }>(`/department/findFilteredDepartment/${searchTerm}/${page}`);
+    }>(`/department/findFilteredDepartment/${page}`,
+      { search: searchTerm }
+    );
     return response.data;
   },
 
@@ -1414,16 +1612,16 @@ export const employeeService = {
   },
 
   updateMasterEQuestions: async (data: {
-  id: string;
-  question: string;
-  responseType: "yes_no" | "text";
-  levels: string[];
-}): Promise<boolean> => {
-  const response = await api.post<boolean>(
-    "/eQuestions/updateMasterEQuestions",
-    data
-  );
-  return response.data;
-},
+    id: string;
+    question: string;
+    responseType: "yes_no" | "text";
+    levels: string[];
+  }): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      "/eQuestions/updateMasterEQuestions",
+      data
+    );
+    return response.data;
+  },
 
 };

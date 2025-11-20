@@ -78,11 +78,34 @@ const TasksPage: React.FC = () => {
   const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
   const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
   const [totalQuestionCount, setTotalQuestionCount] = useState(0);
+  const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
     [totalElements]
   );
+
+  useEffect(() => {
+    const fetchLookupData = async () => {
+      try {
+        const levels = await adminService.getLookupItems("Level");
+        setLevelOptions(levels);
+
+        const departments = await adminService.findAllDepartment();
+        const transformedDepartments = departments.map(dept => ({
+          ...dept,
+          value: dept.value || dept.key
+        }));
+        setDepartmentOptions(transformedDepartments);
+      } catch (error) {
+        toast.error("Failed to load dropdown options.");
+      }
+    };
+    fetchLookupData();
+  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -91,14 +114,30 @@ const TasksPage: React.FC = () => {
         page: currentPage,
         size: PAGE_SIZE,
       };
-      const search = searchFilter.trim();
-      if (search) params.search = search;
-      const response = await taskService.getTask(params);
+
+      if (searchFilter.trim()) {
+        params.search = searchFilter.trim();
+      }
+
+      if (selectedDepartment && departmentOptions.length > 0) {
+        const dept = departmentOptions.find(d => d.id === selectedDepartment);
+        if (dept) {
+          params.department = dept.value;
+        }
+      }
+
+      if (selectedLevel && levelOptions.length > 0) {
+        const lvl = levelOptions.find(l => l.id === selectedLevel);
+        if (lvl) {
+          params.level = lvl.value;
+        }
+      }
+
+      const response = await taskService.getTasksWithFilter(params);
       const taskList = response.commonListDto.content ?? [];
       setTasks(taskList);
       setTotalElements(response.totalElements ?? 0);
 
-      // Get list of employees who have questions assigned (from employee_question table)
       try {
         const employeesWithQuestionsArray =
           await EQuestions.getEmployeesWithQuestions();
@@ -107,19 +146,14 @@ const TasksPage: React.FC = () => {
         setEmployeesWithQuestions(new Set());
       }
 
-      const [tasksResponse, formatResponse] = await Promise.all([
-        taskService.getTask(params),
-        taskService.getDateFormat(),
-      ]);
-      setTasks(tasksResponse.commonListDto.content ?? []);
-      setTotalElements(tasksResponse.totalElements ?? 0);
-      setDateFormat(formatResponse); // Store the fetched format string
+      const formatResponse = await taskService.getDateFormat();
+      setDateFormat(formatResponse);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setTasks([]);
       setTotalElements(0);
     }
-  }, [currentPage, searchFilter]);
+  }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
   useEffect(() => {
     fetchTasks();
@@ -387,6 +421,40 @@ const TasksPage: React.FC = () => {
       {/* Header / Search */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <SearchableDropdown
+            options={departmentOptions}
+            value={selectedDepartment}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(department) => {
+              if (department === undefined) {
+                setSelectedDepartment(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(department)) {
+                setSelectedDepartment(department as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select department"
+          />
+          <SearchableDropdown
+            options={levelOptions}
+            value={selectedLevel}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(level) => {
+              if (level === undefined) {
+                setSelectedLevel(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(level)) {
+                setSelectedLevel(level as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select level"
+          />
           <input
             type="text"
             value={searchFilter}
@@ -755,138 +823,128 @@ const TasksPage: React.FC = () => {
         </div>
       )}
       {showLabChangeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4 ">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 ">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 Change Lab
               </CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Lab:</label>
-                {loadingLabs ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="text-sm text-muted-foreground">
-                      Loading labs...
-                    </div>
-                  </div>
-                ) : (
-                  <SearchableDropdown
-                    options={labOptions}
-                    value={selectedLabId}
-                    onChange={(value) => setSelectedLabId(value as number)}
-                    placeholder="Select a lab..."
-                    className="w-full"
-                    isEmployeePage={true}
-                    displayFullValue={false}
-                  />
-                )}
-              </div>
-            </CardContent>
-
-            {/* Footer with top border and wider buttons */}
-            <div className="flex justify-between items-center gap-3 border-t border-gray-200 bg-gray-50 px-6 py-5">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLabChangeModal(false);
-                  setSelectedEmployeeForLabChange(null);
-                  setSelectedLabId(undefined);
-                  setLabOptions([]);
-                }}
-                className="min-w-[130px] px-7 py-3 bg-[#ff5555] text-white border border-[#ff5555] rounded-lg text-sm font-semibold 
-          transition-all duration-300 ease-in-out hover:bg-[#ff5555] hover:shadow-md hover:-translate-y-0.5"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleLabChangeSubmit}
-                disabled={!selectedLabId}
-                className="min-w-[130px] px-7 py-3 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-          shadow-md transition-all duration-300 ease-in-out 
-          hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
-          disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Update Lab
-              </button>
             </div>
-          </Card>
+
+            <div className="flex-1 overflow-y-auto px-8 py-6">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    Select Lab <span className="text-red-500">*</span>
+                  </label>
+                  {loadingLabs ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="text-sm text-muted-foreground">
+                        Loading labs...
+                      </div>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={labOptions}
+                      value={selectedLabId}
+                      onChange={(value) => setSelectedLabId(value as number)}
+                      placeholder="Select a lab..."
+                      className="w-full"
+                      isEmployeePage={true}
+                      displayFullValue={false}
+                      usePortal={true}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowLabChangeModal(false);
+                    setSelectedEmployeeForLabChange(null);
+                    setSelectedLabId(undefined);
+                    setLabOptions([]);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+
+                <button
+                  onClick={handleLabChangeSubmit}
+                  disabled={!selectedLabId}
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+              shadow-md transition-all duration-300 ease-in-out 
+              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Update Lab
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Questions Modal */}
       {showQuestionsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-black rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden dark: border">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 ">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Employee Task Question
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+
+            <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
+              <h2 className="text-1xl font-semibold text-primary-gradient">
+                Employee Task Questions
               </h2>
-              <div className="flex-1 flex justify-end items-center">
+
+              {/* Progress counter */}
+              <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-xl font-bold text-primary dark:text-primary">
+                  <div className="text-lg font-bold text-indigo-600">
                     {completedQuestionCount} / {totalQuestionCount}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Questions
+                  <div className="text-[11px] text-gray-500">
+                    Completed
                   </div>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setShowQuestionsModal(false);
-                  setSelectedTaskQuestions([]);
-                  setSelectedEmployeeName("");
-                }}
-                className="rounded-lg ml-4"
-              >
-                <X size={16} />
-              </Button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[70vh]">
+            <div className="flex-1 overflow-y-auto px-8 py-6">
               {selectedTaskQuestions.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="text-center py-12">
                   <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500">
                     No questions found for this employee.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {selectedTaskQuestions.map((question, index) => (
-                    <div
-                      key={question.id || index}
-                      className="border border-gray-200 dark: rounded-lg p-4 bg-white dark:bg-black"
-                    >
-                      <div className="mb-3">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Question {index + 1}:
-                        </h3>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          {question.question || "No question text available"}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Response:
-                        </h4>
-                        <div className="bg-gray-50 dark:bg-black border border-grey-200 rounded-md p-3">
-                          <p className="text-gray-800 dark:text-gray-200">
-                            {question.response || "No response provided"}
-                          </p>
-                        </div>
-                      </div>
+                    <div key={question.id || index} className="space-y-2">
+
+                      {/* Question number + text */}
+                      <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                        {index + 1}. {question.question || "No question text available"}
+                      </p>
+
+                      {/* Answer below question */}
+                      <p className="text-[14px] text-gray-700 leading-relaxed pl-4 ">
+                        {question.response || "No response provided"}
+                      </p>
+
+
+                      {/* Divider */}
+                      {index < selectedTaskQuestions.length - 1 && (
+                        <div className="border-b border-gray-200 pt-3"></div>
+                      )}
                     </div>
                   ))}
                 </div>
+
               )}
             </div>
           </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Users, CheckCircle, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Users, CheckCircle, AlertCircle, } from "lucide-react";
 import { useAuth } from "@/app/auth/AuthContext";
 import Button from "@/app/components/Button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -20,7 +20,8 @@ const Dashboard: React.FC = () => {
   const [questions, setQuestions] = useState<EmployeeQuestions[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [submitting, setSubmitting] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [savedValues, setSavedValues] = useState<RespMap>({});
   const [draftValues, setDraftValues] = useState<RespMap>({});
   const [savingByKey, setSavingByKey] = useState<BoolMap>({});
@@ -51,14 +52,14 @@ const Dashboard: React.FC = () => {
       const userId = user.id;
 
       const resp = await EQuestions.getEmployeeQuestions(userId, 0);
+      console.log("Fetched Employee Questions:", resp); //debug log
       const list: EmployeeQuestions[] = Array.isArray(resp?.commonListDto)
         ? resp.commonListDto
         : [];
 
       setQuestions(list);
-      // console.log(list.map(q => ({ id: q.id, completedflag: q.completedFlag, response: q.response }))); //debug log
 
-// Initialize saved and draft values
+      // Initialize saved and draft values
       const initSaved: RespMap = {};
       const initDraft: RespMap = {};
       for (const q of list) {
@@ -96,6 +97,13 @@ const Dashboard: React.FC = () => {
         setSavingByKey((s) => ({ ...s, [key]: true }));
         await EQuestions.saveResponse(q.id, value);
         setSavedValues((sv) => ({ ...sv, [key]: value }));
+        setQuestions((prevQuestions) =>
+          prevQuestions.map((question) =>
+            question.id === q.id
+              ? { ...question, completedFlag: true }
+              : question
+          )
+        );
         toast.success("Response saved");
       } catch (e: any) {
         toast.error(e?.response?.data?.message ?? "Failed to save response");
@@ -110,6 +118,58 @@ const Dashboard: React.FC = () => {
   const onChangeDraft = useCallback((key: string, v: string) => {
     setDraftValues((dv) => ({ ...dv, [key]: v }));
   }, []);
+
+  // Add this check before the submit button section
+  const allCompleted = questions.length > 0 && questions.every(q => q.completedFlag === true);
+  const anyFrozen = questions.some(q => q.freezeFlag === true);
+  const showSubmitButton = allCompleted && !anyFrozen;
+  // Submit All Questions Handler
+  const handleSubmitQuestions = useCallback(async () => {
+    try {
+      setShowSubmitModal(false);
+      setSubmitting(true);
+      setError(null);
+
+      // Get user ID from localStorage
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        throw new Error("No user found in localStorage");
+      }
+      const user = JSON.parse(storedUser);
+      const userId = user.id;
+
+      const questionIds = questions
+        .map((q) => {
+          const id = q.id;
+          // Convert to number if it's a string
+          return typeof id === 'string' ? parseInt(id, 10) : id;
+        })
+        .filter((id): id is number => typeof id === 'number' && !isNaN(id));
+
+      if (questionIds.length === 0) {
+        toast.error("No questions to submit");
+        return;
+      }
+
+      // Call the API
+      const result = await EQuestions.submitEmployeeQuestions(userId, questionIds);
+
+      if (result) {
+        toast.success("All questions submitted successfully!");
+        // Optionally reload questions to get updated status
+        await loadQuestions();
+      } else {
+        toast.error("Submission failed. Please try again.");
+      }
+    } catch (e: any) {
+      console.error("Error submitting questions:", e);
+      const errorMessage = e?.response?.data?.message ?? "Failed to submit questions. Please try again.";
+      toast.error(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [questions, loadQuestions]);
 
   if (loading) {
     return (
@@ -137,7 +197,6 @@ const Dashboard: React.FC = () => {
     );
   }
 
-
   // Total questions
   const totalQuestions = questions.length;
 
@@ -146,7 +205,6 @@ const Dashboard: React.FC = () => {
 
   // Pending questions = total - completed
   const pendingQuestions = totalQuestions - completedQuestions;
-
 
   return (
     <div className="space-y-2">
@@ -191,21 +249,28 @@ const Dashboard: React.FC = () => {
 
       {/* Employee Questions Table */}
       <Card>
-        <CardContent className="pt-0">
+        <CardContent className="p-0">
+          {error && (
+            <div className="px-4 py-2 text-sm text-red-500" role="alert">
+              {error}
+            </div>
+          )}
+
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Question</TableHead>
                 <TableHead>Response</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {questions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={2} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Users size={48} className="text-muted-foreground" />
-                      <p className="text-muted-foreground">No questions found.</p>
+                      <p className="text-muted-foreground">No questions found</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -219,9 +284,11 @@ const Dashboard: React.FC = () => {
 
                   return (
                     <TableRow key={key}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-semibold min-w-[140px]">
                         {questionText}
-                        <div className="text-xs text-muted-foreground">{isTextType(q) ? "Text" : "Yes/No"}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {isTextType(q) ? "Text" : "Yes/No"}
+                        </div>
                       </TableCell>
                       <TableCell className="min-w-[260px]">
                         {isTextType(q) ? (
@@ -236,15 +303,13 @@ const Dashboard: React.FC = () => {
                               if (saving || newVal === saved) return;
                               void saveQuestionResponse(q, newVal);
                             }}
-                            disabled={saving}
-                          />
+                            disabled={saving || q.freezeFlag === true} />
                         ) : (
                           <div className="flex items-center gap-2">
                             <Button
                               type="button"
                               variant={(saved || "").toLowerCase() === "yes" ? "default" : "outline"}
-                              disabled={saving}
-                              onClick={() => {
+                              disabled={saving || q.freezeFlag === true} onClick={() => {
                                 onChangeDraft(key, "YES");
                                 void saveQuestionResponse(q, "YES");
                               }}
@@ -254,8 +319,7 @@ const Dashboard: React.FC = () => {
                             <Button
                               type="button"
                               variant={(saved || "").toLowerCase() === "no" ? "default" : "outline"}
-                              disabled={saving}
-                              onClick={() => {
+                              disabled={saving || q.freezeFlag === true} onClick={() => {
                                 onChangeDraft(key, "NO");
                                 void saveQuestionResponse(q, "NO");
                               }}
@@ -274,6 +338,56 @@ const Dashboard: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Submit Button */}
+      {showSubmitButton && (
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={() => setShowSubmitModal(true)}
+            disabled={submitting}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <span>Submit</span>
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardContent className="pt-6">
+              <p className="mb-4 text-md">
+                Are you sure you want to submit? This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitQuestions}
+                  className="flex-1 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1]"
+                >
+                  Yes, Submit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

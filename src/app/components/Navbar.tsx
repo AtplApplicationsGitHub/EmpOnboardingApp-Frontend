@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 import { cn } from "../lib/utils";
-import ThemeToggle from "./ThemeToggle";
 import { useAnimation, animationClasses } from "../lib/animations";
 import { useSidebar } from "./SidebarContext";
 import {
@@ -88,14 +87,21 @@ export default function Navbar() {
         {/* Title with toggle button */}
         <div className="flex h-20 items-center justify-between border-b border-[#e2e8f0] px-5">
           {!isCollapsed && (
-            <span className="text-[17px] font-bold tracking-wide text-[#4c51bf]">
-              Onboarding App
-            </span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <img 
+                src="/assets/Icon.jpg" 
+                alt="Company Logo" 
+                className="h-8 w-auto object-contain flex-shrink-0"
+              />
+              <span className="text-[17px] font-bold tracking-wide text-[#4c51bf] whitespace-nowrap">
+                Onboarding
+              </span>
+            </div>
           )}
           <button
             onClick={toggleSidebar}
             className={cn(
-              "p-2 rounded-lg hover:bg-[rgba(76,81,191,0.08)] transition-colors",
+              "p-2 rounded-lg hover:bg-[rgba(76,81,191,0.08)] transition-colors flex-shrink-0",
               isCollapsed && "mx-auto"
             )}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}

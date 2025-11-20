@@ -104,6 +104,7 @@ export interface Question {
   deleteFlag?: boolean;
   verifiedBy?: string;
   verifiedByEmail?: string;
+  verifiedById?: number;
 }
 
 export interface GLDashboard {
@@ -140,6 +141,7 @@ export interface Task {
   createdTime: string;
   updatedTime: string;
   answer?: "yes" | "no"
+  assignedFreezeTask?: boolean;
 
   // Additional fields that might come from API
   // mock_employee_id?: string;
@@ -171,6 +173,8 @@ export interface EmployeeQuestions {
   responseType: string;
   response: string;
   completedFlag: boolean;
+  freezeFlag: boolean;
+
 }
 
 export interface TaskQuestions {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Table,
   TableHeader,
@@ -57,6 +57,8 @@ const formatDateForInput = (dateString: string | undefined | null) => {
 };
 
 const EmployeesPage: React.FC = () => {
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
@@ -277,6 +279,9 @@ const EmployeesPage: React.FC = () => {
       setShowAddModal(true);
       setEmailExists(false);
       setCheckingEmail(false);
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 150);
     } catch (err: any) {
       toast.error("Failed to load employee data");
     }
@@ -544,17 +549,9 @@ const EmployeesPage: React.FC = () => {
     return pages;
   };
 
-  // Get initials for avatar
-  // const getInitials = (name: string) => {
-  //   const parts = name.split(' ');
-  //   if (parts.length >= 2) {
-  //     return (parts[0][0] + parts[1][0]).toUpperCase();
-  //   }
-  //   return name.substring(0, 2).toUpperCase();
-  // };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 ">
       {/* Header Section */}
       <div className="flex items-center justify-between">
         {/* Search Box */}
@@ -573,16 +570,16 @@ const EmployeesPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* <Button
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap flex-shrink-0"
-                onClick={handleDownloadTemplate}
-              >
-                <Download size={14} className="mr-1" />
-                <span className="hidden sm:inline">Download Template</span>
-                <span className="sm:hidden">Download</span>
-              </Button> */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="whitespace-nowrap flex-shrink-0"
+            onClick={handleDownloadTemplate}
+          >
+            <Download size={14} className="mr-1" />
+            <span className="hidden sm:inline">Download Template</span>
+            <span className="sm:hidden">Download</span>
+          </Button>
           <button
             onClick={() => setShowImportModal(true)}
             disabled={processing}
@@ -616,7 +613,11 @@ const EmployeesPage: React.FC = () => {
                 email: "",
                 group: "",
               });
+              setTimeout(() => {
+                nameInputRef.current?.focus();
+              }, 150);
             }}
+
             className="flex items-center gap-2"
           >
             <Plus size={16} />
@@ -631,31 +632,31 @@ const EmployeesPage: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="table-heading-bg text-primary-gradient">
-                <th className="px-6 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
                   Name
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   Email
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
                   DOJ
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[13%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Department
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Lab
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[8%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[8%]">
                   Level
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[11%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[11%]">
                   Role
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Compliance
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
+                <th className="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                   Actions
                 </th>
               </tr>
@@ -672,50 +673,46 @@ const EmployeesPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                employees.map((emp, index) => (
-                  <tr
-                    key={emp.id}
-                    className={`transition-all group ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-indigo-50 hover:bg-indigo-100'
-                      }`}
-                  >
+                employees.map((emp) => (
+                  <tr key={emp.id}>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm font-medium text-gray-900">{emp.name}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600">{emp.email}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600 font-medium">{emp.date}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                         {emp.department || "N/A"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-500">
                         {emp.labAllocation || "-"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
                         {emp.level || "L1"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm text-gray-600">{emp.role || "N/A"}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="text-sm font-medium text-gray-700">
                         {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-center gap-5">
                         <button
                           onClick={() => handleEditEmployee(emp.id)}
-                          className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                           title="Edit Employee"
                         >
                           <Edit size={18} />
@@ -725,7 +722,7 @@ const EmployeesPage: React.FC = () => {
                             setEmployeeToDelete(emp);
                             setShowDeleteModal(true);
                           }}
-                          className="p-2 rounded-lg text-red-500 transition-all hover:bg-red-50 hover:scale-110"
+                          className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                           title="Delete Employee"
                         >
                           <Trash2 size={18} />
@@ -742,58 +739,73 @@ const EmployeesPage: React.FC = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(0)}
-              disabled={page === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsLeft size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 0}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={18} />
-            </button>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </div>
 
-            {generatePageNumbers().map((pageNum, idx) =>
-              typeof pageNum === "number" ? (
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {employees.length > 0 ? page * PAGE_SIZE + 1 : 0} to{" "}
+                  {Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements} employees
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
-                  key={idx}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  onClick={() => handlePageChange(0)}
+                  disabled={page === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {pageNum + 1}
+                  <ChevronsLeft size={18} />
                 </button>
-              ) : (
-                <span key={idx} className="px-2 text-gray-400">
-                  {pageNum}
-                </span>
-              )
-            )}
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 0}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={18} />
+                </button>
 
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => handlePageChange(totalPages - 1)}
-              disabled={page >= totalPages - 1}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronsRight size={18} />
-            </button>
-          </div>
-        </div>
+                {generatePageNumbers().map((pageNum, idx) =>
+                  typeof pageNum === "number" ? (
+                    <button
+                      key={idx}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  ) : (
+                    <span key={idx} className="px-2 text-gray-400">
+                      {pageNum}
+                    </span>
+                  )
+                )}
+
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages - 1)}
+                  disabled={page >= totalPages - 1}
+                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -813,6 +825,7 @@ const EmployeesPage: React.FC = () => {
                     Candidate Name <span className="text-red-500">*</span>
                   </label>
                   <input
+                    ref={nameInputRef}
                     type="text"
                     value={(newEmployee.name as string) ?? ""}
                     onChange={(e) =>
@@ -1163,73 +1176,73 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-    {showImportModal && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="relative w-full max-w-lg flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-      {/* Header */}
-      <div className="flex-shrink-0 px-5 py-4 shadow-md">
-        <CardTitle className="text-1xl font-semibold text-primary-gradient">
-          Import from Excel
-        </CardTitle>
-      </div>
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-lg flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                Import from Excel
+              </CardTitle>
+            </div>
 
-      {/* Body */}
-      <div className="flex-1 px-8 py-6">
-        <div>
-          <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-            Select Excel File <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-            className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
-          {importFile && (
-            <p className="text-sm text-gray-500 mt-2">
-              Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
-            </p>
-          )}
-        </div>
-      </div>
+            {/* Body */}
+            <div className="flex-1 px-8 py-6">
+              <div>
+                <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  Select Excel File <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {importFile && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
+                  </p>
+                )}
+              </div>
+            </div>
 
-      {/* Footer with gradient button */}
-      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowImportModal(false);
-              setImportFile(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <button
-            onClick={handleImportFromExcel}
-            disabled={!importFile || importLoading}
-            className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+            {/* Footer with gradient button */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportFile(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <button
+                  onClick={handleImportFromExcel}
+                  disabled={!importFile || importLoading}
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
               hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {importLoading ? (
-              <>
-                <Clock size={16} className="animate-spin" />
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload size={16} />
-                Import Employees
-              </>
-            )}
-          </button>
+                >
+                  {importLoading ? (
+                    <>
+                      <Clock size={16} className="animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      Import Employees
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };

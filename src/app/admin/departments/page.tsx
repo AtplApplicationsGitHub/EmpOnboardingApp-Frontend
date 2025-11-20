@@ -10,11 +10,13 @@ import {
   ChevronsRight,
   Search,
   Edit,
+  Delete,
+  Trash2,
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import { employeeService } from "@/app/services/api";
 import toast from "react-hot-toast";
-import { Card, CardContent, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 
 
 const PAGE_SIZE = 10;
@@ -25,6 +27,7 @@ type Department = {
   lab?: string;
   createdTime: string;
   updatedTime: string;
+  disableDelete: boolean;
 };
 
 type FormState = {
@@ -50,7 +53,10 @@ const DepartmentsPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState<any | null>(
+    null
+  );
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
     [total]
@@ -182,6 +188,20 @@ const DepartmentsPage: React.FC = () => {
     return pages;
   };
 
+  const handleDeleteDepartment = async () => {
+    if (!departmentToDelete) return;
+
+    try {
+      await employeeService.deleteDepartment(departmentToDelete);
+      toast.success("Department deleted successfully!");
+      fetchDepartments();
+      setShowDeleteModal(false);
+      setDepartmentToDelete(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete Department.");
+    }
+  };
+
   return (
     <div className="space-y-2">
       {/* Header */}
@@ -260,14 +280,26 @@ const DepartmentsPage: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {dept.updatedTime}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 flex items-center gap-3">
                       <button
                         onClick={() => openEditModal(dept.id)}
-                        className="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 hover:scale-110 transition-all"
+                        className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                         title="Edit Department"
                       >
                         <Edit size={18} />
                       </button>
+                      {!dept.disableDelete && (
+                        <button
+                          onClick={() => {
+                            setDepartmentToDelete(dept.id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="rounded-lg text-red-500 transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]"
+                          title="Delete Employee"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -383,6 +415,8 @@ const DepartmentsPage: React.FC = () => {
                   Cancel
                 </Button>
                 <Button
+                  className="
+                shadow-md transition-all duration-300 ease-in-out hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                   onClick={editMode ? handleUpdate : handleCreate}
                 >
                   {editMode ? "Update Department" : "Create Department"}
@@ -390,6 +424,40 @@ const DepartmentsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {showDeleteModal && departmentToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Delete Department</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to delete?
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDepartmentToDelete(null);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteDepartment}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

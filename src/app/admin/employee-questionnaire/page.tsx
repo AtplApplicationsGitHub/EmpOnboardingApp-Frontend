@@ -33,7 +33,7 @@ const emptyForm: FormState = {
 
 
 const EmployeeQuestionnairePage: React.FC = () => {
-    const questionInputRef = useRef<HTMLInputElement>(null);
+    const questionInputRef = useRef<HTMLTextAreaElement>(null);
 
     const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
     const [total, setTotal] = useState(0);
@@ -135,7 +135,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
     };
 
     // Handle form submission for create/update
-    // Handle form submission for create/update
     const handleSubmit = async () => {
         if (!form.question.trim() || !form.responseType || form.level.length === 0) {
             alert("Please fill all required fields");
@@ -178,6 +177,10 @@ const EmployeeQuestionnairePage: React.FC = () => {
             alert("Failed to save/update questionnaire. Please try again.");
         }
     };
+
+    setTimeout(() => {
+        questionInputRef.current?.focus();
+    }, 100);
 
 
     const handlePageChange = (page: number) => {
@@ -299,7 +302,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => openEditModal(questionnaire.id)}
-                                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
+                                                className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                                                 title="Edit Question"
                                             >
                                                 <Edit size={16} />
@@ -386,8 +389,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
 
             {/* Create / Edit Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
                         {/* Gradient Header */}
                         <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
                             <CardTitle className="text-1xl font-semibold text-primary-gradient">
@@ -404,6 +407,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         Question <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
+                                        ref={questionInputRef}
                                         value={form.question}
                                         onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                                         placeholder="Enter the question here..."
@@ -472,6 +476,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         isMultiSelect={true}
                                         disabled={editMode}
                                         showSelectAll={true}
+                                        usePortal={true}
                                     />
                                 </div>
                             </div>

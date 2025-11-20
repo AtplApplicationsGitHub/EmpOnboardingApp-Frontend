@@ -22,9 +22,7 @@ const GroupDetailsPage: React.FC = () => {
   const router = useRouter();
   const groupId = parseInt(params.id as string);
 
-  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(
-    null
-  );
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -36,8 +34,10 @@ const GroupDetailsPage: React.FC = () => {
   const [periodOptions, setPeriodOptions] = useState<DropDownDTO[]>([]);
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
-  const [verifiedByOptions, setVerifiedByOptions] = useState<DropDownDTO[]>([]);
   const [isFormValid, setIsFormValid] = useState(false);
+
+  // State for verified by options (for display purposes)
+  const [verifiedBySelectedOption, setVerifiedBySelectedOption] = useState<DropDownDTO[]>([]);
 
   // Pagination state
   const [questionPage, setQuestionPage] = useState(0);
@@ -54,7 +54,7 @@ const GroupDetailsPage: React.FC = () => {
     questionDepartment: [] as string[],
     groupId: groupId.toString(),
     defaultflag: "no" as "yes" | "no",
-    verifiedBy: "",
+    verifiedBy: undefined as number | undefined,
   });
 
   // Validate form data
@@ -63,12 +63,12 @@ const GroupDetailsPage: React.FC = () => {
     if (!formData.response) return false;
     if (formData.response === "yes_no" && !formData.defaultflag) return false;
     if (!formData.period) return false;
-    if (!formData.complainceDay || parseInt(formData.complainceDay) < 1)
-      return false;
+    if (!formData.complainceDay || parseInt(formData.complainceDay) < 1) return false;
     if (formData.questionDepartment.length === 0) return false;
     if (formData.questionLevel.length === 0) return false;
     return true;
   };
+
   useEffect(() => {
     setIsFormValid(validateForm());
   }, [formData]);
@@ -81,13 +81,12 @@ const GroupDetailsPage: React.FC = () => {
       document.body.style.overflow = "unset";
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [showCreateModal, showEditModal, showDeleteModal]);
 
-  //fetch dropdown options
+  // Fetch dropdown options
   useEffect(() => {
     const fetchLookupData = async () => {
       try {
@@ -98,14 +97,11 @@ const GroupDetailsPage: React.FC = () => {
         setLevelOptions(levels);
 
         const departments = await adminService.findAllDepartment();
-        // console.log("new api", departments); // DEBUG
         const transformedDepartments = departments.map(dept => ({
           ...dept,
           value: dept.value || dept.key
         }));
-
         setDepartmentOptions(transformedDepartments);
-        await fetchVerifiedByOptions();
       } catch (error) {
         toast.error("Failed to load dropdown options.");
       }
@@ -113,13 +109,26 @@ const GroupDetailsPage: React.FC = () => {
     fetchLookupData();
   }, []);
 
-  //fetch verifiedBy options with pagination and search
-  const fetchVerifiedByOptions = async () => {
+  // Async search function for verified by
+  const searchVerifiedBy = async (searchTerm: string): Promise<DropDownDTO[]> => {
     try {
-      const groupLeadsResponse = await adminService.getAllGroupLeads();
-      setVerifiedByOptions(groupLeadsResponse);
-    } catch (error) {
-      console.error("Failed to load group leads:", error);
+      const results = await adminService.searchGroupLeads(searchTerm);
+      return results;
+    } catch (err: any) {
+      console.error("Failed to search verified by options:", err);
+      return [];
+    }
+  };
+
+  // Fetch verified by option details by email
+  const fetchVerifiedByDetails = async (email?: string): Promise<DropDownDTO | null> => {
+    if (!email) return null;
+    try {
+      const results = await searchVerifiedBy(email);
+      return results.find((lead) => lead.value === email) || null;
+    } catch (err) {
+      console.error("Failed to fetch verified by details:", err);
+      return null;
     }
   };
 
@@ -127,7 +136,6 @@ const GroupDetailsPage: React.FC = () => {
     if (groupId) {
       fetchGroupData();
     }
-    // eslint-disable-next-line
   }, [groupId, questionPage]);
 
   const valuesToIds = (values: string[], options: DropDownDTO[]) =>
@@ -146,19 +154,10 @@ const GroupDetailsPage: React.FC = () => {
     try {
       setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
-      const questionRes = await adminService.getQuestions(
-        groupId,
-        questionPage
-      );
-      //debug logs
-      // console.log(" Question Response:", questionRes); // DEBUG
-      // console.log("Questions:", questionRes.commonListDto); //  DEBUG
-      // console.log(" Total:", questionRes.totalElements); //  DEBUG
-      // console.log(" Current Page:", questionPage); //  DEBUG
+      const questionRes = await adminService.getQuestions(groupId, questionPage);
 
       setQuestions(questionRes.commonListDto || []);
       setQuestionTotal(questionRes.totalElements || 0);
-
       setGroup(groupData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group data");
@@ -170,15 +169,16 @@ const GroupDetailsPage: React.FC = () => {
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() || formData.questionLevel.length === 0) return;
+
     try {
       const { defaultflag, verifiedBy, ...rest } = formData;
 
       const dataToSend = {
         ...rest,
-        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
+        ...(verifiedBy && { verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
-      console.log("Creating Question with data:", dataToSend);
+
       await adminService.createQuestion(dataToSend);
       setShowCreateModal(false);
       resetForm();
@@ -199,8 +199,8 @@ const GroupDetailsPage: React.FC = () => {
         complainceDay: question.complainceDay || "1",
         questionDepartment: question.questionDepartment,
         questionLevel: question.questionLevel,
+        verifiedBy:question.verifiedById,
         groupId: question.groupId.toString(),
-        ...(question.verifiedByEmail && { verifiedByEmail: question.verifiedByEmail }),
         ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
       };
       await adminService.createQuestion(dataToSend);
@@ -219,9 +219,10 @@ const GroupDetailsPage: React.FC = () => {
     try {
       const { defaultflag, verifiedBy, ...rest } = formData;
 
+
       const dataToSend = {
         ...rest,
-        ...(verifiedBy && { verifiedByEmail: verifiedBy }),
+        ...(verifiedBy && { verifiedBy }),
         ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
       };
 
@@ -238,58 +239,6 @@ const GroupDetailsPage: React.FC = () => {
     }
   };
 
-  // const handleEditQuestion = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (
-  //     !editingQuestion ||
-  //     !formData.text.trim() ||
-  //     formData.questionLevel.length === 0
-  //   )
-  //     return;
-
-  //   try {
-  //     const { defaultflag, verifiedBy, ...rest } = formData;
-
-  //     console.log("=== EDIT QUESTION DEBUG ===");
-  //     // console.log(" Form verifiedBy VALUE:", verifiedBy);
-
-  //     const verifiedByKey = verifiedByOptions.find(opt => opt.value === verifiedBy)?.key || "";
-  //     // console.log(" Found verifiedByKey:", verifiedByKey);
-
-  //     const dataToSend = {
-  //       ...rest,
-  //       verifiedBy: verifiedByKey,
-  //       ...(formData.response === "yes_no" && { defaultFlag: defaultflag }),
-  //     };
-
-  //     console.log(" Data being sent to API:", dataToSend);
-
-  //     // Call update API
-  //     await adminService.updateQuestion(dataToSend);
-
-  //     // Close modal first for better UX
-  //     setShowEditModal(false);
-  //     setEditingQuestion(null);
-  //     resetForm();
-
-  //     // Fetch data from database
-  //     await fetchGroupData();
-
-  //     //debug logs
-  //     console.log(" Fresh questions from database:", questions);
-
-  //     // Find the specific question we just updated
-  //     const updatedQuestion = questions.find(q => q.id === editingQuestion.id);
-  //     // console.log("Updated question from DB:", updatedQuestion);
-  //     // console.log(" Updated question's verifiedBy from DB:", updatedQuestion?.verifiedBy);
-
-  //     // toast.success("Question updated successfully!");
-  //   } catch (err: any) {
-  //     console.error("Error updating question:", err);
-  //     setError(err.response?.data?.message || "Failed to update question");
-  //     toast.error("Failed to update question");
-  //   }
-  // };
   const handleDeleteQuestion = async () => {
     if (!questionToDelete) return;
     try {
@@ -301,17 +250,29 @@ const GroupDetailsPage: React.FC = () => {
       } else {
         fetchGroupData();
       }
+      toast.success("Question deleted successfully!");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete question");
+      toast.error("Failed to delete question");
     }
   };
 
-  const openEditModal = (question: Question) => {
+  const openEditModal = async (question: Question) => {
     setEditingQuestion(question);
 
-    const matchingOption = verifiedByOptions.find(
-      opt => opt.value === question.verifiedByEmail
-    );
+    // Fetch verified by details if exists
+    let verifiedByOption: DropDownDTO | null = null;
+    let verifiedById: number | undefined = undefined;
+
+    if (question.verifiedByEmail) {
+      verifiedByOption = await fetchVerifiedByDetails(question.verifiedByEmail);
+      if (verifiedByOption) {
+        verifiedById = verifiedByOption.id;
+        setVerifiedBySelectedOption([verifiedByOption]);
+      }
+    } else {
+      setVerifiedBySelectedOption([]);
+    }
 
     setFormData({
       id: question.id,
@@ -323,7 +284,7 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: question.questionLevel,
       groupId: question.groupId.toString(),
       defaultflag: question.defaultFlag || "no",
-      verifiedBy: matchingOption?.value || "",
+      verifiedBy: verifiedById,
     });
     setShowEditModal(true);
   };
@@ -339,24 +300,30 @@ const GroupDetailsPage: React.FC = () => {
       questionLevel: [],
       groupId: groupId.toString(),
       defaultflag: "no",
-      verifiedBy: "",
+      verifiedBy: undefined,
     });
-  };
-  const handleLevelToggle = (level: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      questionLevel: prev.questionLevel.includes(level)
-        ? prev.questionLevel.filter((l) => l !== level)
-        : [...prev.questionLevel, level],
-    }));
+    setVerifiedBySelectedOption([]);
   };
 
   const totalQuestionPages = Math.ceil(questionTotal / PAGE_SIZE);
 
+  // Helper function to get verified by display name
+  const getVerifiedByDisplayName = (email?: string) => {
+    if (!email) return null;
+
+    // Try to find in the questions list first (from fetched data)
+    const matchingQuestion = questions.find(q => q.verifiedByEmail === email);
+    if (matchingQuestion?.verifiedBy) {
+      return matchingQuestion.verifiedBy;
+    }
+
+    return email;
+  };
+
   if (loading) {
     return (
       <div className="p-8">
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-start justify-center py-12">
           <div className="text-muted-foreground">Loading group data...</div>
         </div>
       </div>
@@ -391,19 +358,18 @@ const GroupDetailsPage: React.FC = () => {
         <div className="flex items-right gap-2">
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center">
+            className="flex items-center gap-1">
             <Plus size={16} />
             Add Question
           </Button>
           <Button
             variant="outline"
             onClick={() => router.push("/admin/groups")}
-            className="flex items-center">
+            className="flex items-center gap-1">
             <ArrowLeft size={16} />
             Back
           </Button>
         </div>
-       
       </div>
 
       {/* Error Display */}
@@ -426,11 +392,11 @@ const GroupDetailsPage: React.FC = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="flex items-center gap-4 text-lg">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
+                  <CardTitle className="flex items-center gap-4 text-md">
+                    <span className=" flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
                       {questionPage * PAGE_SIZE + index + 1}
                     </span>
-                    {question.text}
+                    <span className="flex-1 break-words">{question.text}</span>
                   </CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded">
@@ -441,62 +407,41 @@ const GroupDetailsPage: React.FC = () => {
                     <span>Due: Day {question.complainceDay}</span>
                     <span>Period: {question.period}</span>
 
-                    <div className="flex items-center gap-1">
-                      <span>Levels:</span>
-                      {question.questionLevel.map((questionLevel) => (
-                        <span
-                          key={questionLevel}
-                          className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
-                        >
-                          {questionLevel}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span>Departments:</span>
-                      {question.questionDepartment.map((questionDepartment) => (
-                        <span
-                          key={questionDepartment}
-                          className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs"
-                        >
-                          {questionDepartment}
-                        </span>
-                      ))}
-                    </div>
-                    {question.verifiedBy && (
+                    {question.verifiedByEmail && (
                       <span className="-ml-2 px-2 py-1 rounded">
-                        Verified by: {verifiedByOptions.find(opt => opt.value === question.verifiedBy)?.key || question.verifiedBy}
+                        Verified by: {getVerifiedByDisplayName(question.verifiedByEmail)}
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="ml-5 flex items-center gap-3">
                   <button
+                    title="Edit Question"
                     onClick={() => openEditModal(question)}
-                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                    className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
                   >
-                    <Edit size={16} />
+                    <Edit size={18} />
                   </button>
                   <button
                     onClick={() => handleCloneQuestion(question)}
-                    className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)]"
                     title="Clone Question"
                   >
-                    <Copy size={16} />
+                    <Copy size={18} />
                   </button>
                   {question.deleteFlag && questions.length > 1 && (
                     <button
+                      title="Delete Question"
                       onClick={() => {
                         setQuestionToDelete(question);
                         setShowDeleteModal(true);
                       }}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                      className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
-                  )}
 
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -509,8 +454,7 @@ const GroupDetailsPage: React.FC = () => {
               <HelpCircle size={48} className="text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Questions Found</h3>
               <p className="text-muted-foreground mb-4 text-center">
-                Start by creating onboarding questions for the {group.name}{" "}
-                department
+                Start by creating onboarding questions for the {group.name} department
               </p>
               <Button onClick={() => setShowCreateModal(true)}>
                 <Plus size={16} className="mr-2" />
@@ -578,11 +522,7 @@ const GroupDetailsPage: React.FC = () => {
               <div className="flex-1 overflow-y-auto">
                 <CardContent className="p-6">
                   <form
-                    onSubmit={
-                      showCreateModal
-                        ? handleCreateQuestion
-                        : handleEditQuestion
-                    }
+                    onSubmit={showCreateModal ? handleCreateQuestion : handleEditQuestion}
                     className="space-y-6"
                     id="question-form"
                   >
@@ -806,44 +746,39 @@ const GroupDetailsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Verified By with Async Search */}
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
                         <label className="block text-sm font-medium mb-2">
                           Verified By
                         </label>
-                        <div className="relative">
+                        <div className="relative z-[9997]">
                           <SearchableDropdown
                             className="w-full"
-                            options={verifiedByOptions}
-                            value={
-                              verifiedByOptions.find(
-                                (opt) => opt.value === formData.verifiedBy
-                              )?.id
-                            }
+                            value={formData.verifiedBy}
                             onChange={(id) => {
-                              const selectedValue = verifiedByOptions.find((opt) => opt.id === id)?.value ?? "";
                               setFormData((prev) => ({
                                 ...prev,
-                                verifiedBy: selectedValue,
+                                verifiedBy: id as number | undefined,
                               }));
                             }}
-                            placeholder="Select who will verify"
+                            placeholder="Type 3+ characters to search..."
                             displayFullValue={false}
-
+                            onSearch={searchVerifiedBy}
+                            minSearchLength={3}
+                            initialSelectedOptions={verifiedBySelectedOption}
                           />
                         </div>
                       </div>
-
-                      <div className="flex-1 " />
+                      <div className="flex-1" />
                     </div>
 
                     <div className="pb-4"></div>
-                    {/* <div className="pb-4"></div> */}
                   </form>
                 </CardContent>
               </div>
 
-              {/* Sticky Footer with Buttons */}
               {/* Sticky Footer with Buttons */}
               <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
                 <div className="flex gap-3 justify-end">
@@ -891,7 +826,6 @@ const GroupDetailsPage: React.FC = () => {
                 ? This action cannot be undone.
               </p>
               <div className="flex gap-3 flex-wrap">
-
                 <Button
                   variant="outline"
                   onClick={() => {

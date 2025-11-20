@@ -26,9 +26,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Users,
-  CheckCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
 
 const qKey = (
   tId: string | number | undefined,
@@ -61,7 +61,8 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
   const [respValues, setRespValues] = useState<Record<string, string>>({});
   const [respSaving, setRespSaving] = useState<Record<string, boolean>>({});
-
+  const commentInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
+  const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
@@ -71,7 +72,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
       setTasks(list);
 
-
       const existingComments: Record<string, string> = {};
       const existingVerifications: Record<string, "yes" | "no"> = {};
       const alreadyVerified = new Set<string>();
@@ -80,13 +80,14 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
         (task.questionList ?? []).forEach((q: any) => {
           if (q.comments) {
             existingComments[q.id] = q.comments;
-            alreadyVerified.add(q.id);
-
-            if (q.answer) {
-              existingVerifications[q.id] = q.answer.toLowerCase() === "yes" ? "yes" : "no";
-            }
           }
 
+          if (q.answer) {
+            existingVerifications[q.id] = q.answer.toLowerCase() === "yes" ? "yes" : "no";
+          }
+          if (task.verifiedFreezeTask === true) {
+            alreadyVerified.add(q.id);
+          }
         });
       });
 
@@ -105,7 +106,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const freezeTask = tasks[0]?.freezeTask;
 
   useEffect(() => {
     const map: Record<string, string> = {};
@@ -124,51 +124,75 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       [questionId]: value,
     }));
   };
+  const handleCommentSave = (questionId: string, value: string) => {
+    setComments((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }));
+    adminService.saveTaskVerification(Number(questionId), "comments", value);
+  };
 
   const handleVerificationChange = (questionId: string, value: "yes" | "no") => {
     setVerifications((prev) => ({
       ...prev,
       [questionId]: value,
     }));
-  };
+    adminService.saveTaskVerification(Number(questionId), "answer", value.toUpperCase());
 
-  const handleVerify = async (questionId: string) => {
-    try {
-      const comment = comments[questionId];
-      const verification = verifications[questionId];
-
-      if (!comment || comment.trim() === "") {
-        toast.error("Please enter a comment before verifying");
-        return;
-      }
-
-      if (verification === null || verification === undefined) {
-        toast.error("Please select Yes or No before verifying");
-        return;
-      }
-
-
-      setLoading(true);
-
-      const answer = verification.toUpperCase();
-      // Debug logs
-      console.log("Question ID being sent:", questionId);
-      console.log("Comment being sent to BE:", comment);
-      console.log("Verification being sent to BE:", answer);
-
-      await adminService.saveVerificationComment(answer, Number(questionId), comment);
-
-      setVerifiedQuestions(prev => new Set([...prev, questionId]));
-      toast.success("Question verified successfully");
-
-      fetchTasks();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to verify question");
-    } finally {
-      setLoading(false);
+    // Focus on comment input if "no" is selected
+    if (value === "no") {
+      setTimeout(() => {
+        commentInputRefs.current[questionId]?.focus();
+      }, 0);
     }
   };
+  // Check if submit button should be enabled
+  const isSubmitEnabled = () => {
+    // Check if task is already frozen/verified
+    const isTaskFrozen = tasks.some((task: any) => task.verifiedFreezeTask === true);
+    if (isTaskFrozen) return false; // Disable submit if already verified
 
+    const allQuestions: string[] = [];
+    tasks.forEach((task) => {
+      (task.questionList ?? []).forEach((q) => {
+        allQuestions.push(String(q.id));
+      });
+    });
+
+    // Check if all questions have verification selected
+    for (const qId of allQuestions) {
+      if (verifiedQuestions.has(qId)) continue; // Skip already verified questions
+
+      const verification = verifications[qId];
+      if (!verification) return false; // No verification selected
+
+      // If verification is "no", comments are mandatory
+      if (verification === "no" && (!comments[qId] || comments[qId].trim() === "")) {
+        return false;
+      }
+    }
+
+    return allQuestions.length > 0;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const result = await taskService.verifiedFreezeTask(taskId);
+
+      if (result) {
+        toast.success("Verification submitted successfully!");
+        setShowSubmitModal(false);
+        await fetchTasks();
+      } else {
+        toast.error("Failed to submit verification. Please try again.");
+        setShowSubmitModal(false);
+      }
+    } catch (error: any) {
+      console.error("Error submitting verification:", error);
+      toast.error(error?.response?.data?.message || "Failed to submit task");
+      setShowSubmitModal(false);
+    }
+  };
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
     const status = (q.status || "Pending").toLowerCase();
     const overdue = q.overDueFlag;
@@ -238,14 +262,14 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3">
         <Button
           variant="outline"
           onClick={() => router.push("/group-lead/engineer-verification")}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1"
         >
           <ArrowLeft size={16} />
-          Back to Tasks
+          Back
         </Button>
       </div>
 
@@ -255,17 +279,16 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
         return (
           <Card key={t.id}>
-            <CardContent className="pt-0">
+            <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
+                <TableHeader >
+                  <TableRow className="table-heading-bg text-primary-gradient">
                     <TableHead>Question</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Compliance Day</TableHead>
                     <TableHead>Response</TableHead>
-                    <TableHead className="min-w-[150px]">Verification</TableHead>
-                    <TableHead className="min-w-[250px]">Comments</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Verification</TableHead>
+                    <TableHead>Comments</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -285,7 +308,6 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                       const questionId = String(q.id);
                       const key = qKey(t.id, q.id);
                       const initial = getInitialResp(q);
-                      const value = respValues[key] ?? initial;
 
                       return (
                         <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
@@ -334,34 +356,17 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                           <TableCell>
                             <input
                               type="text"
+                              ref={(el) => { commentInputRefs.current[questionId] = el; }}
                               value={comments[questionId] || ""}
                               onChange={(e) => handleCommentChange(questionId, e.target.value)}
                               disabled={verifiedQuestions.has(questionId)}
+                              onBlur={(e) => handleCommentSave(questionId, e.target.value)}
                               placeholder="Enter comments..."
                               className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
                                 ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
                                 : 'bg-background border-input'
                                 }`}
                             />
-                          </TableCell>
-
-                          <TableCell>
-                            {comments[questionId] &&
-                              comments[questionId].trim() !== "" &&
-                              verifications[questionId] !== null &&
-                              verifications[questionId] !== undefined && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleVerify(questionId)}
-                                  disabled={verifiedQuestions.has(questionId)}
-                                  className="rounded-lg bg-green-500 hover:bg-green-600 text-white"
-                                  aria-label="Verify question"
-                                >
-                                  <CheckCircle size={16} className="mr-1" />
-                                  {verifiedQuestions.has(questionId) ? "Verified" : "Verify"}
-                                </Button>
-                              )}
                           </TableCell>
                         </TableRow>
                       );
@@ -373,8 +378,52 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
           </Card>
         );
       })}
+      {/* Submit Button */}
+
+      {!tasks.some((task: any) => task.verifiedFreezeTask === true) && (
+        <div className="flex justify-center py-6">
+          <Button
+            onClick={() => setShowSubmitModal(true)}
+            disabled={!isSubmitEnabled()}
+            className="px-8"
+          >
+            Submit
+          </Button>
+        </div>
+      )}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardContent className="pt-6">
+              <p className="mb-4 text-md">
+                Are you sure you want to submit? This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  className="flex-1 bg-gradient-to-r from-[#4c51bf] to-[#5a60d1]"
+                >
+                  Yes, Submit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
+
+
 
 export default EmployeeAcknowledgementDetail;

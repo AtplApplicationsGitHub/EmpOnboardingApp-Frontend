@@ -85,33 +85,31 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <Card>
-        <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search by employee, group, department, or role..."
-              className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
-              aria-label="Search tasks"
-            />
-          </div>
-        </CardContent>
-      </Card>
+
+      <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Search by employee, group, department, or role..."
+            className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </CardContent>
+
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Task ID</TableHead>
                 <TableHead>Employee Name</TableHead>
-                <TableHead>Group ID</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
+                <TableHead>Level</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -133,10 +131,8 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                   <TableRow key={task.id}>
                     <TableCell>{task.id}</TableCell>
                     <TableCell>{task.employeeName}</TableCell>
-                    <TableCell>{task.groupName}</TableCell>
+                     <TableCell>{task.department}</TableCell>
                     <TableCell>{task.level}</TableCell>
-                    <TableCell>{task.role}</TableCell>
-                    <TableCell>{task.department}</TableCell>
 
                     {/* Progress Section */}
                     <TableCell>
@@ -206,13 +202,11 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                       })()}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
+                      <button
+                        className="rounded-lg text-[#474BDD]"
                         onClick={() => router.push(`/group-lead/engineer-verification/${task.id}`)} >
-                        <Eye size={16} />
-                      </Button>
+                        <Eye size={18} />
+                      </button>
                     </TableCell>
                   </TableRow>
 

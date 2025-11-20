@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { adminService } from "../../services/api";
 import { User, DropDownDTO } from "../../types";
-import { Card, CardContent, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
 import {
@@ -17,16 +17,14 @@ import {
 import {
   Plus,
   Users,
-  Shield,
-  UserCheck,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Search,
   Edit,
   X,
   Trash,
+  UserX,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SearchableDropdown from "../../components/SearchableDropdown";
@@ -54,7 +52,9 @@ const UsersPage: React.FC = () => {
   const [ldapLoading, setLdapLoading] = useState(false);
   const [fetchedLdapUsers, setFetchedLdapUsers] = useState<(User & { emailError?: string })[]>([]);
   const [showLdapUsersTable, setShowLdapUsersTable] = useState(false);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userId, setUserId] = useState<any | null>(null);
+  const [userRole, setuserRole] = useState<any | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -64,15 +64,6 @@ const UsersPage: React.FC = () => {
   });
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-
-  interface MockLdapResponse {
-    successUserInfoList: Array<{
-      name: string;
-      email: string;
-
-    }>;
-    failedUserList: string[];
-  }
 
 
   // Fetch roles for dropdown
@@ -96,7 +87,6 @@ const UsersPage: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      // setLoading(true);
       const params: any = { page: currentPage };
       if (searchFilter && searchFilter.trim() !== "") {
         params.search = searchFilter.trim();
@@ -106,12 +96,8 @@ const UsersPage: React.FC = () => {
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
-    } finally {
-      // setLoading(false);
-    }
+    } 
   };
-
-
 
   // 1. CREATE
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -125,7 +111,6 @@ const UsersPage: React.FC = () => {
       return;
     }
     try {
-      console.log("Creating user with data:", formData);
       await adminService.createUser(formData);
       setFormData({ name: "", email: "", password: "", role: "group_lead" });
       setShowCreateModal(false);
@@ -171,7 +156,6 @@ const UsersPage: React.FC = () => {
       const res = await adminService.isEmailExists(value);
       setEmailExists(res);
     } catch (error) {
-      console.error("Email check failed", error);
       setEmailExists(false);
     } finally {
       setCheckingEmail(false);
@@ -231,6 +215,36 @@ const UsersPage: React.FC = () => {
       toast.error("Failed to load user");
     } finally {
       // setLoading(false);
+    }
+  };
+
+  const canDeactivateUser = async (userId: number, role: string) => {
+    try {
+      const deactivate = await adminService.canDeactivateUser(userId);
+      if (deactivate) {
+        setUserId(userId);
+        setuserRole(role)
+        setShowDeleteModal(true);
+      } else {
+        toast.error(role === "admin" ? "At least one active administrator is required." : "This user has pending tasks or verifications. Please complete them before deactivating.");
+      }
+    } catch (err: any) {
+      toast.error("Failed to load user");
+    }
+  };
+
+  const handleDeactivateUser = async () => {
+    if (!userId) return;
+    try {
+      const response = await adminService.deactivateUser(userId);
+        if (response)
+          toast.success(`User deactivated successfully`);
+        else
+          toast.error("Failed to deactivate the user");
+        setShowDeleteModal(false);
+        fetchUsers();
+    } catch (err: any) {
+      toast.error("Failed to load user");
     }
   };
 
@@ -496,17 +510,20 @@ const UsersPage: React.FC = () => {
                       {user.updatedTime}
                     </TableCell>
                     <TableCell className="flex items-center gap-3">
-                      {user.role === "admin" ? (
-                        <Shield size={18} className="text-red-500" />
-                      ) : (
-                        <UserCheck size={18} className="text-blue-500" />
-                      )}
                       <button
-                        className="p-2 rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 hover:scale-110"
+                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
                         onClick={() => handleEditUser(user.id)}
-                        title="Edit User"
+                        title="Edit"
                       >
                         <Edit size={18} />
+                      </button>
+
+                      <button
+                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
+                        onClick={() => canDeactivateUser(user.id, user.role)}
+                        title="Deactivate"
+                      >
+                        <UserX size={18} />
                       </button>
 
                     </TableCell>
@@ -859,6 +876,7 @@ const UsersPage: React.FC = () => {
                                 className="w-full"
                                 isEmployeePage={true}
                                 displayFullValue={false}
+                                usePortal={true}
                               />
                             </TableCell>
                           </TableRow>
@@ -884,7 +902,40 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
       )}
-
+      {showDeleteModal && userId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm mx-4">
+            <CardHeader>
+              <CardTitle>Deactivate User</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Are you sure you want to Deactivate?
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setUserId(null);
+                    setuserRole(null)
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeactivateUser}
+                  className="flex-1"
+                >
+                  Yes, Deactivate
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
