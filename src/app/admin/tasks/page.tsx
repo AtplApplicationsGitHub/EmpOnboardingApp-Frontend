@@ -557,7 +557,7 @@ const TasksPage: React.FC = () => {
                             </button>
                           )}
 
-                          {task.status?.toLowerCase() === "completed" &&
+                          {/* {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "N" &&
                             (task.lab ?? "").toString().trim() !== "" && (
                               <button
@@ -582,7 +582,7 @@ const TasksPage: React.FC = () => {
                               >
                                 <Lock size={18} />
                               </button>
-                            )}
+                            )} */}
                         </div>
                       </TableCell>
                     </TableRow>
