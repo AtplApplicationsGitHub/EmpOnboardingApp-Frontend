@@ -528,7 +528,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={true}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(newEscalationGroupLeadId)}
                     minSearchLength={3}
@@ -549,7 +549,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(newPrimaryGroupLeadId)}
                     minSearchLength={3}
@@ -577,7 +577,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Select auto assign option"
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     isEmployeePage={true}
                     displayFullValue={false}
                     className="w-full"
@@ -657,7 +657,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={true}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(editEscalationGroupLeadId)}
                     minSearchLength={3}
@@ -678,7 +678,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Type 3+ characters to search..."
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     onSearch={getFilteredSearchFunction(editPrimaryGroupLeadId)}
                     minSearchLength={3}
@@ -706,7 +706,7 @@ const GroupsPage: React.FC = () => {
                     }}
                     placeholder="Select auto assign option"
                     required={false}
-                    maxDisplayItems={4}
+                    maxDisplayItems={10}
                     className="w-full"
                     isEmployeePage={true}
                     displayFullValue={false}
