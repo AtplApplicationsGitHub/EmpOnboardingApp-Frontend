@@ -196,7 +196,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                           <span
                             className={`${base} bg-amber-500/20 text-amber-600`}
                           >
-                            In Progress
+                            {task.status}
                           </span>
                         );
                       })()}
