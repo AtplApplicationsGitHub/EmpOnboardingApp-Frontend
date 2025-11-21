@@ -479,7 +479,15 @@ const TasksPage: React.FC = () => {
                           const status = (task.status || "").toLowerCase();
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
-
+                          if (completed === 0) {
+                            return (
+                              <span
+                                className={`${base} bg-blue-600/20 text-blue-600`}
+                              >
+                                Open
+                              </span>
+                            );
+                          }
                           if (status === "overdue") {
                             return (
                               <span
