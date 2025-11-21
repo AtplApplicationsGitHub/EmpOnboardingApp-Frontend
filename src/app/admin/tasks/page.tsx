@@ -512,16 +512,19 @@ const TasksPage: React.FC = () => {
                       {/* Actions */}
                       <TableCell>
                         <div className="flex items-center gap-5">
-                          {!task.lab && (
-                            <button
-                              className="rounded-lg text-[#eea11d]"
-                              onClick={() => handleOpenLabChangeModal(task)}
-                              aria-label="Change lab"
-                              title="Change Lab"
-                            >
-                              <FlaskConical size={18} />
-                            </button>
-                          )}
+                          <div className="w-[18px]">
+                            {!task.lab && (
+                              <button
+                                className="rounded-lg text-[#eea11d]"
+                                onClick={() => handleOpenLabChangeModal(task)}
+                                aria-label="Change lab"
+                                title="Change Lab"
+                              >
+                                <FlaskConical size={18} />
+                              </button>
+
+                            )}
+                          </div>
                           <button
                             className="rounded-lg p-2 text-[#474BDD]"
                             onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
