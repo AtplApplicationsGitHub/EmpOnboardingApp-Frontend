@@ -317,10 +317,8 @@ const GroupLeadTasksPage: React.FC = () => {
                 <TableRow className="table-heading-bg text-primary-gradient">
                   <TableHead>Task ID</TableHead>
                   <TableHead>Employee Name</TableHead>
-                  <TableHead>Group ID</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Role</TableHead>
                   <TableHead>Department</TableHead>
+                  <TableHead>Level</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -373,10 +371,8 @@ const GroupLeadTasksPage: React.FC = () => {
                             {(task as any).id}
                           </TableCell>
                           <TableCell>{(task as any).employeeName}</TableCell>
-                          <TableCell>{(task as any).groupName}</TableCell>
-                          <TableCell>{(task as any).level}</TableCell>
-                          <TableCell>{(task as any).role}</TableCell>
                           <TableCell>{(task as any).department}</TableCell>
+                          <TableCell>{(task as any).level}</TableCell>
                           <TableCell className="">
                             <div className="flex flex-col gap-2">
                               <div className="flex items-center gap-2 text-sm">
@@ -422,15 +418,39 @@ const GroupLeadTasksPage: React.FC = () => {
                                 <span
                                   className={`${base} bg-amber-500/20 text-amber-600`}
                                 >
-                                  In Progress
+                                  {task.status}
                                 </span>
                               );
-                            })()}
+                            })
+                              ()}
                           </TableCell>
 
                           {/* Actions */}
                           <TableCell>
                             <div className="flex items-center gap-5">
+                              <div className="w-[18px]">
+
+                                {!task.lab && isFirstOccurrence && (
+                                  <button
+                                    className="rounded-lg text-[#eea11d]"
+                                    onClick={() => handleOpenLabChangeModal(task)}
+                                    aria-label="Change lab"
+                                    title="Change Lab"
+                                  >
+                                    <FlaskConical size={18} />
+                                  </button>
+                                )}
+                              </div>
+                              <button
+                                className="rounded-lg text-[#474BDD]"
+                                onClick={() =>
+                                  router.push(`/group-lead/tasks/${task.id}`)
+                                }
+                                aria-label="View details"
+                              >
+                                <Eye size={18} />
+                              </button>
+
                               {/* View Answers button - only show for first occurrence of employees who have questions */}
                               {isFirstOccurrence && hasQuestions && (
                                 <button
@@ -443,27 +463,6 @@ const GroupLeadTasksPage: React.FC = () => {
                                   title="View Employee Answers"
                                 >
                                   <TicketCheck size={18} />
-                                </button>
-                              )}
-
-                              <button
-                                className="rounded-lg text-[#474BDD]"
-                                onClick={() =>
-                                  router.push(`/group-lead/tasks/${task.id}`)
-                                }
-                                aria-label="View details"
-                              >
-                                <Eye size={18} />
-                              </button>
-
-                              {!task.lab && isFirstOccurrence && (
-                                <button
-                                  className="rounded-lg text-[#eea11d]"
-                                  onClick={() => handleOpenLabChangeModal(task)}
-                                  aria-label="Change lab"
-                                  title="Change Lab"
-                                >
-                                  <FlaskConical size={18} />
                                 </button>
                               )}
                             </div>
@@ -481,7 +480,7 @@ const GroupLeadTasksPage: React.FC = () => {
       </Card>
 
       {showLabChangeModal && (
-         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
             {/* Header */}
@@ -670,7 +669,7 @@ const GroupLeadTasksPage: React.FC = () => {
 
       {/* Questions Modal */}
       {showQuestionsModal && (
-         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
@@ -688,19 +687,6 @@ const GroupLeadTasksPage: React.FC = () => {
                     Questions
                   </div>
                 </div>
-
-                {/* <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setShowQuestionsModal(false);
-                    setSelectedTaskQuestions([]);
-                    setSelectedEmployeeName("");
-                  }}
-                  className="rounded-lg"
-                >
-                  <X size={16} />
-                </Button> */}
               </div>
             </div>
 

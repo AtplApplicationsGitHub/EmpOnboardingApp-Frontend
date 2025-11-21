@@ -108,10 +108,8 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
               <TableRow className="table-heading-bg text-primary-gradient">
                 <TableHead>Task ID</TableHead>
                 <TableHead>Employee Name</TableHead>
-                <TableHead>Group ID</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
+                <TableHead>Level</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -133,10 +131,8 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                   <TableRow key={task.id}>
                     <TableCell>{task.id}</TableCell>
                     <TableCell>{task.employeeName}</TableCell>
-                    <TableCell>{task.groupName}</TableCell>
+                     <TableCell>{task.department}</TableCell>
                     <TableCell>{task.level}</TableCell>
-                    <TableCell>{task.role}</TableCell>
-                    <TableCell>{task.department}</TableCell>
 
                     {/* Progress Section */}
                     <TableCell>
@@ -200,7 +196,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                           <span
                             className={`${base} bg-amber-500/20 text-amber-600`}
                           >
-                            In Progress
+                            {task.status}
                           </span>
                         );
                       })()}

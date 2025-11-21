@@ -479,7 +479,15 @@ const TasksPage: React.FC = () => {
                           const status = (task.status || "").toLowerCase();
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
-
+                          if (completed === 0) {
+                            return (
+                              <span
+                                className={`${base} bg-blue-600/20 text-blue-600`}
+                              >
+                                Open
+                              </span>
+                            );
+                          }
                           if (status === "overdue") {
                             return (
                               <span
@@ -512,6 +520,19 @@ const TasksPage: React.FC = () => {
                       {/* Actions */}
                       <TableCell>
                         <div className="flex items-center gap-5">
+                          <div className="w-[18px]">
+                            {!task.lab && (
+                              <button
+                                className="rounded-lg text-[#eea11d]"
+                                onClick={() => handleOpenLabChangeModal(task)}
+                                aria-label="Change lab"
+                                title="Change Lab"
+                              >
+                                <FlaskConical size={18} />
+                              </button>
+
+                            )}
+                          </div>
                           <button
                             className="rounded-lg p-2 text-[#474BDD]"
                             onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
@@ -519,17 +540,6 @@ const TasksPage: React.FC = () => {
                           >
                             <Eye size={18} />
                           </button>
-
-                          {!task.lab && (
-                            <button
-                              className="rounded-lg text-[#eea11d]"
-                              onClick={() => handleOpenLabChangeModal(task)}
-                              aria-label="Change lab"
-                              title="Change Lab"
-                            >
-                              <FlaskConical size={18} />
-                            </button>
-                          )}
 
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
@@ -547,12 +557,10 @@ const TasksPage: React.FC = () => {
                             </button>
                           )}
 
-                          {task.status?.toLowerCase() === "completed" &&
+                          {/* {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "N" &&
                             (task.lab ?? "").toString().trim() !== "" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg"
                                 aria-label="Archive and Freeze"
                                 title="Archive Employee"
@@ -562,21 +570,19 @@ const TasksPage: React.FC = () => {
                                   setShowFreezeModal(true);
                                 }}
                               >
-                                <Unlock size={16} />
-                              </Button>
+                                <Unlock size={18} />
+                              </button>
                             )}
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "Y" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg ml-2"
                                 aria-label="Frozen"
                                 disabled
                               >
-                                <Lock size={16} />
-                              </Button>
-                            )}
+                                <Lock size={18} />
+                              </button>
+                            )} */}
                         </div>
                       </TableCell>
                     </TableRow>

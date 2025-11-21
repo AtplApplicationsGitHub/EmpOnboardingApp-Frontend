@@ -67,7 +67,7 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const t = await taskService.getTaskById(taskId);
+      const t = await taskService.getTaskByIdForVerification(taskId);
       console.log('Fetched Task Data:', t);
       const list: Task[] = Array.isArray(t) ? t : t ? [t] : [];
       setTasks(list);
