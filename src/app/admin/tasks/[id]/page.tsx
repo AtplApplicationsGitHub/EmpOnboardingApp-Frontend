@@ -619,13 +619,6 @@ const TaskDetailsPage: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <Button
-                  variant="destructive"
-                  onClick={handleDeleteQuestion}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
-                <Button
                   variant="outline"
                   onClick={() => {
                     setShowDeleteModal(false);
@@ -634,6 +627,14 @@ const TaskDetailsPage: React.FC = () => {
                 >
                   Cancel
                 </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteQuestion}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+
               </div>
             </CardContent>
           </Card>

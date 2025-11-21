@@ -1154,13 +1154,6 @@ const EmployeesPage: React.FC = () => {
               </p>
               <div className="flex gap-3">
                 <Button
-                  variant="destructive"
-                  onClick={handleDeleteEmployee}
-                  className="flex-1"
-                >
-                  Yes, Delete
-                </Button>
-                <Button
                   variant="outline"
                   onClick={() => {
                     setShowDeleteModal(false);
@@ -1170,6 +1163,14 @@ const EmployeesPage: React.FC = () => {
                 >
                   Cancel
                 </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteEmployee}
+                  className="flex-1"
+                >
+                  Yes, Delete
+                </Button>
+
               </div>
             </CardContent>
           </Card>

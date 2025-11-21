@@ -512,14 +512,6 @@ const TasksPage: React.FC = () => {
                       {/* Actions */}
                       <TableCell>
                         <div className="flex items-center gap-5">
-                          <button
-                            className="rounded-lg p-2 text-[#474BDD]"
-                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
-                            aria-label="View details"
-                          >
-                            <Eye size={18} />
-                          </button>
-
                           {!task.lab && (
                             <button
                               className="rounded-lg text-[#eea11d]"
@@ -530,6 +522,13 @@ const TasksPage: React.FC = () => {
                               <FlaskConical size={18} />
                             </button>
                           )}
+                          <button
+                            className="rounded-lg p-2 text-[#474BDD]"
+                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
+                            aria-label="View details"
+                          >
+                            <Eye size={18} />
+                          </button>
 
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
