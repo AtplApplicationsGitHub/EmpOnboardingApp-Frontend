@@ -1076,6 +1076,7 @@ const EmployeesPage: React.FC = () => {
                         !selectedEmployeeId ||
                         groupOptions.length === 0
                       }
+                      usePortal={true}
                     />
                   </div>
                 )}
