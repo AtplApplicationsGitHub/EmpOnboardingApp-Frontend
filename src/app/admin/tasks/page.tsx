@@ -552,9 +552,7 @@ const TasksPage: React.FC = () => {
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "N" &&
                             (task.lab ?? "").toString().trim() !== "" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg"
                                 aria-label="Archive and Freeze"
                                 title="Archive Employee"
@@ -564,20 +562,18 @@ const TasksPage: React.FC = () => {
                                   setShowFreezeModal(true);
                                 }}
                               >
-                                <Unlock size={16} />
-                              </Button>
+                                <Unlock size={18} />
+                              </button>
                             )}
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "Y" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg ml-2"
                                 aria-label="Frozen"
                                 disabled
                               >
-                                <Lock size={16} />
-                              </Button>
+                                <Lock size={18} />
+                              </button>
                             )}
                         </div>
                       </TableCell>
