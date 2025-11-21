@@ -421,23 +421,27 @@ const GroupLeadTasksPage: React.FC = () => {
                                   In Progress
                                 </span>
                               );
-                            })()}
+                            })
+                              ()}
                           </TableCell>
 
                           {/* Actions */}
                           <TableCell>
                             <div className="flex items-center gap-5">
-                               {!task.lab && isFirstOccurrence && (
-                                <button
-                                  className="rounded-lg text-[#eea11d]"
-                                  onClick={() => handleOpenLabChangeModal(task)}
-                                  aria-label="Change lab"
-                                  title="Change Lab"
-                                >
-                                  <FlaskConical size={18} />
-                                </button>
-                              )}
-                               <button
+                              <div className="w-[18px]">
+
+                                {!task.lab && isFirstOccurrence && (
+                                  <button
+                                    className="rounded-lg text-[#eea11d]"
+                                    onClick={() => handleOpenLabChangeModal(task)}
+                                    aria-label="Change lab"
+                                    title="Change Lab"
+                                  >
+                                    <FlaskConical size={18} />
+                                  </button>
+                                )}
+                              </div>
+                              <button
                                 className="rounded-lg text-[#474BDD]"
                                 onClick={() =>
                                   router.push(`/group-lead/tasks/${task.id}`)
@@ -460,7 +464,7 @@ const GroupLeadTasksPage: React.FC = () => {
                                 >
                                   <TicketCheck size={18} />
                                 </button>
-                              )}             
+                              )}
                             </div>
                           </TableCell>
 
@@ -476,7 +480,7 @@ const GroupLeadTasksPage: React.FC = () => {
       </Card>
 
       {showLabChangeModal && (
-         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
             {/* Header */}
@@ -665,7 +669,7 @@ const GroupLeadTasksPage: React.FC = () => {
 
       {/* Questions Modal */}
       {showQuestionsModal && (
-         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">

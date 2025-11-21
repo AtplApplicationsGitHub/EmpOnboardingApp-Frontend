@@ -512,16 +512,19 @@ const TasksPage: React.FC = () => {
                       {/* Actions */}
                       <TableCell>
                         <div className="flex items-center gap-5">
-                          {!task.lab && (
-                            <button
-                              className="rounded-lg text-[#eea11d]"
-                              onClick={() => handleOpenLabChangeModal(task)}
-                              aria-label="Change lab"
-                              title="Change Lab"
-                            >
-                              <FlaskConical size={18} />
-                            </button>
-                          )}
+                          <div className="w-[18px]">
+                            {!task.lab && (
+                              <button
+                                className="rounded-lg text-[#eea11d]"
+                                onClick={() => handleOpenLabChangeModal(task)}
+                                aria-label="Change lab"
+                                title="Change Lab"
+                              >
+                                <FlaskConical size={18} />
+                              </button>
+
+                            )}
+                          </div>
                           <button
                             className="rounded-lg p-2 text-[#474BDD]"
                             onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
@@ -549,9 +552,7 @@ const TasksPage: React.FC = () => {
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "N" &&
                             (task.lab ?? "").toString().trim() !== "" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg"
                                 aria-label="Archive and Freeze"
                                 title="Archive Employee"
@@ -561,20 +562,18 @@ const TasksPage: React.FC = () => {
                                   setShowFreezeModal(true);
                                 }}
                               >
-                                <Unlock size={16} />
-                              </Button>
+                                <Unlock size={18} />
+                              </button>
                             )}
                           {task.status?.toLowerCase() === "completed" &&
                             task.freeze === "Y" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
+                              <button
                                 className="rounded-lg ml-2"
                                 aria-label="Frozen"
                                 disabled
                               >
-                                <Lock size={16} />
-                              </Button>
+                                <Lock size={18} />
+                              </button>
                             )}
                         </div>
                       </TableCell>
