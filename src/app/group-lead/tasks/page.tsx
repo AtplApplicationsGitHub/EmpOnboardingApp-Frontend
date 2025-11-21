@@ -427,6 +427,26 @@ const GroupLeadTasksPage: React.FC = () => {
                           {/* Actions */}
                           <TableCell>
                             <div className="flex items-center gap-5">
+                               {!task.lab && isFirstOccurrence && (
+                                <button
+                                  className="rounded-lg text-[#eea11d]"
+                                  onClick={() => handleOpenLabChangeModal(task)}
+                                  aria-label="Change lab"
+                                  title="Change Lab"
+                                >
+                                  <FlaskConical size={18} />
+                                </button>
+                              )}
+                               <button
+                                className="rounded-lg text-[#474BDD]"
+                                onClick={() =>
+                                  router.push(`/group-lead/tasks/${task.id}`)
+                                }
+                                aria-label="View details"
+                              >
+                                <Eye size={18} />
+                              </button>
+
                               {/* View Answers button - only show for first occurrence of employees who have questions */}
                               {isFirstOccurrence && hasQuestions && (
                                 <button
@@ -440,28 +460,7 @@ const GroupLeadTasksPage: React.FC = () => {
                                 >
                                   <TicketCheck size={18} />
                                 </button>
-                              )}
-
-                              <button
-                                className="rounded-lg text-[#474BDD]"
-                                onClick={() =>
-                                  router.push(`/group-lead/tasks/${task.id}`)
-                                }
-                                aria-label="View details"
-                              >
-                                <Eye size={18} />
-                              </button>
-
-                              {!task.lab && isFirstOccurrence && (
-                                <button
-                                  className="rounded-lg text-[#eea11d]"
-                                  onClick={() => handleOpenLabChangeModal(task)}
-                                  aria-label="Change lab"
-                                  title="Change Lab"
-                                >
-                                  <FlaskConical size={18} />
-                                </button>
-                              )}
+                              )}             
                             </div>
                           </TableCell>
 
