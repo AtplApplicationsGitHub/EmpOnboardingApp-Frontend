@@ -41,7 +41,7 @@ const PAGE_SIZE = 10;
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<TaskProjection[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -104,16 +104,11 @@ const TasksPage: React.FC = () => {
         size: PAGE_SIZE,
       };
 
-      if (searchFilter.trim()) {
+      if (searchFilter.trim())
         params.search = searchFilter.trim();
-      }
-
-      if (selectedDepartment && departmentOptions.length > 0) {
-        const dept = departmentOptions.find(d => d.id === selectedDepartment);
-        if (dept) {
-          params.department = dept.value;
-        }
-      }
+      
+      if (selectedDepartment )
+        params.department = selectedDepartment;
 
       if (selectedLevel && levelOptions.length > 0) {
         const lvl = levelOptions.find(l => l.id === selectedLevel);
@@ -123,8 +118,7 @@ const TasksPage: React.FC = () => {
       }
 
       const response = await taskService.getTasksWithFilter(params);
-      const taskList = response.commonListDto.content ?? [];
-      setTasks(taskList);
+      setTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
 
       try {
@@ -150,26 +144,26 @@ const TasksPage: React.FC = () => {
 
   // Function to fetch labs based on department
   const fetchLabsByDepartment = async (
-    department: string,
-    currentLab?: string
+    departmentId: number,
+    currentLab?: number
   ) => {
-    if (!department) {
+    if (!departmentId) {
       setLabOptions([]);
       return;
     }
     try {
-      const labs = await adminService.getLab(department);
-      const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
-        id: index + 1,
-        value: lab as string,
-        key: lab as string,
+      const labs = await adminService.getDepartmentLabs(departmentId);
+      const transformedLabs = labs.map(lab => ({
+        ...lab,
+        value: lab.value || lab.key
       }));
+      setLabOptions(transformedLabs);
 
-      setLabOptions(labOptionsFormatted);
+      setLabOptions(transformedLabs);
 
       if (currentLab) {
-        const matchingLab = labOptionsFormatted.find(
-          (lab) => lab.value === currentLab
+        const matchingLab = transformedLabs.find(
+          (lab) => lab.id === currentLab
         );
         if (matchingLab) {
           setSelectedLabId(matchingLab.id);
@@ -204,9 +198,9 @@ const TasksPage: React.FC = () => {
   const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
-
-    if (employee.department) {
-      await fetchLabsByDepartment(employee.department, employee.lab);
+    debugger
+    if (employee.departmentId) {
+      await fetchLabsByDepartment(employee.departmentId, employee.labId);
     } else {
       setLabOptions([]);
       setSelectedLabId(undefined);
@@ -223,7 +217,7 @@ const TasksPage: React.FC = () => {
     try {
       await taskService.labAllocation(
         selectedEmployeeForLabChange.employeeId,
-        selectedLab.value
+        selectedLabId
       );
 
       toast.success("Lab updated successfully");
@@ -414,7 +408,7 @@ const TasksPage: React.FC = () => {
                     >
                       {/* Employee Name */}
                       <TableCell className="font-semibold min-w-[140px]">
-                        {(task as any).name}
+                        {(task as any).employeeName}
                       </TableCell>
                       {/* Level */}
                       <TableCell>{(task as any).level}</TableCell>
@@ -431,29 +425,7 @@ const TasksPage: React.FC = () => {
                       </TableCell>
                       {/* DOJ */}
                       <TableCell className="min-w-[100px]">
-                        {(() => {
-                          const dojArray = (task as any).doj;
-                          if (
-                            Array.isArray(dojArray) &&
-                            dateFormat &&
-                            dojArray.length >= 3
-                          ) {
-                            try {
-                              const dateObject = new Date(
-                                dojArray[0],
-                                dojArray[1] - 1,
-                                dojArray[2]
-                              );
-                              if (isNaN(dateObject.getTime())) {
-                                return "Invalid Date";
-                              }
-                              return format(dateObject, dateFormat);
-                            } catch (error) {
-                              return "Invalid Date";
-                            }
-                          }
-                          return "Invalid Date";
-                        })()}
+                        {(task as any).doj}
                       </TableCell>
                       {/* Lab */}
                       <TableCell className="min-w-[80px]">
@@ -535,7 +507,7 @@ const TasksPage: React.FC = () => {
                           </div>
                           <button
                             className="rounded-lg p-2 text-[#474BDD]"
-                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
+                            onClick={() => (window.location.href = `/admin/tasks/${(task as any).id}`)}
                             aria-label="View details"
                           >
                             <Eye size={18} />
@@ -546,8 +518,7 @@ const TasksPage: React.FC = () => {
                             <button
                               className="rounded-lg text-[#3b82f6]"
                               onClick={() => {
-                                const firstTaskId = task.taskIds.split(",")[0];
-                                handleViewQuestions(firstTaskId, (task as any).name);
+                                handleViewQuestions(task.id, task.employeeName);
                               }}
                               disabled={questionsLoading}
                               aria-label="View answers"
@@ -565,7 +536,7 @@ const TasksPage: React.FC = () => {
                                 aria-label="Archive and Freeze"
                                 title="Archive Employee"
                                 onClick={() => {
-                                  setSelectedTaskId(task.taskIds);
+                                  setSelectedTaskId(task.id);
                                   setSelectedEmployeeId(parseInt(task.employeeId, 10));
                                   setShowFreezeModal(true);
                                 }}
