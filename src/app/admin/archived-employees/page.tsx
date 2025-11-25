@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import {
@@ -22,13 +20,13 @@ import {
     ChevronsRight,
     Eye,
     Users,
-    TicketCheck,
-    X
+    TicketCheck
 } from "lucide-react";
-import { TaskProjection } from "@/app/types";
-import { archiveService, taskService, EQuestions } from "../../services/api";
+import { DropDownDTO, TaskProjection } from "@/app/types";
+import { archiveService, taskService, EQuestions, adminService } from "../../services/api";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 
 const PAGE_SIZE = 10;
@@ -36,12 +34,11 @@ const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 
 const ArchivedEmployeesPage: React.FC = () => {
-    const [employees, setEmployees] = useState<TaskProjection[]>([]);
+    const [employees, setEmployees] = useState<any[]>([]);
     const [totalElements, setTotalElements] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [searchFilter, setSearchFilter] = useState("");
-    const [dateFormat, setDateFormat] = useState<string | null>(null);
     const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
     const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<any[]>([]);
@@ -49,12 +46,34 @@ const ArchivedEmployeesPage: React.FC = () => {
     const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
     const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
     const [totalQuestionCount, setTotalQuestionCount] = useState(0);
-
+    const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+    const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+    const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
+    const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
         [totalElements]
     );
+
+      useEffect(() => {
+        const fetchLookupData = async () => {
+          try {
+            const levels = await adminService.getLookupItems("Level");
+            setLevelOptions(levels);
+    
+            const departments = await adminService.findAllDepartment();
+            const transformedDepartments = departments.map(dept => ({
+              ...dept,
+              value: dept.value || dept.key
+            }));
+            setDepartmentOptions(transformedDepartments);
+          } catch (error) {
+            toast.error("Failed to load dropdown options.");
+          }
+        };
+        fetchLookupData();
+      }, []);
 
     const fetchArchivedEmployees = useCallback(async () => {
         try {
@@ -63,15 +82,21 @@ const ArchivedEmployeesPage: React.FC = () => {
                 page: currentPage,
                 size: PAGE_SIZE,
             };
-            const search = searchFilter.trim();
-            if (search) params.search = search;
-            const [response, formatResponse] = await Promise.all([
-                archiveService.getArchiveTask(params),
-                taskService.getDateFormat()
-            ]);
-            setEmployees(response.commonListDto.content ?? []);
+            if (searchFilter.trim())
+                params.search = searchFilter.trim();
+
+            if (selectedDepartment)
+                params.department = selectedDepartment;
+
+            if (selectedLevel && levelOptions.length > 0) {
+                const lvl = levelOptions.find(l => l.id === selectedLevel);
+                if (lvl) {
+                    params.level = lvl.value;
+                }
+            }
+             const response = await archiveService.getTasksWithFilter(params);
+            setEmployees(response.commonListDto ?? []);
             setTotalElements(response.totalElements ?? 0);
-            setDateFormat(formatResponse);
 
             try {
                 const employeesWithQuestionsArray = await EQuestions.getEmployeesArchWithQuestions();
@@ -85,7 +110,7 @@ const ArchivedEmployeesPage: React.FC = () => {
             setEmployees([]);
             setTotalElements(0);
         }
-    }, [currentPage, searchFilter]);
+    }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
     useEffect(() => {
         fetchArchivedEmployees();
@@ -153,20 +178,54 @@ const ArchivedEmployeesPage: React.FC = () => {
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={searchFilter}
-                        onChange={(e) => {
-                            setSearchFilter(e.target.value);
-                            setCurrentPage(0);
-                        }}
-                        placeholder="Search…"
-                        className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
-                        aria-label="Search archived employees"
-                    />
-                </div>
-            </div>
+        <div className="flex items-center gap-2">
+          <SearchableDropdown
+            options={departmentOptions}
+            value={selectedDepartment}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(department) => {
+              if (department === undefined) {
+                setSelectedDepartment(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(department)) {
+                setSelectedDepartment(department as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select department"
+          />
+          <SearchableDropdown
+            options={levelOptions}
+            value={selectedLevel}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(level) => {
+              if (level === undefined) {
+                setSelectedLevel(undefined);
+                setCurrentPage(0);
+              } else if (!Array.isArray(level)) {
+                setSelectedLevel(level as number);
+                setCurrentPage(0);
+              }
+            }}
+            placeholder="Select level"
+          />
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => {
+              setSearchFilter(e.target.value);
+              setCurrentPage(0);
+            }}
+            placeholder="Search…"
+            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </div>
             {/* Archived Employees Table */}
             <Card>
                 <CardContent className="p-0">
@@ -225,10 +284,10 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     }
 
                                     return (
-                                        <TableRow key={employee.taskIds}>
+                                        <TableRow key={employee.id}>
                                             {/* Employee Name */}
                                             <TableCell className="font-semibold min-w-[140px]">
-                                                {employee.name}
+                                                {employee.employeeName}
                                             </TableCell>
 
                                             {/* Level */}
@@ -246,29 +305,7 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                                             {/* DOJ */}
                                             <TableCell className="min-w-[100px]">
-                                                {(() => {
-                                                    const dojArray = (employee as any).doj;
-                                                    if (
-                                                        Array.isArray(dojArray) &&
-                                                        dateFormat &&
-                                                        dojArray.length >= 3
-                                                    ) {
-                                                        try {
-                                                            const dateObject = new Date(
-                                                                dojArray[0],
-                                                                dojArray[1] - 1,
-                                                                dojArray[2]
-                                                            );
-                                                            if (isNaN(dateObject.getTime())) {
-                                                                return "Invalid Date";
-                                                            }
-                                                            return format(dateObject, dateFormat);
-                                                        } catch (error) {
-                                                            return "Invalid Date";
-                                                        }
-                                                    }
-                                                    return "Invalid Date";
-                                                })()}
+                                                {employee.doj}
                                             </TableCell>
 
                                             {/* Lab */}
@@ -311,7 +348,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                     <button
                                                         className="rounded-lg p-2 text-[#474BDD]"
                                                         onClick={() =>
-                                                            (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
+                                                            (window.location.href = `/admin/archived-employees/${employee.id}`)
                                                         }
                                                         aria-label="View details"
                                                         title="View Details"
@@ -324,8 +361,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                         <button
                                                             className="rounded-lg text-[#3b82f6]"
                                                             onClick={() => {
-                                                                const firstTaskId = employee.taskIds.split(",")[0];
-                                                                handleViewQuestions(firstTaskId, employee.name);
+                                                                handleViewQuestions(employee.id, employee.employeeName);
                                                             }}
                                                             disabled={questionsLoading}
                                                             aria-label="View answers"

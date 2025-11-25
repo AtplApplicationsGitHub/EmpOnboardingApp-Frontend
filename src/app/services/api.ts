@@ -1043,6 +1043,29 @@ export const auditService = {
 
 //Achieve Services
 export const archiveService = {
+
+  getTasksWithFilter: async (params?: {
+    search?: string;
+    department?: string;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: any[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: any[];
+      totalElements: number;
+    }>(`/task/filteredArchiveTaskForAdmin/${page}`,
+      { search: search, department: department, level: level }
+    );
+    return response.data;
+  },
+
   getArchiveTask: async (params?: {
     search?: string;
     page?: number;
@@ -1095,9 +1118,7 @@ export const taskService = {
     level?: string;
     page?: number;
   }): Promise<{
-    commonListDto: {
-      content: TaskProjection[];
-    };
+    commonListDto: any[];
     totalElements: number;
   }> => {
     const search = params?.search ?? "";
@@ -1105,9 +1126,7 @@ export const taskService = {
     const level = params?.level ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
-      commonListDto: {
-        content: TaskProjection[];
-      };
+      commonListDto: any[];
       totalElements: number;
     }>(`/task/filteredTaskForAdminWithFilter/${page}`,
       { search: search, department: department, level: level }
@@ -1165,10 +1184,10 @@ export const taskService = {
 
   labAllocation: async (
     id: number,
-    labAllocation: string
+    labId: number
   ): Promise<boolean> => {
     const response = await api.post<boolean>(
-      `/employee/labSave/${labAllocation}/${id}`
+      `/employee/labSave/${labId}/${id}`
     );
     return response.data;
   },

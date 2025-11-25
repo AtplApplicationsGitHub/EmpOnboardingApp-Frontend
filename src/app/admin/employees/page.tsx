@@ -128,7 +128,6 @@ const EmployeesPage: React.FC = () => {
         ...lab,
         value: lab.value || lab.key
       }));
-      console.log(transformedLabs);
       setLabOptions(transformedLabs);
     } catch (error) {
       toast.error("Failed to load lab options for selected department.");
