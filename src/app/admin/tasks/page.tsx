@@ -198,7 +198,6 @@ const TasksPage: React.FC = () => {
   const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
-    debugger
     if (employee.departmentId) {
       await fetchLabsByDepartment(employee.departmentId, employee.labId);
     } else {
@@ -528,13 +527,12 @@ const TasksPage: React.FC = () => {
                             </button>
                           )}
 
-                          {/* {task.status?.toLowerCase() === "completed" &&
-                            task.freeze === "N" &&
-                            (task.lab ?? "").toString().trim() !== "" && (
+                          {task.status?.toLowerCase() === "completed" &&
+                            task.freezeTask === "N" && task.labId && (
                               <button
                                 className="rounded-lg"
                                 aria-label="Archive and Freeze"
-                                title="Archive Employee"
+                                title="Archive and Freeze Employee"
                                 onClick={() => {
                                   setSelectedTaskId(task.id);
                                   setSelectedEmployeeId(parseInt(task.employeeId, 10));
@@ -543,17 +541,7 @@ const TasksPage: React.FC = () => {
                               >
                                 <Unlock size={18} />
                               </button>
-                            )} */}
-                          {/* {task.status?.toLowerCase() === "completed" &&
-                            task.freeze === "Y" && (
-                              <button
-                                className="rounded-lg ml-2"
-                                aria-label="Frozen"
-                                disabled
-                              >
-                                <Lock size={18} />
-                              </button>
-                            )} */}
+                            )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -640,7 +628,7 @@ const TasksPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
-      {/* {showFreezeModal && (
+      {showFreezeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-sm mx-4">
             <CardHeader>
@@ -648,7 +636,7 @@ const TasksPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Do you want to archive this employee?
+                Do you want to Archive and Freeze this employee?
               </p>
               <div className="flex flex-col gap-3">
                 <Button
@@ -660,7 +648,7 @@ const TasksPage: React.FC = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleFreezeTask(false)}
+                  onClick={() => setShowFreezeModal(false)}
                   className="w-full"
                 >
                   No
@@ -670,7 +658,7 @@ const TasksPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      )} */}
+      )}
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
