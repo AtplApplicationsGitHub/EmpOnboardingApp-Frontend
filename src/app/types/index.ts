@@ -31,6 +31,8 @@ export interface Employee {
   id: number;
   name: string;
   date: string;
+  departmentId: number;
+  labId:number;
   department: string;
   role: string;
   email: string;
@@ -54,6 +56,7 @@ export interface EmployeeImportResult {
 
 export interface Lab {
   id: string;
+  departmentId:number,
   location: string;
   lab: string[];
   createdTime: string;

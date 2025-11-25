@@ -24,12 +24,15 @@ const PAGE_SIZE = 10;
 
 type FormState = {
   location: string;
+  departmentId:number,
   labInputs: string[];
 };
 
 const emptyForm: FormState = {
   location: "",
+  departmentId:0,
   labInputs: [""],
+  
 };
 
 const LabsPage: React.FC = () => {
@@ -131,14 +134,10 @@ const LabsPage: React.FC = () => {
       const existingLabs = Array.isArray(lab.lab) && lab.lab.length > 0
         ? lab.lab
         : [""];
-
-      const matchingLocation = locationOptions.find(
-        opt => opt.value === lab.location ||
-          opt.value?.toLowerCase() === lab.location?.toLowerCase()
-      );
-
+    
       setForm({
-        location: matchingLocation?.value || lab.location || "",
+        location: lab.location || "",
+        departmentId:lab.departmentId || 0,
         labInputs: existingLabs,
       });
 
@@ -187,11 +186,12 @@ const LabsPage: React.FC = () => {
 
   const validateAndBuildPayload = (): {
     location: string;
+    departmentId:number;
     lab: string[];
   } | null => {
     const location = form.location.trim();
     const lab = form.labInputs.map((s) => s.trim()).filter(Boolean);
-
+    const departmentId = form.departmentId;
     if (!location) {
       toast.error("Location is required");
       return null;
@@ -200,7 +200,7 @@ const LabsPage: React.FC = () => {
       toast.error("Add at least one lab");
       return null;
     }
-    return { location, lab };
+    return { location, departmentId, lab };
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -479,6 +479,7 @@ const LabsPage: React.FC = () => {
                         setForm((prev) => ({
                           ...prev,
                           location: selected?.value ?? "",
+                          departmentId:selected?.id ?? 0
                         }));
                       }}
                       placeholder="Select Department"

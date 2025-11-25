@@ -548,6 +548,13 @@ export const adminService = {
     return response.data;
   },
 
+   getDepartmentLabs: async (deptId: number): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/location/getLabsForDepartment/${deptId}`
+    );
+    return response.data;
+  },
+
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/lookup/getCategoryItemByName/${type}`
@@ -718,11 +725,11 @@ export const adminService = {
   createEmployee: async (data: {
     name: string;
     date: string;
-    department: string;
+    departmentId: number;
+    labId:number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
-    labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
     email: string;
@@ -907,10 +914,12 @@ export const labService = {
 
   createLab: async (data: {
     location: string;
+    departmentId:number,
     lab: string[];
   }): Promise<boolean> => {
     const response = await api.post<boolean>("/location/saveLocation", {
       location: data.location,
+      departmentId:data.departmentId,
       lab: data.lab,
     });
     return response.data;
@@ -925,12 +934,6 @@ export const labService = {
     const response = await api.post<void>(`/location/labInlineSave/${id}`, {
       lab,
     });
-    return response.data;
-  },
-
-
-  getDepartments: async (): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/location/findAllLocation`);
     return response.data;
   },
 };
