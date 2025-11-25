@@ -16,6 +16,7 @@ import { DropDownDTO, Questionnaire } from "../../types";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import Button from "../../components/ui/button";
 import { Card, CardContent, CardTitle } from "../../components/ui/card";
+
 const PAGE_SIZE = 10;
 
 type FormState = {
@@ -29,8 +30,6 @@ const emptyForm: FormState = {
     responseType: "",
     level: [],
 };
-
-
 
 const EmployeeQuestionnairePage: React.FC = () => {
     const questionInputRef = useRef<HTMLTextAreaElement>(null);
@@ -48,7 +47,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
     const [searchInput, setSearchInput] = useState("");
 
     const [form, setForm] = useState<FormState>(emptyForm);
-
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -91,7 +89,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
         fetchQuestionnaires();
     }, [currentPage, searchFilter]);
 
-
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setSearchFilter(searchInput.trim());
@@ -127,6 +124,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
             }, 100);
         }
     };
+
     const closeModal = () => {
         setShowModal(false);
         setEditMode(false);
@@ -182,7 +180,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
         questionInputRef.current?.focus();
     }, 100);
 
-
     const handlePageChange = (page: number) => {
         if (page >= 0 && page < totalPages) setCurrentPage(page);
     };
@@ -208,26 +205,26 @@ const EmployeeQuestionnairePage: React.FC = () => {
 
     if (loading && questionnaires.length === 0) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-lg">Loading questionnaires...</p>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <p className="text-lg text-foreground">Loading questionnaires...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 bg-background min-h-screen p-6">
             {/* Header Section */}
             <div className="flex items-center justify-between">
                 {/* Search Box */}
                 <div className="relative w-80">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                     <input
                         type="text"
                         placeholder="Search by question, type, or level..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white transition-all focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                        className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring"
                     />
                 </div>
 
@@ -242,33 +239,32 @@ const EmployeeQuestionnairePage: React.FC = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card className="bg-card border-border">
                 <CardContent className="p-0">
                     <table className="w-full">
                         <thead>
                             <tr className="table-heading-bg text-primary-gradient">
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%] ">
                                     Question
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%] ">
                                     Response Type
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%] ">
                                     Level
                                 </th>
-
                                 <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-border">
                             {questionnaires.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center gap-3">
-                                            <FileQuestion size={48} className="text-gray-300" />
-                                            <p className="text-gray-500 text-sm font-medium">No questionnaires found</p>
+                                            <FileQuestion size={48} className="text-muted-foreground" />
+                                            <p className="text-muted-foreground text-sm font-medium">No questionnaires found</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -276,39 +272,38 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                 questionnaires.map((questionnaire) => (
                                     <tr
                                         key={questionnaire.id}
-                                        className="transition-all hover:bg-gray-50 group"
+                                        className="transition-all hover:bg-accent/50 group"
                                     >
                                         <td className="px-6 py-4">
-                                            <span className="text-sm font-medium text-gray-900">
+                                            <span className="text-sm font-medium text-foreground">
                                                 {questionnaire.question}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
                                                 {questionnaire.responseType}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${questionnaire.levels?.[0] === "Basic"
-                                                ? "bg-green-50 text-green-700 border border-green-100"
-                                                : questionnaire.levels?.[0] === "Intermediate"
-                                                    ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
-                                                    : "bg-red-50 text-red-700 border border-red-100"
-                                                }`}>
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                questionnaire.levels?.[0] === "Basic"
+                                                    ? "bg-green-50 text-green-700 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
+                                                    : questionnaire.levels?.[0] === "Intermediate"
+                                                    ? "bg-yellow-50 text-yellow-700 border border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                                                    : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                                            }`}>
                                                 {questionnaire.levels?.[0] || 'N/A'}
                                             </span>
                                         </td>
-
                                         <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => openEditModal(questionnaire.id)}
-                                                className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                                                className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                 title="Edit Question"
                                             >
                                                 <Edit size={16} />
                                             </button>
                                         </td>
-
                                     </tr>
                                 ))
                             )}
@@ -318,92 +313,107 @@ const EmployeeQuestionnairePage: React.FC = () => {
             </Card>
 
             {/* Pagination */}
+         {totalPages > 1 && (
+  <Card>
+    <CardContent className="p-4">
+      <div className="flex items-center justify-between">
+        
+        {/* Page Info */}
+        <div className="text-sm text-muted-foreground">
+          Page {currentPage + 1} of {totalPages}
+        </div>
 
-            {totalPages > 1 && (
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
-                                Page {currentPage + 1} of {totalPages}
-                            </div>
-                            <div className="flex items-center justify-between px-4 py-2">
-                                <div className="text-sm text-muted-foreground">
-                                    Showing {questionnaires.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
-                                    {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handlePageChange(0)}
-                                    disabled={currentPage === 0}
-                                    className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronsLeft size={18} />
-                                </button>
-                                <button
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 0}
-                                    className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronLeft size={18} />
-                                </button>
+        {/* Showing Info */}
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="text-sm text-muted-foreground">
+            Showing {questionnaires.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+            {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} questionnaires
+          </div>
+        </div>
 
-                                {generatePageNumbers().map((pageNum, idx) =>
-                                    typeof pageNum === "number" ? (
-                                        <button
-                                            key={idx}
-                                            onClick={() => handlePageChange(pageNum)}
-                                            className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${currentPage === pageNum
-                                                ? "bg-indigo-600 text-white"
-                                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                                }`}
-                                        >
-                                            {pageNum + 1}
-                                        </button>
-                                    ) : (
-                                        <span key={idx} className="px-2 text-gray-400">
-                                            {pageNum}
-                                        </span>
-                                    )
-                                )}
+        {/* Pagination Buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(0)}
+            disabled={currentPage === 0}
+            className="p-2"
+          >
+            <ChevronsLeft size={16} />
+          </Button>
 
-                                <button
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage >= totalPages - 1}
-                                    className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronRight size={18} />
-                                </button>
-                                <button
-                                    onClick={() => handlePageChange(totalPages - 1)}
-                                    disabled={currentPage >= totalPages - 1}
-                                    className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronsRight size={18} />
-                                </button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="p-2"
+          >
+            <ChevronLeft size={16} />
+          </Button>
+
+          {generatePageNumbers().map((page, index) => (
+            <React.Fragment key={index}>
+              {page === "..." ? (
+                <span className="px-3 py-2 text-muted-foreground">...</span>
+              ) : (
+                <Button
+                  variant={page === currentPage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page as number)}
+                  className="min-w-[40px]"
+                >
+                  {(page as number) + 1}
+                </Button>
+              )}
+            </React.Fragment>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages - 1}
+            className="p-2"
+          >
+            <ChevronRight size={16} />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(totalPages - 1)}
+            disabled={currentPage === totalPages - 1}
+            className="p-2"
+          >
+            <ChevronsRight size={16} />
+          </Button>
+        </div>
+
+      </div>
+    </CardContent>
+  </Card>
+)}
+
 
             {/* Create / Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-                        {/* Gradient Header */}
-                        <div className="flex-shrink-0 from-[#4c51bf] to-[#5a60d1] px-5 py-3 shadow-md">
-                            <CardTitle className="text-1xl font-semibold text-primary-gradient">
+                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                        {/* Header */}
+                        <div className="flex-shrink-0 px-5 py-3 order-b border-border shadow-md">
+                            <CardTitle className="text-xl font-semibold text-primary">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
                             </CardTitle>
                         </div>
 
                         {/* Scrollable Body */}
-                        <div className="flex-1 overflow-y-auto px-8 py-6">
+                        <div className="flex-1 overflow-y-auto px-8 py-6 bg-card">
                             <div className="space-y-5">
                                 {/* Question Text */}
                                 <div>
-                                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                                    <label className="block text-[13px] font-semibold text-foreground mb-2">
                                         Question <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
@@ -411,13 +421,13 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         value={form.question}
                                         onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                                         placeholder="Enter the question here..."
-                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 resize-none h-24"
+                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-border rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-ring resize-none h-24"
                                     />
                                 </div>
 
                                 {/* Response Type */}
                                 <div>
-                                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                                    <label className="block text-[13px] font-semibold text-foreground mb-2">
                                         Response Type <span className="text-red-500">*</span>
                                     </label>
                                     <div className="flex gap-4 items-center">
@@ -429,7 +439,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                                 onChange={(e) => setForm((prev) => ({ ...prev, responseType: e.target.value as "yes_no" | "text" }))}
                                                 className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                                             />
-                                            <span className="text-sm text-gray-700">Yes/No/N/A Question</span>
+                                            <span className="text-sm text-foreground">Yes/No/N/A Question</span>
                                         </label>
                                         <label className="flex items-center gap-2 whitespace-nowrap cursor-pointer">
                                             <input
@@ -439,14 +449,14 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                                 onChange={(e) => setForm((prev) => ({ ...prev, responseType: e.target.value as "yes_no" | "text" }))}
                                                 className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                                             />
-                                            <span className="text-sm text-gray-700">Text Response</span>
+                                            <span className="text-sm text-foreground">Text Response</span>
                                         </label>
                                     </div>
                                 </div>
 
                                 {/* Employee Levels */}
                                 <div>
-                                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                                    <label className="block text-[13px] font-semibold text-foreground mb-2">
                                         Level <span className="text-red-500">*</span>
                                     </label>
                                     <SearchableDropdown
@@ -483,18 +493,20 @@ const EmployeeQuestionnairePage: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+                        <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-accent/30 border-t border-border">
                             <div className="flex items-center gap-3">
                                 <Button
                                     variant="outline"
                                     type="button"
                                     onClick={closeModal}
+                                    className="border-border text-foreground hover:bg-accent"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={!form.question.trim() || !form.responseType || !form.level}
+                                    className="bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] text-white"
                                 >
                                     {editMode ? "Update Question" : "Create Question"}
                                 </Button>

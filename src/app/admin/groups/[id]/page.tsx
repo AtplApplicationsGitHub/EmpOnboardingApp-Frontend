@@ -349,7 +349,7 @@ const GroupDetailsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-[17px] font-bold text-[#4c51bf]">{group.name} Questions</h1>
+            <h1 className="text-[17px] font-bold text-primary">{group.name} Questions</h1>
             <p className="text-[15px] text-muted-foreground mt-2">
               Manage onboarding questions for the {group.name} department
             </p>
@@ -392,12 +392,12 @@ const GroupDetailsPage: React.FC = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="flex items-center gap-4 text-md">
-                    <span className=" flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] hover:scale-110 transition-transform duration-300">
-                      {questionPage * PAGE_SIZE + index + 1}
-                    </span>
-                    <span className="flex-1 break-words">{question.text}</span>
-                  </CardTitle>
+                 <CardTitle className="flex items-center gap-4 text-md">
+  <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] dark:from-white dark:to-gray-200 text-white dark:text-gray-900 font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform duration-300">
+    {questionPage * PAGE_SIZE + index + 1}
+  </span>
+  <span className="flex-1 break-words">{question.text}</span>
+</CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded">
                       {question.response === "yes_no"
@@ -418,13 +418,13 @@ const GroupDetailsPage: React.FC = () => {
                   <button
                     title="Edit Question"
                     onClick={() => openEditModal(question)}
-                    className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                    className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                   >
                     <Edit size={18} />
                   </button>
                   <button
                     onClick={() => handleCloneQuestion(question)}
-                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)]"
+                    className="rounded-lg text-[#7c3aed] duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                     title="Clone Question"
                   >
                     <Copy size={18} />
@@ -508,12 +508,12 @@ const GroupDetailsPage: React.FC = () => {
 
       {/* Create/Edit Question Modal */}
       {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl h-[90vh] flex flex-col">
-            <Card className="flex flex-col h-full bg-background">
+            <Card className="flex flex-col h-full bg-card border border-border">
               {/* Fixed Header */}
-              <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md">
-                <CardTitle className="text-1xl font-semibold text-primary-gradient">
+              <CardHeader className="flex-shrink-0 px-5 py-3 shadow-md border-b border-border">
+                <CardTitle className="text-1xl font-semibold text-primary">
                   {showCreateModal ? "Create New Question" : "Edit Question"}
                 </CardTitle>
               </CardHeader>
@@ -528,7 +528,7 @@ const GroupDetailsPage: React.FC = () => {
                   >
                     {/* Question Text */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Question Text *
                       </label>
                       <textarea
@@ -541,7 +541,7 @@ const GroupDetailsPage: React.FC = () => {
                           }))
                         }
                         placeholder="Enter the onboarding question..."
-                        className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
+                        className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24 placeholder:text-muted-foreground"
                         required
                       />
                     </div>
@@ -550,11 +550,11 @@ const GroupDetailsPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Response Type */}
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Response Type *
                         </label>
                         <div className="flex gap-4 items-center">
-                          <label className="flex items-center gap-2 whitespace-nowrap">
+                          <label className="flex items-center gap-2 whitespace-nowrap text-foreground">
                             <input
                               type="radio"
                               value="yes_no"
@@ -565,11 +565,11 @@ const GroupDetailsPage: React.FC = () => {
                                   response: e.target.value as "yes_no",
                                 }))
                               }
-                              className="text-primary"
+                              className="text-primary accent-primary"
                             />
                             Yes/No/N/A Question
                           </label>
-                          <label className="flex items-center gap-2 whitespace-nowrap">
+                          <label className="flex items-center gap-2 whitespace-nowrap text-foreground">
                             <input
                               type="radio"
                               value="text"
@@ -580,7 +580,7 @@ const GroupDetailsPage: React.FC = () => {
                                   response: e.target.value as "text",
                                 }))
                               }
-                              className="text-primary"
+                              className="text-primary accent-primary"
                             />
                             Text Response
                           </label>
@@ -590,11 +590,11 @@ const GroupDetailsPage: React.FC = () => {
                       {/* Default Value - Conditionally rendered */}
                       {formData.response === "yes_no" && (
                         <div className="flex-1">
-                          <label className="block text-sm font-medium mb-2">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Default Value *
                           </label>
                           <div className="flex gap-4 items-center">
-                            <label className="flex items-center gap-2 whitespace-nowrap">
+                            <label className="flex items-center gap-2 whitespace-nowrap text-foreground">
                               <input
                                 type="radio"
                                 value="yes"
@@ -605,11 +605,11 @@ const GroupDetailsPage: React.FC = () => {
                                     defaultflag: e.target.value as "yes" | "no",
                                   }))
                                 }
-                                className="text-primary"
+                                className="text-primary accent-primary"
                               />
                               Yes
                             </label>
-                            <label className="flex items-center gap-2 whitespace-nowrap">
+                            <label className="flex items-center gap-2 whitespace-nowrap text-foreground">
                               <input
                                 type="radio"
                                 value="no"
@@ -620,7 +620,7 @@ const GroupDetailsPage: React.FC = () => {
                                     defaultflag: e.target.value as "yes" | "no",
                                   }))
                                 }
-                                className="text-primary"
+                                className="text-primary accent-primary"
                               />
                               No
                             </label>
@@ -632,7 +632,7 @@ const GroupDetailsPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Period */}
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Period *
                         </label>
                         <div className="relative z-[10000]">
@@ -662,7 +662,7 @@ const GroupDetailsPage: React.FC = () => {
 
                       {/* Compliance Day */}
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Compliance Day * (Number of days)
                         </label>
                         <input
@@ -682,7 +682,7 @@ const GroupDetailsPage: React.FC = () => {
                             }));
                           }}
                           placeholder="Enter number of days"
-                          className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
                           required
                         />
                       </div>
@@ -691,7 +691,7 @@ const GroupDetailsPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Departments */}
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Departments *
                         </label>
                         <div className="relative z-[9999]">
@@ -719,7 +719,7 @@ const GroupDetailsPage: React.FC = () => {
                       </div>
                       {/* Employee Levels */}
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Employee Levels * (Select at least one)
                         </label>
                         <div className="relative z-[9998]">
@@ -750,7 +750,7 @@ const GroupDetailsPage: React.FC = () => {
                     {/* Verified By with Async Search */}
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Verified By
                         </label>
                         <div className="relative z-[9997]">
@@ -780,7 +780,7 @@ const GroupDetailsPage: React.FC = () => {
               </div>
 
               {/* Sticky Footer with Buttons */}
-              <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
                 <div className="flex gap-3 justify-end">
                   <Button
                     type="button"
@@ -798,9 +798,9 @@ const GroupDetailsPage: React.FC = () => {
                     type="submit"
                     form="question-form"
                     disabled={!isFormValid}
-                    className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
         shadow-md transition-all duration-300 ease-in-out 
-        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
         disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {showCreateModal ? "Create Question" : "Update Question"}

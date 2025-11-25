@@ -1,7 +1,8 @@
 'use client';
 
 import { AuthProvider } from './auth/AuthContext';
-import { SidebarProvider } from './components/SidebarContext'; 
+import { SidebarProvider } from './components/SidebarContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 export default function ClientLayout({
   children,
@@ -9,10 +10,12 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
         <SidebarProvider>
           {children}
         </SidebarProvider>
       </AuthProvider>
+    </ThemeProvider>
   );
 }
