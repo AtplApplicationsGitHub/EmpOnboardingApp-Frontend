@@ -175,6 +175,7 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
+      console.log(data);
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -250,6 +251,8 @@ const EmployeesPage: React.FC = () => {
         name: emp.name,
         date: formattedDate,
         department: emp.department,
+        departmentId: emp.departmentId,
+        labId: emp.labId,
         role: emp.role,
         level: emp.level,
         totalExperience: emp.totalExperience,
@@ -260,7 +263,7 @@ const EmployeesPage: React.FC = () => {
         group: emp.group || "",
       });
 
-      if (emp.department) {
+      if (emp.departmentId) {
         await fetchLabsByDepartment(emp.departmentId);
       }
 

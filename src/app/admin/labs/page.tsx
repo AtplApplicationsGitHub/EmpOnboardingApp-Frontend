@@ -24,15 +24,15 @@ const PAGE_SIZE = 10;
 
 type FormState = {
   location: string;
-  departmentId:number,
+  departmentId: number,
   labInputs: string[];
 };
 
 const emptyForm: FormState = {
   location: "",
-  departmentId:0,
+  departmentId: 0,
   labInputs: [""],
-  
+
 };
 
 const LabsPage: React.FC = () => {
@@ -134,10 +134,10 @@ const LabsPage: React.FC = () => {
       const existingLabs = Array.isArray(lab.lab) && lab.lab.length > 0
         ? lab.lab
         : [""];
-    
+
       setForm({
         location: lab.location || "",
-        departmentId:lab.departmentId || 0,
+        departmentId: lab.departmentId || 0,
         labInputs: existingLabs,
       });
 
@@ -186,7 +186,7 @@ const LabsPage: React.FC = () => {
 
   const validateAndBuildPayload = (): {
     location: string;
-    departmentId:number;
+    departmentId: number;
     lab: string[];
   } | null => {
     const location = form.location.trim();
@@ -479,7 +479,7 @@ const LabsPage: React.FC = () => {
                         setForm((prev) => ({
                           ...prev,
                           location: selected?.value ?? "",
-                          departmentId:selected?.id ?? 0
+                          departmentId: selected?.id ?? 0
                         }));
                       }}
                       placeholder="Select Department"
@@ -508,8 +508,6 @@ const LabsPage: React.FC = () => {
 
                   <div className="space-y-2.5">
                     {form.labInputs.map((value, idx) => {
-                      const isExistingLab = editMode && idx < existingLabCount;
-
                       return (
                         <div key={`lab-row-${idx}`} className="flex items-center gap-2">
                           <input
@@ -518,12 +516,7 @@ const LabsPage: React.FC = () => {
                             onChange={(e) => updateLabRow(idx, e.target.value)}
                             placeholder={`Lab ${idx + 1}`}
                             required={idx === 0}
-                            disabled={isExistingLab}
-                            readOnly={isExistingLab}
-                            className={`flex-1 px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 ${isExistingLab
-                              ? "bg-gray-50 border-gray-300 text-gray-700 cursor-not-allowed"
-                              : "bg-white border-gray-300"
-                              }`}
+                            className="flex-1 px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm bg-white border-gray-300 transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
                           />
                           {!editMode && (
                             <button
@@ -548,7 +541,7 @@ const LabsPage: React.FC = () => {
                   <p className="text-xs text-gray-500 mt-2">
                     {editMode
                       ? "Click 'Add Lab' to add new lab rows. Existing labs cannot be modified."
-                      : "Click 'Add Lab' to add another row, and '–' to remove a row."}
+                      : "Click 'Add Lab' to add another row."}
                   </p>
                 </div>
               </form>
