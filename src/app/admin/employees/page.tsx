@@ -2,13 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "../../components/ui/table";
-import {
   Card,
   CardContent,
   CardHeader,
@@ -88,15 +81,17 @@ const EmployeesPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
   const [groupChanged, setGroupChanged] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
-    department: "",
+    departmentId: 0,
+    labId:0,
     role: "",
     level: "L1",
     totalExperience: "0",
     pastOrganization: "",
-    labAllocation: "",
     complianceDay: "",
     email: "",
     group: '',
@@ -109,7 +104,6 @@ const EmployeesPage: React.FC = () => {
       setLevelOptions(levels);
 
       const departments = await adminService.findAllDepartment();
-      // console.log("new api", departments); // DEBUG
       const transformedDepartments = departments.map(dept => ({
         ...dept,
         value: dept.value || dept.key
@@ -122,20 +116,20 @@ const EmployeesPage: React.FC = () => {
   };
 
   // Fetch labs based on selected department
-  const fetchLabsByDepartment = async (departmentValue: string) => {
-    if (!departmentValue) {
+  const fetchLabsByDepartment = async (departmentId: number) => {
+    if (!departmentId) {
       setLabOptions([]);
       return;
     }
 
     try {
-      const labs = await adminService.getLab(departmentValue);
-      const labDropdownOptions: DropDownDTO[] = labs.map((lab, index) => ({
-        id: index + 1,
-        value: lab as string,
-        key: lab as string
+      const labs = await adminService.getDepartmentLabs(departmentId);
+       const transformedLabs = labs.map(lab => ({
+        ...lab,
+        value: lab.value || lab.key
       }));
-      setLabOptions(labDropdownOptions);
+      console.log(transformedLabs);
+      setLabOptions(transformedLabs);
     } catch (error) {
       toast.error("Failed to load lab options for selected department.");
       setLabOptions([]);
@@ -206,12 +200,12 @@ const EmployeesPage: React.FC = () => {
       await adminService.createEmployee({
         name: newEmployee.name,
         date: newEmployee.date || new Date().toISOString().split("T")[0],
-        department: newEmployee.department || "General",
+        departmentId: newEmployee.departmentId || 0,
+        labId: newEmployee.labId || 0,
         role: newEmployee.role || "Employee",
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
         totalExperience: newEmployee.totalExperience || "0",
         pastOrganization: newEmployee.pastOrganization || "N/A",
-        labAllocation: newEmployee.labAllocation || "",
         complianceDay: newEmployee.complianceDay || "",
         email: newEmployee.email || "N/A",
       });
@@ -267,7 +261,7 @@ const EmployeesPage: React.FC = () => {
       });
 
       if (emp.department) {
-        await fetchLabsByDepartment(emp.department);
+        await fetchLabsByDepartment(emp.departmentId);
       }
 
       if (emp.level && emp.department && employeeId) {
@@ -386,12 +380,12 @@ const EmployeesPage: React.FC = () => {
 
     setNewEmployee({
       ...newEmployee,
-      department: selectedDept?.value || "",
+      departmentId: selectedDept?.id || 0,
       labAllocation: "",
     });
 
-    if (selectedDept?.value) {
-      fetchLabsByDepartment(selectedDept.value);
+    if (selectedDept?.id) {
+      fetchLabsByDepartment(selectedDept.id);
     } else {
       setLabOptions([]);
     }
@@ -860,7 +854,7 @@ const EmployeesPage: React.FC = () => {
                     options={departmentOptions}
                     value={
                       departmentOptions.find(
-                        (option) => option.value === newEmployee.department
+                        (option) => option.id === newEmployee.departmentId
                       )?.id
                     }
                     onChange={handleDepartmentChange}
@@ -879,20 +873,20 @@ const EmployeesPage: React.FC = () => {
                     options={labOptions}
                     value={
                       labOptions.find(
-                        (option) => option.value === newEmployee.labAllocation
+                        (option) => option.id === newEmployee.labId
                       )?.id
                     }
                     onChange={(id) => {
                       const selectedLab = labOptions.find(
                         (option) => option.id === id
-                      )?.value;
+                      )?.id;
                       setNewEmployee({
                         ...newEmployee,
-                        labAllocation: selectedLab || "",
+                        labId: selectedLab || 0,
                       });
                     }}
                     placeholder={
-                      !newEmployee.department
+                      !newEmployee.departmentId
                         ? "Select Department First"
                         : labOptions.length === 0
                           ? "No labs available"
@@ -900,7 +894,7 @@ const EmployeesPage: React.FC = () => {
                     }
                     displayFullValue={false}
                     isEmployeePage={true}
-                    disabled={!newEmployee.department || labOptions.length === 0}
+                    disabled={!newEmployee.departmentId || labOptions.length === 0}
                   />
                 </div>
 
@@ -1120,7 +1114,7 @@ const EmployeesPage: React.FC = () => {
                     !newEmployee.name ||
                     !newEmployee.name.trim() ||
                     !newEmployee.level ||
-                    !newEmployee.department ||
+                    !newEmployee.departmentId ||
                     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
                     emailExists ||
                     checkingEmail
