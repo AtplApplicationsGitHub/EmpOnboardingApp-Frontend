@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '../components/ui/table';
 import Button from '../components/ui/button';
 import TaskReassignModal from '../components/TaskReassignModal';
@@ -17,6 +17,28 @@ import { Users, UserPlus, MessageSquare, Clock, Activity, ChevronLeft, ChevronRi
 import Link from 'next/link';
 import { formatDateTime } from '../lib/utils';
 import { useAnimation, animationClasses, staggerClasses } from '../lib/animations';
+
+const useCountUp = (value: number | undefined, duration = 700) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!value) return;
+    let start = 0;
+    const increment = value / (duration / 16);
+    const animate = () => {
+      start += increment;
+      if (start < value) {
+        setCount(Math.floor(start));
+        requestAnimationFrame(animate);
+      } else {
+        setCount(value);
+      }
+    };
+    animate();
+  }, [value, duration]);
+
+  return count;
+};
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -30,24 +52,57 @@ const AdminDashboard: React.FC = () => {
   const [tasksPerPage, setTasksPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Reassignment modal state
-  // const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
-  // const [selectedTasksForReassign, setSelectedTasksForReassign] = useState<any[]>([]);
 
   const isVisible = useAnimation();
+
+  const totalGroupsCount = useCountUp(stats.totalGroups);
+  const totalUsersCount = useCountUp(stats.totalUsers);
+  const totalQuestionsCount = useCountUp(stats.totalQuestions);
+  const totalTasksCount = useCountUp(stats.tasks);
+
+  const cardData = [
+    {
+      label: "Total Groups",
+      value: totalGroupsCount,
+      icon: <Users className="w-7 h-7 text-white" />,
+      gradient: "from-blue-500 to-blue-600",
+      route: "/admin/groups",
+    },
+    {
+      label: "Total Users",
+      value: totalUsersCount,
+      icon: <UserPlus className="w-7 h-7 text-white" />,
+      gradient: "from-green-500 to-emerald-600",
+      route: "/admin/users",
+    },
+    {
+      label: "Total Questions",
+      value: totalQuestionsCount,
+      icon: <MessageSquare className="w-7 h-7 text-white" />,
+      gradient: "from-purple-500 to-purple-600",
+      route: "/admin/groups",
+    },
+    {
+      label: "Total Tasks",
+      value: totalTasksCount,
+      icon: <Clock className="w-7 h-7 text-white" />,
+      gradient: "from-orange-500 to-orange-600",
+      route: null,
+    },
+  ];
+
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        
+
         const totalGroups = await adminService.getGroupsCount();
         const totalQuestions = await adminService.getQuestionsCount();
         const totalUsers = await adminService.getUserCount();
         const tasks = await adminService.getTaskCount();
 
-         setStats({
+        setStats({
           totalGroups,
           totalUsers,
           totalQuestions,
@@ -60,13 +115,9 @@ const AdminDashboard: React.FC = () => {
       }
     };
 
-   // Initial fetch
-   fetchStats();
-   }, []);
+    fetchStats();
+  }, []);
 
-    
-
-  // Pagination logic
   const totalPages = Math.ceil(recentTasks.length / tasksPerPage);
   const startIndex = (currentPage - 1) * tasksPerPage;
   const endIndex = startIndex + tasksPerPage;
@@ -90,90 +141,67 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className={`space-y-2 ${isVisible ? animationClasses.fadeIn : 'opacity-0'}`}>
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Groups - Clickable */}
-        <Link href="/admin/groups">
-          <Card className={`cursor-pointer transition-all duration-200 hover:scale-105 ${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[0]}` : 'opacity-0'} hover:shadow-lg hover:border-blue-500/50`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Groups</p>
-                  <p className="text-2xl font-bold">{stats.totalGroups}</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 opacity-70">Click to manage →</p>
-                </div>
-                <div className="p-3 bg-blue-500/10 rounded-full">
-                  <Users size={20} className="text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Total Users - Clickable */}
-        <Link href="/admin/users">
-          <Card className={`cursor-pointer transition-all duration-200 hover:scale-105 ${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[1]}` : 'opacity-0'} hover:shadow-lg hover:border-green-500/50`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1 opacity-70">Click to manage →</p>
-                </div>
-                <div className="p-3 bg-green-500/10 rounded-full">
-                  <UserPlus size={20} className="text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Total Questions - Clickable */}
-        <Link href="/admin/groups">
-          <Card className={`cursor-pointer transition-all duration-200 hover:scale-105 ${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[2]}` : 'opacity-0'} hover:shadow-lg hover:border-purple-500/50`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Questions</p>
-                  <p className="text-2xl font-bold">{stats.totalQuestions}</p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 opacity-70">Click to manage →</p>
-                </div>
-                <div className="p-3 bg-purple-500/10 rounded-full">
-                  <MessageSquare size={20} className="text-purple-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Total Tasks - Non-clickable */}
-        <Card className={`${animationClasses.hoverLift} ${isVisible ? `${animationClasses.slideInUp} ${staggerClasses[3]}` : 'opacity-0'}`}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                <p className="text-2xl font-bold">{stats.tasks}</p>
-              </div>
-              <div className="p-3 bg-orange-500/10 rounded-full">
-                <Clock size={20} className="text-orange-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-2">
+      <div className="mb-4 animate-fade-in">
+        <h1 className="text-[17px] font-bold text-primary">
+          Admin Dashboard
+        </h1>
       </div>
 
-      
+      {/* Statistics Cards - Using CSS variables for automatic dark mode support */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {cardData.map((item, index) => {
+          const CardWrapper = item.route ? 'a' : 'div';
+          const wrapperProps = item.route
+            ? {
+              href: item.route, onClick: (e: React.MouseEvent) => {
+                e.preventDefault();
+                window.location.href = item.route;
+              }
+            }
+            : {};
 
-      {/* Reassignment Modal */}
-      {/* <TaskReassignModal
-        isOpen={isReassignModalOpen}
-        onClose={handleCloseReassignModal}
-        onReassignSuccess={handleReassignSuccess}
-        selectedTasks={selectedTasksForReassign}
-        mode={selectedTasksForReassign.length === 1 ? 'single' : 'bulk'}
-        userType="admin"
-      /> */}
+          return (
+            <CardWrapper key={index} className="group block" {...wrapperProps}>
+              <div
+                className="bg-card border border-border rounded-2xl shadow-lg p-4 
+                hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
+                transition-all duration-300 relative overflow-hidden cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`p-3 bg-gradient-to-br ${item.gradient} rounded-xl shadow-md 
+                      group-hover:shadow-lg transition-shadow duration-300`}
+                    >
+                      {item.icon}
+                    </div>
+
+                    <div className="flex flex-col">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <p className="text-3xl font-extrabold text-foreground mt-1 
+                        transition-transform duration-500 group-hover:scale-110">
+                        {item.value}
+                      </p>
+                    </div>
+                  </div>
+
+                  {item.route && (
+                    <button
+                      className="p-2 bg-secondary hover:bg-secondary/80 
+                      rounded-full transition-colors duration-200 shadow-sm"
+                    >
+                      <ArrowRight className="w-5 h-5 text-foreground" />
+                    </button>
+                  )}
+                </div>                
+              </div>
+            </CardWrapper>
+          );
+        })}
+      </div>
     </div>
   );
 };
