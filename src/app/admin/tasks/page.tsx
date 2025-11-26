@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { TaskProjection, DropDownDTO } from "@/app/types";
+import { DropDownDTO } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -106,8 +106,8 @@ const TasksPage: React.FC = () => {
 
       if (searchFilter.trim())
         params.search = searchFilter.trim();
-
-      if (selectedDepartment)
+      
+      if (selectedDepartment )
         params.department = selectedDepartment;
 
       if (selectedLevel && levelOptions.length > 0) {
@@ -380,183 +380,173 @@ const TasksPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                (() => {
-                  const seenEmployees = new Set<string>();
+                tasks.map((task) => {
+                  const completed =
+                    (task as any).completedQuetions ??
+                    (task as any).completedQuestions ??
+                    0;
+                  const totalQ =
+                    (task as any).totalQuetions ??
+                    (task as any).totalQuestions ??
+                    0;
+                  const percent = totalQ
+                    ? Math.round((completed / totalQ) * 100)
+                    : 0;
 
-                  return tasks.map((task) => {
-                    const completed =
-                      (task as any).completedQuetions ??
-                      (task as any).completedQuestions ??
-                      0;
-                    const totalQ =
-                      (task as any).totalQuetions ??
-                      (task as any).totalQuestions ??
-                      0;
-                    const percent = totalQ
-                      ? Math.round((completed / totalQ) * 100)
-                      : 0;
+                  let progressColor = "bg-muted-foreground/60";
+                  const status = (task.status || "").toLowerCase();
+                  if (status === "completed") {
+                    progressColor = "bg-green-600";
+                  } else if (status === "in progress") {
+                    progressColor = "bg-amber-500";
+                  }
 
-                    let progressColor = "bg-muted-foreground/60";
-                    const status = (task.status || "").toLowerCase();
-                    if (status === "completed") {
-                      progressColor = "bg-green-600";
-                    } else if (status === "in progress") {
-                      progressColor = "bg-amber-500";
-                    }
-
-                    const employeeId = (task as any).employeeId;
-                    const isFirstOccurrence = !seenEmployees.has(employeeId);
-
-                    if (isFirstOccurrence) {
-                      seenEmployees.add(employeeId);
-                    }
-
-                    return (
-                      <TableRow
-                        key={(task as any).id ?? (task as any).employeeId}
-                      >
-                        {/* Employee Name */}
-                        <TableCell className="font-semibold min-w-[140px]">
-                          {(task as any).employeeName}
-                        </TableCell>
-                        {/* Level */}
-                        <TableCell>{(task as any).level}</TableCell>
-                        {/* Role & Department */}
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-base font-semibold">
-                              {(task as any).role}
+                  return (
+                    <TableRow
+                      key={(task as any).id ?? (task as any).employeeId}
+                    >
+                      {/* Employee Name */}
+                      <TableCell className="font-semibold min-w-[140px]">
+                        {(task as any).employeeName}
+                      </TableCell>
+                      {/* Level */}
+                      <TableCell>{(task as any).level}</TableCell>
+                      {/* Role & Department */}
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="text-base font-semibold">
+                            {(task as any).role}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {(task as any).department}
+                          </span>
+                        </div>
+                      </TableCell>
+                      {/* DOJ */}
+                      <TableCell className="min-w-[100px]">
+                        {(task as any).doj}
+                      </TableCell>
+                      {/* Lab */}
+                      <TableCell className="min-w-[80px]">
+                        {(task as any).lab}
+                      </TableCell>
+                      {/* Progress */}
+                      <TableCell className="min-w-[120px]">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold">
+                              {completed}/{totalQ}
                             </span>
-                            <span className="text-sm text-muted-foreground">
-                              {(task as any).department}
+                            <span className="text-muted-foreground">
+                              {percent}%
                             </span>
                           </div>
-                        </TableCell>
-                        {/* DOJ */}
-                        <TableCell className="min-w-[100px]">
-                          {(task as any).doj}
-                        </TableCell>
-                        {/* Lab */}
-                        <TableCell className="min-w-[80px]">
-                          {(task as any).lab}
-                        </TableCell>
-                        {/* Progress */}
-                        <TableCell className="min-w-[120px]">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold">
-                                {completed}/{totalQ}
-                              </span>
-                              <span className="text-muted-foreground">
-                                {percent}%
-                              </span>
-                            </div>
-                            <ProgressBar value={percent} color={progressColor} />
-                          </div>
-                        </TableCell>
-                        {/* Status */}
-                        <TableCell className="min-w-[100px]">
-                          {(() => {
-                            const status = (task.status || "").toLowerCase();
-                            const base =
-                              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
-                            if (completed === 0) {
-                              return (
-                                <span
-                                  className={`${base} bg-blue-600/20 text-blue-600`}
-                                >
-                                  Open
-                                </span>
-                              );
-                            }
-                            if (status === "overdue") {
-                              return (
-                                <span
-                                  className={`${base} bg-red-600/20 text-red-600`}
-                                >
-                                  Overdue
-                                </span>
-                              );
-                            }
-
-                            if (status === "completed") {
-                              return (
-                                <span
-                                  className={`${base} bg-green-600/20 text-green-600`}
-                                >
-                                  Completed
-                                </span>
-                              );
-                            }
-
+                          <ProgressBar value={percent} color={progressColor} />
+                        </div>
+                      </TableCell>
+                      {/* Status */}
+                      <TableCell className="min-w-[100px]">
+                        {(() => {
+                          const status = (task.status || "").toLowerCase();
+                          const base =
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                          if (completed === 0) {
                             return (
                               <span
-                                className={`${base} bg-amber-500/20 text-amber-600`}
+                                className={`${base} bg-blue-600/20 text-blue-600`}
                               >
-                                In Progress
+                                Open
                               </span>
                             );
-                          })()}
-                        </TableCell>
-                        {/* Actions */}
-                        <TableCell>
-                          <div className="flex items-center gap-5">
-                            <div className="w-[18px]">
-                              {!task.lab && isFirstOccurrence && (  // ✅ Add isFirstOccurrence check
-                                <button
-                                  className="rounded-lg text-[#eea11d]"
-                                  onClick={() => handleOpenLabChangeModal(task)}
-                                  aria-label="Change lab"
-                                  title="Change Lab"
-                                >
-                                  <FlaskConical size={18} />
-                                </button>
-                              )}
-                            </div>
-
-                            <button
-                              className="rounded-lg p-2 text-[#474BDD]"
-                              onClick={() => (window.location.href = `/admin/tasks/${(task as any).id}`)}
-                              aria-label="View details"
-                            >
-                              <Eye size={18} />
-                            </button>
-
-                            {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
-                              <button
-                                className="rounded-lg text-[#3b82f6]"
-                                onClick={() => {
-                                  handleViewQuestions(task.id, task.employeeName);
-                                }}
-                                disabled={questionsLoading}
-                                aria-label="View answers"
-                                title="View Employee Answers"
+                          }
+                          if (status === "overdue") {
+                            return (
+                              <span
+                                className={`${base} bg-red-600/20 text-red-600`}
                               >
-                                <TicketCheck size={18} />
+                                Overdue
+                              </span>
+                            );
+                          }
+
+                          if (status === "completed") {
+                            return (
+                              <span
+                                className={`${base} bg-green-600/20 text-green-600`}
+                              >
+                                Completed
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <span
+                              className={`${base} bg-amber-500/20 text-amber-600`}
+                            >
+                              In Progress
+                            </span>
+                          );
+                        })()}
+                      </TableCell>
+                      {/* Actions */}
+                      <TableCell>
+                        <div className="flex items-center gap-5">
+                          <div className="w-[18px]">
+                            {!task.lab && (
+                              <button
+                                className="rounded-lg text-[#eea11d]"
+                                onClick={() => handleOpenLabChangeModal(task)}
+                                aria-label="Change lab"
+                                title="Change Lab"
+                              >
+                                <FlaskConical size={18} />
+                              </button>
+
+                            )}
+                          </div>
+                          <button
+                            className="rounded-lg p-2 text-[#474BDD]"
+                            onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
+                            aria-label="View details"
+                          >
+                            <Eye size={18} />
+                          </button>
+
+                          {/* View Answers button - only show for employees who have questions assigned */}
+                          {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
+                            <button
+                              className="rounded-lg text-[#3b82f6]"
+                              onClick={() => {
+                                const firstTaskId = task.taskIds.split(",")[0];
+                                handleViewQuestions(firstTaskId, (task as any).employeeName);
+                              }}
+                              disabled={questionsLoading}
+                              aria-label="View answers"
+                              title="View Employee Answers"
+                            >
+                              <TicketCheck size={18} />
+                            </button>
+                          )}
+
+                          {task.status?.toLowerCase() === "completed" && task.labId && (
+                              <button
+                                className="rounded-lg"
+                                aria-label="Archive and Freeze"
+                                title="Archive and Freeze Employee"
+                                onClick={() => {
+                                  setSelectedTaskId(task.taskIds);
+                                  setSelectedEmployeeId(parseInt(task.employeeId, 10));
+                                  setShowFreezeModal(true);
+                                }}
+                              >
+                                <Unlock size={18} />
                               </button>
                             )}
-
-                            {task.status?.toLowerCase() === "completed" &&
-                              task.freezeTask === "N" && task.labId && (
-                                <button
-                                  className="rounded-lg"
-                                  aria-label="Archive and Freeze"
-                                  title="Archive and Freeze Employee"
-                                  onClick={() => {
-                                    setSelectedTaskId(task.id);
-                                    setSelectedEmployeeId(parseInt(task.employeeId, 10));
-                                    setShowFreezeModal(true);
-                                  }}
-                                >
-                                  <Unlock size={18} />
-                                </button>
-                              )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  });
-                })()
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
