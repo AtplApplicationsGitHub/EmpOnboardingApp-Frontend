@@ -284,7 +284,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     }
 
                                     return (
-                                        <TableRow key={employee.id}>
+                                        <TableRow key={employee.employeeId}>
                                             {/* Employee Name */}
                                             <TableCell className="font-semibold min-w-[140px]">
                                                 {employee.employeeName}
@@ -348,7 +348,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                     <button
                                                         className="rounded-lg p-2 text-[#474BDD]"
                                                         onClick={() =>
-                                                            (window.location.href = `/admin/archived-employees/${employee.id}`)
+                                                            (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
                                                         aria-label="View details"
                                                         title="View Details"
@@ -361,7 +361,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                         <button
                                                             className="rounded-lg text-[#3b82f6]"
                                                             onClick={() => {
-                                                                handleViewQuestions(employee.id, employee.employeeName);
+                                                                handleViewQuestions(employee.taskIds, employee.employeeName);
                                                             }}
                                                             disabled={questionsLoading}
                                                             aria-label="View answers"
