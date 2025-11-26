@@ -32,7 +32,7 @@ export interface Employee {
   name: string;
   date: string;
   departmentId: number;
-  labId:number;
+  labId: number;
   department: string;
   role: string;
   email: string;
@@ -56,7 +56,7 @@ export interface EmployeeImportResult {
 
 export interface Lab {
   id: string;
-  departmentId:number,
+  departmentId: number,
   location: string;
   lab: string[];
   createdTime: string;
@@ -145,7 +145,8 @@ export interface Task {
   updatedTime: string;
   answer?: "yes" | "no"
   assignedFreezeTask?: boolean;
-
+  departmentId?: number;
+  
   // Additional fields that might come from API
   // mock_employee_id?: string;
   // mock_employee_name?: string;

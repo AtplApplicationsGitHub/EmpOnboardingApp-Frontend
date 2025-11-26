@@ -106,32 +106,33 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
   // Fetch labs for a department
   const fetchLabsByDepartment = useCallback(
-    async (department?: string, currentLab?: string) => {
-      if (!department) {
+    async (deptId?: number, currentLab?: string) => {
+      if (!deptId) {
         setLabOptions([]);
         return;
       }
       try {
-        const labs = await adminService.getLab(department);
-        console.log("Fetched labs:", labs); // Debug log
-        const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
-          id: index + 1,
-          value: lab as string,
-          key: lab as string,
+        // Pass the department ID (number) to the API
+        const labs = await adminService.getDepartmentLabs(deptId);
+
+        // Transform labs (they already have real IDs from the database)
+        const transformedLabs = labs.map(lab => ({
+          ...lab,
+          value: lab.value || lab.key
         }));
 
-        setLabOptions(labOptionsFormatted);
+        setLabOptions(transformedLabs);
 
+        // Set currently selected lab
         if (currentLab) {
-          const matchingLab = labOptionsFormatted.find(
-            (lab) => lab.value === currentLab
+          const matchingLab = transformedLabs.find(
+            (lab) => lab.value === currentLab || lab.key === currentLab
           );
           if (matchingLab) {
             setSelectedLabId(matchingLab.id);
           }
         }
       } catch (error) {
-        console.error("Error fetching labs:", error);
         setLabOptions([]);
         toast.error("Failed to fetch labs for this department");
       }
@@ -234,6 +235,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
   const employeeName = tasks[0]?.employeeName;
   const employeeLevel = tasks[0]?.level;
   const department = tasks[0]?.department;
+  const departmentId = tasks[0]?.departmentId;
   const role = tasks[0]?.role;
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
@@ -242,10 +244,10 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
   // Fetch labs when department changes
   useEffect(() => {
-    if (department) {
-      fetchLabsByDepartment(department, lab);
+    if (departmentId) {
+      fetchLabsByDepartment(departmentId, lab);
     }
-  }, [department, lab, fetchLabsByDepartment]);
+  }, [departmentId, lab, fetchLabsByDepartment]);
 
   // Initialize editable response cache when tasks change
   useEffect(() => {
@@ -259,31 +261,37 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     setRespSaving({});
   }, [tasks]);
 
-  // Save lab allocation (auto-save on change)
   const handleSaveLab = async (id?: number) => {
     setSelectedLabId(id);
-    const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
-    if (!selectedLabValue) {
+
+    const selectedLab = labOptions.find((o) => o.id === id);
+
+    if (!selectedLab) {
       toast.error("Invalid lab selection.");
       return;
     }
+
     if (!employeeId) {
       toast.error("Missing employee id.");
       return;
     }
-    if (selectedLabValue === lab) {
+
+    // Check if same lab
+    if (selectedLab.value === lab || selectedLab.key === lab) {
       toast.success("Lab already up to date.");
       return;
     }
+
     try {
-      await taskService.labAllocation(employeeId, selectedLabValue);
+      await taskService.labAllocation(Number(employeeId), selectedLab.id);
+
       toast.success("Lab updated");
       await fetchTasks();
     } catch (e: any) {
       toast.error(
         e?.response?.data?.message ?? "Failed to update lab allocation"
       );
-      const prevId = labOptions.find((o) => o.value === lab)?.id;
+      const prevId = labOptions.find((o) => o.value === lab || o.key === lab)?.id;
       setSelectedLabId(prevId);
     }
   };
