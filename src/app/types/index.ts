@@ -361,3 +361,15 @@ export interface Questionnaire {
   createdDate?: string;
   updatedTime?: string;
 };
+
+export interface TaskStepperUser {
+  userName: string;
+  status: string;
+  totalQuestions: number;
+  completedQuestions: number;
+}
+
+export interface TaskStepperGroup {
+  groupName: string;
+  users: TaskStepperUser[];
+}

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { DropDownDTO } from "@/app/types";
+import { DropDownDTO, TaskStepperGroup } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -31,6 +31,9 @@ import {
   Verified,
   FlaskConical,
   X,
+  CheckCircle2,
+  Circle,
+  Clock
 } from "lucide-react";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -40,6 +43,25 @@ const PAGE_SIZE = 10;
 
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return 'bg-green-100 text-green-700';
+    case 'in progress':
+      return 'bg-blue-100 text-blue-700';
+    case 'overdue':
+      return 'bg-red-100 text-red-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+};
+
+const getProgressColor = (completed: number, total: number) => {
+  const percentage = (completed / total) * 100;
+  if (percentage === 100) return 'bg-green-500';
+  if (percentage >= 50) return 'bg-blue-500';
+  return 'bg-red-500';
+};
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -71,6 +93,10 @@ const TasksPage: React.FC = () => {
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
+  const [taskStepperData, setTaskStepperData] = useState<TaskStepperGroup[]>([]);
+  const [showStepperModal, setShowStepperModal] = useState(false);
+  const [stepperModalData, setStepperModalData] = useState<any[]>([]);
+  const [loadingStepper, setLoadingStepper] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -106,8 +132,8 @@ const TasksPage: React.FC = () => {
 
       if (searchFilter.trim())
         params.search = searchFilter.trim();
-      
-      if (selectedDepartment )
+
+      if (selectedDepartment)
         params.department = selectedDepartment;
 
       if (selectedLevel && levelOptions.length > 0) {
@@ -118,6 +144,7 @@ const TasksPage: React.FC = () => {
       }
 
       const response = await taskService.getTasksWithFilter(params);
+      console.log("Fetched tasks:", response);
       setTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
 
@@ -228,6 +255,34 @@ const TasksPage: React.FC = () => {
       setLabOptions([]);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update lab");
+    }
+  };
+
+  // Fetch Task Stepper Data
+  const fetchTaskStepper = async (employeeId: number) => {
+    try {
+      setLoadingStepper(true);
+      const stepperData = await taskService.getEmployeeTaskStepper(employeeId);
+      console.log("Fetched stepper data:", stepperData);
+
+      // Transform the API data into the format needed for the modal
+      const transformedData = stepperData.flatMap(group =>
+        group.users.map(user => ({
+          employeeName: user.userName,
+          department: group.groupName,
+          completed: user.completedQuestions,
+          total: user.totalQuestions,
+          status: user.status,
+        }))
+      );
+
+      setStepperModalData(transformedData);
+      setShowStepperModal(true);
+    } catch (error) {
+      console.error("Failed to fetch task stepper:", error);
+      toast.error("Failed to load task stepper data");
+    } finally {
+      setLoadingStepper(false);
     }
   };
 
@@ -449,11 +504,15 @@ const TasksPage: React.FC = () => {
                         {(() => {
                           const status = (task.status || "").toLowerCase();
                           const base =
-                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:shadow-md transition-all";
+
+                          const handleClick = () => fetchTaskStepper(parseInt(task.employeeId, 10));
+
                           if (completed === 0) {
                             return (
                               <span
-                                className={`${base} bg-blue-600/20 text-blue-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-blue-600/20 text-blue-600 hover:bg-blue-600/30`}
                               >
                                 Open
                               </span>
@@ -462,7 +521,8 @@ const TasksPage: React.FC = () => {
                           if (status === "overdue") {
                             return (
                               <span
-                                className={`${base} bg-red-600/20 text-red-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-red-600/20 text-red-600 hover:bg-red-600/30`}
                               >
                                 Overdue
                               </span>
@@ -472,7 +532,8 @@ const TasksPage: React.FC = () => {
                           if (status === "completed") {
                             return (
                               <span
-                                className={`${base} bg-green-600/20 text-green-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-green-600/20 text-green-600 hover:bg-green-600/30`}
                               >
                                 Completed
                               </span>
@@ -481,7 +542,8 @@ const TasksPage: React.FC = () => {
 
                           return (
                             <span
-                              className={`${base} bg-amber-500/20 text-amber-600`}
+                              onClick={handleClick}
+                              className={`${base} bg-amber-500/20 text-amber-600 hover:bg-amber-500/30`}
                             >
                               In Progress
                             </span>
@@ -529,19 +591,19 @@ const TasksPage: React.FC = () => {
                           )}
 
                           {task.status?.toLowerCase() === "completed" && task.labId && (
-                              <button
-                                className="rounded-lg"
-                                aria-label="Archive and Freeze"
-                                title="Archive and Freeze Employee"
-                                onClick={() => {
-                                  setSelectedTaskId(task.taskIds);
-                                  setSelectedEmployeeId(parseInt(task.employeeId, 10));
-                                  setShowFreezeModal(true);
-                                }}
-                              >
-                                <Unlock size={18} />
-                              </button>
-                            )}
+                            <button
+                              className="rounded-lg"
+                              aria-label="Archive and Freeze"
+                              title="Archive and Freeze Employee"
+                              onClick={() => {
+                                setSelectedTaskId(task.taskIds);
+                                setSelectedEmployeeId(parseInt(task.employeeId, 10));
+                                setShowFreezeModal(true);
+                              }}
+                            >
+                              <Unlock size={18} />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -801,6 +863,130 @@ const TasksPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Stepper Modal */}
+      {showStepperModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col 
+      bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="flex-shrink-0 px-6 py-4 shadow-md flex items-center justify-between 
+          bg-card text-foreground border-b border-border">
+              <h2 className="text-xl font-semibold text-primary">
+                Task Progress Overview
+              </h2>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const groupedTasks = stepperModalData.reduce((acc: any, task: any) => {
+                  const key = task.department || 'Unknown Department';
+                  if (!acc[key]) acc[key] = [];
+                  acc[key].push(task);
+                  return acc;
+                }, {});
+
+                return Object.entries(groupedTasks).map(([groupName, tasks], groupIndex) => (
+                  <div key={groupIndex} className="mb-6 last:mb-0">
+
+                    {/* Group Name */}
+                    <h3 className="text-lg font-bold text-foreground mb-3">
+                      {groupName}
+                    </h3>
+
+                    <Card className="overflow-hidden bg-card text-card-foreground border border-border">
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-secondary">
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Assigned To / Verified By
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Progress
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Status
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
+                              {(tasks as any[]).map((task: any, taskIndex: number) => {
+                                const progressPercent = task.total > 0 ? (task.completed / task.total) * 100 : 0;
+                                return (
+                                  <TableRow key={taskIndex}
+                                    className="hover:bg-muted transition-colors text-foreground">
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        <div className="font-semibold text-base">
+                                          {task.employeeName}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                                          <div
+                                            className={`h-full transition-all duration-500 ${getProgressColor(
+                                              task.completed,
+                                              task.total
+                                            )}`}
+                                            style={{ width: `${progressPercent}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-sm font-semibold min-w-[60px] text-muted-foreground">
+                                          {task.completed}/{task.total}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <span
+                                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(
+                                          task.status
+                                        )}`}
+                                      >
+                                        {task.status.toLowerCase() === 'completed' && <CheckCircle2 size={16} />}
+                                        {task.status.toLowerCase() === 'in progress' && <Clock size={16} />}
+                                        {task.status.toLowerCase() === 'overdue' && <Circle size={16} />}
+                                        {task.status}
+                                      </span>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 
+        bg-secondary border-t border-border">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowStepperModal(false);
+                  setStepperModalData([]);
+                }}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
