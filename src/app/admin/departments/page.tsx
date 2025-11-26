@@ -414,7 +414,7 @@ const DepartmentsPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted border-t border-border">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button variant="outline" onClick={closeModal}>
                   Cancel

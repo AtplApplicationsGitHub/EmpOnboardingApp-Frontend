@@ -183,26 +183,25 @@ const GroupLeadTasksPage: React.FC = () => {
   };
 
   const fetchLabsByDepartment = async (
-    department: string,
+    departmentId: number,
     currentLab?: string
   ) => {
-    if (!department) {
+    if (!departmentId) {
       setLabOptions([]);
       return;
     }
     try {
-      const labs = await adminService.getLab(department);
-      const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
-        id: index + 1,
-        value: lab as string,
-        key: lab as string,
+      const labs = await adminService.getDepartmentLabs(departmentId);
+      const labOptionsFormatted = labs.map((lab, index) => ({
+        ...lab,
+        value: lab.value || lab.key
       }));
 
       setLabOptions(labOptionsFormatted);
 
       if (currentLab) {
         const matchingLab = labOptionsFormatted.find(
-          (lab) => lab.value === currentLab
+          (lab) => lab.value === currentLab || lab.key === currentLab
         );
         if (matchingLab) {
           setSelectedLabId(matchingLab.id);
@@ -219,8 +218,8 @@ const GroupLeadTasksPage: React.FC = () => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
 
-    if (employee.department) {
-      await fetchLabsByDepartment(employee.department, employee.lab);
+    if (employee.departmentId) {
+      await fetchLabsByDepartment(employee.departmentId, employee.lab);
     } else {
       setLabOptions([]);
       setSelectedLabId(undefined);
@@ -235,8 +234,8 @@ const GroupLeadTasksPage: React.FC = () => {
 
     try {
       await taskService.labAllocation(
-        selectedEmployeeForLabChange.employeeId,
-        selectedLab.value
+        Number(selectedEmployeeForLabChange.employeeId),
+        selectedLab.id
       );
 
       toast.success("Lab updated successfully");
@@ -250,7 +249,6 @@ const GroupLeadTasksPage: React.FC = () => {
       toast.error(err?.response?.data?.message || "Failed to update lab");
     }
   };
-
   const ProgressBar: React.FC<{ value: number }> = ({ value }) => (
     <div className="w-full h-2 rounded bg-muted/40 overflow-hidden" aria-hidden>
       <div
