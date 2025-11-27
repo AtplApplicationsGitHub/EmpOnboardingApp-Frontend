@@ -115,6 +115,11 @@ export interface GLDashboard {
   totalPendingTasks: number;
   totalCompletedTasks: number;
   overdueTasks: number;
+  totalTasks: number;
+  totalVerifications: number;
+  completedVerificationCount: number;
+  pendingVerificationCount: number;
+  overdueVerificationCount: number;
 }
 
 export interface Task {
@@ -146,7 +151,7 @@ export interface Task {
   answer?: "yes" | "no"
   assignedFreezeTask?: boolean;
   departmentId?: number;
-  
+
   // Additional fields that might come from API
   // mock_employee_id?: string;
   // mock_employee_name?: string;

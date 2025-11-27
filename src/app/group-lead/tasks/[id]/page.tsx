@@ -448,7 +448,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <h3 className="text-xl font-semibold text-[#4c51bf] ml-2">
+        <h3 className="text-xl font-semibold text-primary ml-2">
           Tasks for {employeeName} ({employeeLevel})
         </h3>
         <div className="ml-auto flex items-end gap-3">

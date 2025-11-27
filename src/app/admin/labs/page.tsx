@@ -32,7 +32,6 @@ const emptyForm: FormState = {
   location: "",
   departmentId: 0,
   labInputs: [""],
-
 };
 
 const LabsPage: React.FC = () => {
@@ -93,13 +92,10 @@ const LabsPage: React.FC = () => {
   const fetchLookupData = async () => {
     try {
       const departments = await adminService.findAllDepartment();
-      // console.log("new api", departments); // DEBUG
-
       const transformedDepartments = departments.map(dept => ({
         ...dept,
         value: dept.value || dept.key
       }));
-
       setLocationOptions(transformedDepartments);
     } catch {
       toast.error("Failed to load dropdown options.");
@@ -265,7 +261,7 @@ const LabsPage: React.FC = () => {
   if (loading && labs.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg">Loading labs...</p>
+        <p className="text-lg text-foreground">Loading labs...</p>
       </div>
     );
   }
@@ -276,34 +272,30 @@ const LabsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         {/* Search Box */}
         <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
           <form onSubmit={handleSearchSubmit}>
             <input
               type="text"
               placeholder="Search by department..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white transition-all focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+              className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </form>
         </div>
 
         {/* Action Button */}
-        <Button
-          onClick={openCreateModal}
-        >
+        <Button onClick={openCreateModal}>
           <Plus size={16} style={{ marginRight: '8px' }} />
           <span>Add New Lab</span>
         </Button>
       </div>
-
-      {/* Results Count */}
+   {/* Results Count */}
       {/* {labs.length > 0 && (
         <div className="mb-4 text-sm text-gray-600">
           Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} labs
         </div>
       )} */}
-
       {/* Table */}
       <Card>
         <CardContent className="p-0">
@@ -321,13 +313,13 @@ const LabsPage: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {labs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <MapPin size={48} className="text-gray-300" />
-                      <p className="text-gray-500 text-sm font-medium">No labs found</p>
+                      <MapPin size={48} className="text-muted-foreground/50" />
+                      <p className="text-muted-foreground text-sm font-medium">No labs found</p>
                     </div>
                   </td>
                 </tr>
@@ -335,10 +327,10 @@ const LabsPage: React.FC = () => {
                 labs.map((lab) => (
                   <tr
                     key={lab.id}
-                    className="transition-all hover:bg-gray-50 group"
+                    className="transition-all hover:bg-muted/50 group"
                   >
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-foreground">
                         {lab.location}
                       </span>
                     </td>
@@ -348,21 +340,21 @@ const LabsPage: React.FC = () => {
                           {lab.lab.map((name, idx) => (
                             <span
                               key={`${lab.id}-${idx}-${name}`}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100"
+                              className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
                             >
                               {name}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">-</span>
+                        <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center">
                         <button
                           onClick={() => openEditModal(lab.id)}
-                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                          className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                           title="Edit Lab"
                         >
                           <Edit size={18} />
@@ -395,14 +387,14 @@ const LabsPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(0)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-input text-foreground transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronsLeft size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-input text-foreground transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -412,15 +404,16 @@ const LabsPage: React.FC = () => {
                     <button
                       key={idx}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${currentPage === pageNum
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }`}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${
+                        currentPage === pageNum
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background border border-input text-foreground hover:bg-muted"
+                      }`}
                     >
                       {pageNum + 1}
                     </button>
                   ) : (
-                    <span key={idx} className="px-2 text-gray-400">
+                    <span key={idx} className="px-2 text-muted-foreground">
                       {pageNum}
                     </span>
                   )
@@ -429,14 +422,14 @@ const LabsPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-input text-foreground transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages - 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-input text-foreground transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronsRight size={18} />
                 </button>
@@ -449,10 +442,10 @@ const LabsPage: React.FC = () => {
       {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Gradient Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
+              <CardTitle className="text-xl font-semibold text-primary">
                 {editMode ? "Update Lab" : "Create New Lab"}
               </CardTitle>
             </div>
@@ -461,11 +454,11 @@ const LabsPage: React.FC = () => {
             <div className="flex-1 px-8 py-6">
               <form onSubmit={editMode ? handleUpdate : handleCreate} className="space-y-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Department <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Department <span className="text-destructive">*</span>
                   </label>
                   {editMode ? (
-                    <div className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700">
+                    <div className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-muted text-foreground">
                       {form.location}
                     </div>
                   ) : (
@@ -493,16 +486,16 @@ const LabsPage: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-[13px] font-semibold text-gray-700">
-                      Labs <span className="text-red-500">*</span>
+                    <label className="block text-[13px] font-semibold text-foreground">
+                      Labs <span className="text-destructive">*</span>
                     </label>
                     <button
                       type="button"
                       onClick={addLabRow}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors"
+                      title="Add Lab"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors"
                     >
                       <Plus size={18} />
-
                     </button>
                   </div>
 
@@ -516,14 +509,14 @@ const LabsPage: React.FC = () => {
                             onChange={(e) => updateLabRow(idx, e.target.value)}
                             placeholder={`Lab ${idx + 1}`}
                             required={idx === 0}
-                            className="flex-1 px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm bg-white border-gray-300 transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                            className="flex-1 px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm bg-background text-foreground border-input transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                           />
                           {!editMode && (
                             <button
                               type="button"
                               onClick={() => removeLabRow(idx)}
                               disabled={form.labInputs.length === 1}
-                              className="p-2 rounded-lg text-red-500 transition-all hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="p-2 rounded-lg text-destructive transition-all hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed"
                               title={
                                 form.labInputs.length === 1
                                   ? "At least one lab is required"
@@ -538,9 +531,9 @@ const LabsPage: React.FC = () => {
                     })}
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {editMode
-                      ? "Click 'Add Lab' to add new lab rows. Existing labs cannot be modified."
+                      ? "Click 'Add Lab' to add new lab rows."
                       : "Click 'Add Lab' to add another row."}
                   </p>
                 </div>
@@ -548,7 +541,7 @@ const LabsPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/50 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -559,9 +552,7 @@ const LabsPage: React.FC = () => {
                 </Button>
                 <button
                   onClick={editMode ? handleUpdate : handleCreate}
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-shadow-md transition-all duration-300 ease-in-out 
-hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold shadow-md transition-all duration-300 ease-in-out hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                 >
                   {editMode ? "Update Lab" : "Create Lab"}
                 </button>

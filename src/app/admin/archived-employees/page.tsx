@@ -20,7 +20,7 @@ import {
     ChevronsRight,
     Eye,
     Users,
-    TicketCheck
+    TicketCheck, X
 } from "lucide-react";
 import { DropDownDTO, TaskProjection } from "@/app/types";
 import { archiveService, taskService, EQuestions, adminService } from "../../services/api";
@@ -346,7 +346,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                 <div className="flex items-center gap-5">
                                                     {/* View Details */}
                                                     <button
-                                                        className="rounded-lg p-2 text-[#474BDD]"
+                                                        className="rounded-lg p-2 text-[#474BDD] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                         onClick={() =>
                                                             (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
@@ -359,7 +359,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                     {/* View Answers */}
                                                     {employeesWithQuestions.has(parseInt(employee.employeeId, 10)) && (
                                                         <button
-                                                            className="rounded-lg text-[#3b82f6]"
+                                                            className="rounded-lg text-[#3b82f6] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                             onClick={() => {
                                                                 handleViewQuestions(employee.taskIds, employee.employeeName);
                                                             }}
@@ -460,33 +460,42 @@ const ArchivedEmployeesPage: React.FC = () => {
             )}
             {showQuestionsModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
-                        {/* Header */}
-                        <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
-                            <h2 className="text-1xl font-semibold text-primary-gradient">
-                                Employee Questions - {selectedEmployeeName}
+                        <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between border-b border-border">
+                            <h2 className="text-1xl font-semibold text-primary">
+                                Employee Task Questions
                             </h2>
 
-                            {/* Progress */}
+                            {/* Progress counter */}
                             <div className="flex items-center gap-4">
                                 <div className="text-center">
-                                    <div className="text-lg font-bold text-indigo-600">
+                                    <div className="text-lg font-bold text-primary">
                                         {completedQuestionCount} / {totalQuestionCount}
                                     </div>
-                                    <div className="text-[11px] text-gray-500">
-                                        Questions
+                                    <div className="text-[11px] text-muted-foreground">
+                                        Completed
                                     </div>
                                 </div>
+
+                                <button
+                                    onClick={() => {
+                                        setShowQuestionsModal(false);
+                                        setSelectedTaskQuestions([]);
+                                        setSelectedEmployeeName("");
+                                    }}
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <X size={24} />
+                                </button>
                             </div>
                         </div>
 
-                        {/* Body */}
                         <div className="flex-1 overflow-y-auto px-8 py-6">
                             {selectedTaskQuestions.length === 0 ? (
                                 <div className="text-center py-12">
-                                    <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                                    <p className="text-gray-500">
+                                    <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">
                                         No questions found for this employee.
                                     </p>
                                 </div>
@@ -495,39 +504,24 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     {selectedTaskQuestions.map((question, index) => (
                                         <div key={question.id || index} className="space-y-2">
 
-                                            {/* Question text */}
-                                            <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                                            {/* Question number + text */}
+                                            <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-5">
                                                 {index + 1}. {question.question || "No question text available"}
                                             </p>
 
-                                            {/* Response */}
-                                            <p className="text-[14px] text-gray-700 leading-relaxed pl-4">
+                                            {/* Answer below question */}
+                                            <p className="text-[14px] text-foreground leading-relaxed pl-4">
                                                 {question.response || "No response provided"}
                                             </p>
 
                                             {/* Divider */}
                                             {index < selectedTaskQuestions.length - 1 && (
-                                                <div className="border-b border-gray-200 pt-3"></div>
+                                                <div className="border-b border-border pt-3"></div>
                                             )}
                                         </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    setShowQuestionsModal(false);
-                                    setSelectedTaskQuestions([]);
-                                    setSelectedEmployeeName("");
-                                }}
-                                variant="outline"
-                            >
-                                Close
-                            </Button>
                         </div>
                     </div>
                 </div>

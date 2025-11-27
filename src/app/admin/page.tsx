@@ -169,20 +169,20 @@ const AdminDashboard: React.FC = () => {
                 transition-all duration-300 relative overflow-hidden cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`p-3 bg-gradient-to-br ${item.gradient} rounded-xl shadow-md 
-                      group-hover:shadow-lg transition-shadow duration-300`}
+                      className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg shadow-md 
+    group-hover:shadow-lg transition-shadow duration-300`}
                     >
                       {item.icon}
                     </div>
 
                     <div className="flex flex-col">
-                      <p className="text-sm font-semibold text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground">
                         {item.label}
                       </p>
-                      <p className="text-3xl font-extrabold text-foreground mt-1 
-                        transition-transform duration-500 group-hover:scale-110">
+                      <p className="text-2xl font-bold text-foreground 
+      transition-transform duration-500 group-hover:scale-110">
                         {item.value}
                       </p>
                     </div>
@@ -196,7 +196,7 @@ const AdminDashboard: React.FC = () => {
                       <ArrowRight className="w-5 h-5 text-foreground" />
                     </button>
                   )}
-                </div>                
+                </div>
               </div>
             </CardWrapper>
           );

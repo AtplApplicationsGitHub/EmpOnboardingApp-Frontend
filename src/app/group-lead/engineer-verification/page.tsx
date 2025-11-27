@@ -203,7 +203,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <button
-                        className="rounded-lg text-[#474BDD]"
+                        className="rounded-lg text-[#474BDD] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                         onClick={() => router.push(`/group-lead/engineer-verification/${task.id}`)} >
                         <Eye size={18} />
                       </button>

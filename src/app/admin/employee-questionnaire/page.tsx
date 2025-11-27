@@ -285,13 +285,12 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                questionnaire.levels?.[0] === "Basic"
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${questionnaire.levels?.[0] === "Basic"
                                                     ? "bg-green-50 text-green-700 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
                                                     : questionnaire.levels?.[0] === "Intermediate"
-                                                    ? "bg-yellow-50 text-yellow-700 border border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
-                                                    : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-                                            }`}>
+                                                        ? "bg-yellow-50 text-yellow-700 border border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                                                        : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                                                }`}>
                                                 {questionnaire.levels?.[0] || 'N/A'}
                                             </span>
                                         </td>
@@ -301,7 +300,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                                 className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                 title="Edit Question"
                                             >
-                                                <Edit size={16} />
+                                                <Edit size={18} />
                                             </button>
                                         </td>
                                     </tr>
@@ -313,88 +312,88 @@ const EmployeeQuestionnairePage: React.FC = () => {
             </Card>
 
             {/* Pagination */}
-         {totalPages > 1 && (
-  <Card>
-    <CardContent className="p-4">
-      <div className="flex items-center justify-between">
-        
-        {/* Page Info */}
-        <div className="text-sm text-muted-foreground">
-          Page {currentPage + 1} of {totalPages}
-        </div>
+            {totalPages > 1 && (
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
 
-        {/* Showing Info */}
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="text-sm text-muted-foreground">
-            Showing {questionnaires.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
-            {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} questionnaires
-          </div>
-        </div>
+                            {/* Page Info */}
+                            <div className="text-sm text-muted-foreground">
+                                Page {currentPage + 1} of {totalPages}
+                            </div>
 
-        {/* Pagination Buttons */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(0)}
-            disabled={currentPage === 0}
-            className="p-2"
-          >
-            <ChevronsLeft size={16} />
-          </Button>
+                            {/* Showing Info */}
+                            <div className="flex items-center justify-between px-4 py-2">
+                                <div className="text-sm text-muted-foreground">
+                                    Showing {questionnaires.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
+                                    {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} questionnaires
+                                </div>
+                            </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 0}
-            className="p-2"
-          >
-            <ChevronLeft size={16} />
-          </Button>
+                            {/* Pagination Buttons */}
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(0)}
+                                    disabled={currentPage === 0}
+                                    className="p-2"
+                                >
+                                    <ChevronsLeft size={16} />
+                                </Button>
 
-          {generatePageNumbers().map((page, index) => (
-            <React.Fragment key={index}>
-              {page === "..." ? (
-                <span className="px-3 py-2 text-muted-foreground">...</span>
-              ) : (
-                <Button
-                  variant={page === currentPage ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(page as number)}
-                  className="min-w-[40px]"
-                >
-                  {(page as number) + 1}
-                </Button>
-              )}
-            </React.Fragment>
-          ))}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 0}
+                                    className="p-2"
+                                >
+                                    <ChevronLeft size={16} />
+                                </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages - 1}
-            className="p-2"
-          >
-            <ChevronRight size={16} />
-          </Button>
+                                {generatePageNumbers().map((page, index) => (
+                                    <React.Fragment key={index}>
+                                        {page === "..." ? (
+                                            <span className="px-3 py-2 text-muted-foreground">...</span>
+                                        ) : (
+                                            <Button
+                                                variant={page === currentPage ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => handlePageChange(page as number)}
+                                                className="min-w-[40px]"
+                                            >
+                                                {(page as number) + 1}
+                                            </Button>
+                                        )}
+                                    </React.Fragment>
+                                ))}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(totalPages - 1)}
-            disabled={currentPage === totalPages - 1}
-            className="p-2"
-          >
-            <ChevronsRight size={16} />
-          </Button>
-        </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages - 1}
+                                    className="p-2"
+                                >
+                                    <ChevronRight size={16} />
+                                </Button>
 
-      </div>
-    </CardContent>
-  </Card>
-)}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(totalPages - 1)}
+                                    disabled={currentPage === totalPages - 1}
+                                    className="p-2"
+                                >
+                                    <ChevronsRight size={16} />
+                                </Button>
+                            </div>
+
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
 
             {/* Create / Edit Modal */}
