@@ -1233,7 +1233,6 @@ export const taskService = {
   const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
   return response.data;
 },
-
   getEmployeeTaskStepper: async (empId: number): Promise<TaskStepperGroup[]> => {
     const response = await api.get<TaskStepperGroup[]>(
       `/task/getEmployeeTaskStepper/${empId}`
