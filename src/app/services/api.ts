@@ -61,7 +61,6 @@ class LoadingManager {
       <div style="
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.4);
         z-index: 9999;
         display: flex;
         align-items: center;
@@ -702,8 +701,10 @@ export const adminService = {
     return response.data;
   },
 
-  isEmployeeEmailExists: async (email: string): Promise<boolean> => {
-    const response = await api.get<boolean>(`/employee/emailExists/${email}`);
+  isEmployeeEmailExists: async (id:number, email: string): Promise<boolean> => {
+    const response = await api.post<boolean>(`/employee/emailExists/${id}`,
+      {search:email}
+    );
     return response.data;
   },
 
@@ -743,11 +744,11 @@ export const adminService = {
     id: number;
     name: string;
     date: string;
-    department: string;
+    departmentId: number;
+    labId:number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
-    labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
     email: string;
@@ -758,6 +759,11 @@ export const adminService = {
 
   findByEmployee: async (id: number): Promise<Employee> => {
     const response = await api.get<Employee>(`/employee/findById/${id}`);
+    return response.data;
+  },
+
+  resendWelcomeMail: async (id: number): Promise<any> => {
+    const response = await api.get<any>(`/employee/resendWelcomeMail/${id}`);
     return response.data;
   },
 

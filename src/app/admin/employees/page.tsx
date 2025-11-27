@@ -21,7 +21,8 @@ import {
   Clock,
   Archive,
   Search,
-  AlertTriangle, X
+  AlertTriangle, X,
+  MailPlus
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -87,7 +88,7 @@ const EmployeesPage: React.FC = () => {
     name: "",
     date: "",
     departmentId: 0,
-    labId:0,
+    labId: 0,
     role: "",
     level: "L1",
     totalExperience: "0",
@@ -124,7 +125,7 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const labs = await adminService.getDepartmentLabs(departmentId);
-       const transformedLabs = labs.map(lab => ({
+      const transformedLabs = labs.map(lab => ({
         ...lab,
         value: lab.value || lab.key
       }));
@@ -174,7 +175,6 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
-      console.log(data);
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -233,6 +233,20 @@ const EmployeesPage: React.FC = () => {
       fetchEmployees();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add employee");
+    }
+  };
+
+  const resendMail = async (employeeId: number) => {
+    if (!employeeId) return;
+
+    try {
+      const response = await adminService.resendWelcomeMail(employeeId);
+      if(response)
+        toast.success("Email sent suceessfully");
+      else
+        toast.error("Failed to send Email");
+    } catch (err: any) {
+      toast.error("Failed to send Email");
     }
   };
 
@@ -297,13 +311,13 @@ const EmployeesPage: React.FC = () => {
       const updatePayload = {
         id: selectedEmployeeId,
         name: newEmployee.name,
-        department: newEmployee.department,
+        departmentId: newEmployee.departmentId,
+        labId: newEmployee.labId,
         role: newEmployee.role,
         date: newEmployee.date || undefined,
         level: newEmployee.level as "L1" | "L2" | "L3" | "L4",
         totalExperience: newEmployee.totalExperience,
         pastOrganization: newEmployee.pastOrganization,
-        labAllocation: newEmployee.labAllocation,
         complianceDay: newEmployee.complianceDay,
         email: newEmployee.email,
         group: newEmployee.group,
@@ -361,11 +375,11 @@ const EmployeesPage: React.FC = () => {
 
   const handleEmailChange = async (value: string) => {
     setNewEmployee({ ...newEmployee, email: value });
-    if (!value || editMode) return;
+    if (!value) return;
 
     setCheckingEmail(true);
     try {
-      const res = await adminService.isEmployeeEmailExists(value);
+      const res = await adminService.isEmployeeEmailExists(selectedEmployeeId || 0, value);
       setEmailExists(res);
     } catch (error) {
       setEmailExists(false);
@@ -713,6 +727,13 @@ const EmployeesPage: React.FC = () => {
                         >
                           <Edit size={18} />
                         </button>
+                         <button
+                          onClick={() => resendMail(emp.id)}
+                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                          title="Resend Welcome Mail"
+                        >
+                          <MailPlus  size={18} />
+                        </button>
                         <button
                           onClick={() => {
                             setEmployeeToDelete(emp);
@@ -814,7 +835,7 @@ const EmployeesPage: React.FC = () => {
             </div>
 
             {/* Scrollable Body */}
-            <div className={`flex-1 ${editMode ? "overflow-y-auto max-h-[calc(90vh-180px)]" : ""} px-8 py-6`}>
+            <div className={`flex-1 overflow-y-auto max-h-[calc(110vh-200px)] px-8 py-6`}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-[13px] font-semibold text-gray-700 mb-2">
@@ -939,7 +960,6 @@ const EmployeesPage: React.FC = () => {
                       const value = e.target.value;
                       const numValue = parseInt(value);
 
-
                       if (value === "" || value === "-") {
                         setNewEmployee({
                           ...newEmployee,
@@ -1036,9 +1056,8 @@ const EmployeesPage: React.FC = () => {
                     onChange={(e) => handleEmailChange(e.target.value)}
                     className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
                     placeholder="Enter email address"
-                    disabled={editMode}
                   />
-                  {!editMode && emailExists && (
+                  {emailExists && (
                     <p className="text-red-500 text-sm mt-1">
                       Email already exists
                     </p>
