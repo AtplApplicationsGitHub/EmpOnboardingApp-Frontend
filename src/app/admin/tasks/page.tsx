@@ -723,9 +723,9 @@ const TasksPage: React.FC = () => {
       )}
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
+              <CardTitle className="text-xl font-semibold text-primary">
                 Change Lab
               </CardTitle>
             </div>
@@ -733,8 +733,8 @@ const TasksPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-8 py-6">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Select Lab <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Select Lab <span className="text-destructive">*</span>
                   </label>
                   {loadingLabs ? (
                     <div className="flex items-center justify-center py-4">
@@ -758,7 +758,7 @@ const TasksPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/50 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -776,9 +776,9 @@ const TasksPage: React.FC = () => {
                 <button
                   onClick={handleLabChangeSubmit}
                   disabled={!selectedLabId}
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Update Lab
@@ -788,24 +788,23 @@ const TasksPage: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
 
-            <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
-              <h2 className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-primary">
                 Employee Task Questions
               </h2>
 
               {/* Progress counter */}
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-indigo-600">
+                  <div className="text-lg font-bold text-primary">
                     {completedQuestionCount} / {totalQuestionCount}
                   </div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-[11px] text-muted-foreground">
                     Completed
                   </div>
                 </div>
@@ -816,7 +815,7 @@ const TasksPage: React.FC = () => {
                     setSelectedTaskQuestions([]);
                     setSelectedEmployeeName("");
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X size={24} />
                 </button>
@@ -826,8 +825,8 @@ const TasksPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-8 py-6">
               {selectedTaskQuestions.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">
+                  <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
                     No questions found for this employee.
                   </p>
                 </div>
@@ -837,19 +836,19 @@ const TasksPage: React.FC = () => {
                     <div key={question.id || index} className="space-y-2">
 
                       {/* Question number + text */}
-                      <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                      <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-5">
                         {index + 1}. {question.question || "No question text available"}
                       </p>
 
                       {/* Answer below question */}
-                      <p className="text-[14px] text-gray-700 leading-relaxed pl-4 ">
+                      <p className="text-[14px] text-muted-foreground leading-relaxed pl-4">
                         {question.response || "No response provided"}
                       </p>
 
 
                       {/* Divider */}
                       {index < selectedTaskQuestions.length - 1 && (
-                        <div className="border-b border-gray-200 pt-3"></div>
+                        <div className="border-b border-border pt-3"></div>
                       )}
                     </div>
                   ))}

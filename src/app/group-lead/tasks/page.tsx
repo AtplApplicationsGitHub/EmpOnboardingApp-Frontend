@@ -477,82 +477,82 @@ const GroupLeadTasksPage: React.FC = () => {
         </CardContent>
       </Card>
 
-     {showLabChangeModal && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-background rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+      {showLabChangeModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-background rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
-      {/* Header */}
-      <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
-        <CardTitle className="text-1xl font-semibold text-primary">
-          Change Lab
-        </CardTitle>
-      </div>
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
+                Change Lab
+              </CardTitle>
+            </div>
 
-      {/* Body */}
-      <div className="flex-1 px-8 py-6 bg-background">
-        <div className="space-y-6">
-          <div>
-            <label className="block text-[13px] font-semibold text-foreground mb-2">
-              Select Lab <span className="text-destructive">*</span>
-            </label>
+            {/* Body */}
+            <div className="flex-1 px-8 py-6 bg-background">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Select Lab <span className="text-destructive">*</span>
+                  </label>
 
-            {loadingLabs ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="text-sm text-muted-foreground">
-                  Loading labs...
+                  {loadingLabs ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="text-sm text-muted-foreground">
+                        Loading labs...
+                      </div>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={labOptions}
+                      value={selectedLabId}
+                      onChange={(value) => setSelectedLabId(value as number)}
+                      placeholder="Select a lab..."
+                      className="w-full"
+                      isEmployeePage={true}
+                      displayFullValue={false}
+                      usePortal={true}
+                    />
+                  )}
                 </div>
               </div>
-            ) : (
-              <SearchableDropdown
-                options={labOptions}
-                value={selectedLabId}
-                onChange={(value) => setSelectedLabId(value as number)}
-                placeholder="Select a lab..."
-                className="w-full"
-                isEmployeePage={true}
-                displayFullValue={false}
-                usePortal={true}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      {/* Footer */}
-      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-secondary border-t border-border">
-        <div className="flex items-center gap-3">
-          {/* Cancel Button */}
-          <Button
-            type="button"
-            onClick={() => {
-              setShowLabChangeModal(false);
-              setSelectedEmployeeForLabChange(null);
-              setSelectedLabId(undefined);
-              setLabOptions([]);
-            }}
-            variant="outline"
-          >
-            Cancel
-          </Button>
+            {/* Footer */}
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-secondary border-t border-border">
+              <div className="flex items-center gap-3">
+                {/* Cancel Button */}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowLabChangeModal(false);
+                    setSelectedEmployeeForLabChange(null);
+                    setSelectedLabId(undefined);
+                    setLabOptions([]);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
 
-          {/* Update Button */}
-          <button
-            onClick={handleLabChangeSubmit}
-            disabled={!selectedLabId}
-            className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                {/* Update Button */}
+                <button
+                  onClick={handleLabChangeSubmit}
+                  disabled={!selectedLabId}
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
             shadow-md transition-all duration-300 ease-in-out 
             hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
             disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Update Lab
-          </button>
+                >
+                  Update Lab
+                </button>
 
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
-
-    </div>
-  </div>
-)}
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
