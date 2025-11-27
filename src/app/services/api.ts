@@ -21,7 +21,8 @@ import {
   LdapResponse,
   TaskQuestions,
   Department,
-  Questionnaire
+  Questionnaire,
+  TaskStepperGroup
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -1233,6 +1234,12 @@ export const taskService = {
   return response.data;
 },
 
+  getEmployeeTaskStepper: async (empId: number): Promise<TaskStepperGroup[]> => {
+    const response = await api.get<TaskStepperGroup[]>(
+      `/task/getEmployeeTaskStepper/${empId}`
+    );
+    return response.data;
+  },
 };
 
 // Helper function to convert TaskProjection to Task
