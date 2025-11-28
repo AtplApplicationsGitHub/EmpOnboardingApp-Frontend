@@ -272,6 +272,7 @@ const TasksPage: React.FC = () => {
           department: group.groupName,
           completed: user.completedQuestions,
           total: user.totalQuestions,
+          lastUpdatedTime:user.lastUpdatedTime,
           status: user.status,
         }))
       );
@@ -923,6 +924,9 @@ const TasksPage: React.FC = () => {
                                   Progress
                                 </TableHead>
                                 <TableHead className="font-semibold text-secondary-foreground">
+                                  Last Updated
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
                                   Status
                                 </TableHead>
                               </TableRow>
@@ -956,6 +960,13 @@ const TasksPage: React.FC = () => {
                                         <span className="text-sm font-semibold min-w-[60px] text-muted-foreground">
                                           {task.completed}/{task.total}
                                         </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        <div className="font-semibold text-base">
+                                          {task.lastUpdatedTime}
+                                        </div>
                                       </div>
                                     </TableCell>
 
