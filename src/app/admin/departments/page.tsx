@@ -300,7 +300,7 @@ const DepartmentsPage: React.FC = () => {
                             setDepartmentToDelete(dept.id);
                             setShowDeleteModal(true);
                           }}
-                          className="rounded-lg text-destructive transition-colors duration-300 hover:text-destructive/80 hover:bg-destructive/10"
+                          className="rounded-lg text-destructive transition-colors duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground hover:bg-indigo-50 dark:hover:bg-muted"
                           title="Delete Department"
                         >
                           <Trash2 size={18} />

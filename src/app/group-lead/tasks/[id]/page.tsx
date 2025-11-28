@@ -448,7 +448,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <h3 className="text-xl font-semibold text-[#4c51bf] ml-2">
+        <h3 className="text-xl font-semibold text-primary ml-2">
           Tasks for {employeeName} ({employeeLevel})
         </h3>
         <div className="ml-auto flex items-end gap-3">
@@ -719,10 +719,10 @@ const GroupLeadTaskDetailPage: React.FC = () => {
       {/* Reassign Task Modal with Async Search */}
       {showReassignModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-md flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <h2 className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
+              <h2 className="text-xl font-semibold text-primary">
                 Reassign Task
               </h2>
             </div>
@@ -730,8 +730,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             {/* Body */}
             <div className="flex-1 px-8 py-6">
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                  Primary Group Lead <span className="text-red-500">*</span>
+                <label className="block text-[13px] font-semibold text-foreground mb-2">
+                  Primary Group Lead <span className="text-destructive">*</span>
                 </label>
                 <SearchableDropdown
                   value={primaryGroupLeadId}
@@ -751,7 +751,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/50 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -768,9 +768,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   type="button"
                   onClick={reassignTask}
                   disabled={!primaryGroupLeadId}
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Reassign Task

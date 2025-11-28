@@ -173,7 +173,7 @@ const EmployeeTasksPage: React.FC = () => {
                     <ArrowLeft size={16} />
                     Back
                 </Button> */}
-                <h3 className="text-xl font-semibold ml-2 text-[#4c51bf]">
+                <h3 className="text-xl font-semibold ml-2 text-primary">
                     Tasks for {employeeName} {employeeLevel && `(${employeeLevel})`}
                      {/* — {tasks.length} task
                     {tasks.length === 1 ? "" : "s"}

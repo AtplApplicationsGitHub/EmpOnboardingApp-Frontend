@@ -21,8 +21,7 @@ import {
   Clock,
   Archive,
   Search,
-  AlertTriangle, X,
-  MailPlus
+  AlertTriangle, X, MailPlus
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -241,7 +240,7 @@ const EmployeesPage: React.FC = () => {
 
     try {
       const response = await adminService.resendWelcomeMail(employeeId);
-      if(response)
+      if (response)
         toast.success("Email sent suceessfully");
       else
         toast.error("Failed to send Email");
@@ -561,19 +560,19 @@ const EmployeesPage: React.FC = () => {
 
 
   return (
-    <div className="space-y-2 ">
+    <div className="space-y-2">
       {/* Header Section */}
       <div className="flex items-center justify-between">
         {/* Search Box */}
         <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
           <form onSubmit={handleSearchSubmit}>
             <input
               type="text"
               placeholder="Search employees..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white transition-all focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+              className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </form>
         </div>
@@ -593,7 +592,7 @@ const EmployeesPage: React.FC = () => {
           <button
             onClick={() => setShowImportModal(true)}
             disabled={processing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm font-medium transition-all hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-card text-card-foreground border border-border rounded-lg text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground shadow-sm"
           >
             <Upload size={16} />
             <span>Import from Excel</span>
@@ -627,7 +626,6 @@ const EmployeesPage: React.FC = () => {
                 nameInputRef.current?.focus();
               }, 150);
             }}
-
             className="flex items-center gap-2"
           >
             <Plus size={16} />
@@ -637,12 +635,12 @@ const EmployeesPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+      <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="table-heading-bg text-primary-gradient">
-                <th className="px-4 py-4 text-left text-xs font-semibold  uppercase tracking-wider w-[18%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[18%]">
                   Name
                 </th>
                 <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
@@ -671,50 +669,48 @@ const EmployeesPage: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {employees.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <Users size={48} className="text-gray-300" />
-                      <p className="text-gray-500 text-sm font-medium">No employees found</p>
-
+                      <Users size={48} className="text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-sm font-medium">No employees found</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 employees.map((emp) => (
                   <tr key={emp.id}>
-
                     <td className="px-4 py-4">
-                      <span className="text-sm font-medium text-gray-900">{emp.name}</span>
+                      <span className="text-sm font-medium text-foreground">{emp.name}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-gray-600">{emp.email}</span>
+                      <span className="text-sm text-muted-foreground">{emp.email}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-gray-600 font-medium">{emp.date}</span>
+                      <span className="text-sm text-muted-foreground font-medium">{emp.date}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                         {emp.department || "N/A"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {emp.labAllocation || "-"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
                         {emp.level || "L1"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-gray-600">{emp.role || "N/A"}</span>
+                      <span className="text-sm text-muted-foreground">{emp.role || "N/A"}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-foreground">
                         {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                       </span>
                     </td>
@@ -722,24 +718,24 @@ const EmployeesPage: React.FC = () => {
                       <div className="flex items-center justify-center gap-5">
                         <button
                           onClick={() => handleEditEmployee(emp.id)}
-                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                          className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
                           title="Edit Employee"
                         >
                           <Edit size={18} />
                         </button>
-                         <button
+                        <button
                           onClick={() => resendMail(emp.id)}
-                          className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                          className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                           title="Resend Welcome Mail"
                         >
-                          <MailPlus  size={18} />
+                          <MailPlus size={18} />
                         </button>
                         <button
                           onClick={() => {
                             setEmployeeToDelete(emp);
                             setShowDeleteModal(true);
                           }}
-                          className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
+                          className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                           title="Delete Employee"
                         >
                           <Trash2 size={18} />
@@ -774,14 +770,14 @@ const EmployeesPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(0)}
                   disabled={page === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronsLeft size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -792,14 +788,14 @@ const EmployeesPage: React.FC = () => {
                       key={idx}
                       onClick={() => handlePageChange(pageNum)}
                       className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
                     >
                       {pageNum + 1}
                     </button>
                   ) : (
-                    <span key={idx} className="px-2 text-gray-400">
+                    <span key={idx} className="px-2 text-muted-foreground">
                       {pageNum}
                     </span>
                   )
@@ -808,14 +804,14 @@ const EmployeesPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages - 1)}
                   disabled={page >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronsRight size={18} />
                 </button>
@@ -824,12 +820,12 @@ const EmployeesPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="flex-shrink-0  px-5 py-4 shadow-md">
-
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+          <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 {editMode ? "Edit User" : "Create User"}
               </CardTitle>
             </div>
@@ -838,8 +834,8 @@ const EmployeesPage: React.FC = () => {
             <div className={`flex-1 overflow-y-auto max-h-[calc(110vh-200px)] px-8 py-6`}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Candidate Name <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Candidate Name <span className="text-destructive">*</span>
                   </label>
                   <input
                     ref={nameInputRef}
@@ -848,14 +844,14 @@ const EmployeesPage: React.FC = () => {
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, name: e.target.value })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="Enter full name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Date of Joining <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Date of Joining <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="date"
@@ -863,15 +859,15 @@ const EmployeesPage: React.FC = () => {
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, date: e.target.value })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm text-gray-700 transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm text-foreground bg-background transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     max="9999-12-31"
                     min="1900-01-01"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Department <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Department <span className="text-destructive">*</span>
                   </label>
                   <SearchableDropdown
                     options={departmentOptions}
@@ -889,7 +885,7 @@ const EmployeesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Lab Allocation
                   </label>
                   <SearchableDropdown
@@ -922,8 +918,8 @@ const EmployeesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Level <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Level <span className="text-destructive">*</span>
                   </label>
                   <SearchableDropdown
                     options={levelOptions}
@@ -948,7 +944,7 @@ const EmployeesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Total Experience (years)
                   </label>
                   <input
@@ -990,14 +986,13 @@ const EmployeesPage: React.FC = () => {
                         });
                       }
                     }}
-
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Past Organization
                   </label>
                   <input
@@ -1009,26 +1004,26 @@ const EmployeesPage: React.FC = () => {
                         pastOrganization: e.target.value,
                       })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="Previous company name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">Role</label>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">Role</label>
                   <input
                     type="text"
                     value={newEmployee.role ?? ""}
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, role: e.target.value })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="e.g., Software Engineer, Manager"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Compliance Day
                   </label>
                   <input
@@ -1041,24 +1036,24 @@ const EmployeesPage: React.FC = () => {
                         complianceDay: e.target.value,
                       })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="Number of compliance days"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Email <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="email"
                     value={newEmployee.email ?? ""}
                     onChange={(e) => handleEmailChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="Enter email address"
                   />
                   {emailExists && (
-                    <p className="text-red-500 text-sm mt-1">
+                    <p className="text-destructive text-sm mt-1">
                       Email already exists
                     </p>
                   )}
@@ -1066,7 +1061,7 @@ const EmployeesPage: React.FC = () => {
 
                 {editMode && (
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    <label className="block text-[13px] font-semibold text-foreground mb-2">
                       Select Group
                     </label>
                     <SearchableDropdown
@@ -1099,7 +1094,7 @@ const EmployeesPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-accent/30 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -1125,6 +1120,7 @@ const EmployeesPage: React.FC = () => {
                     setEditMode(false);
                     setGroupOptions([]);
                   }}
+                  className="border-border text-foreground hover:bg-accent"
                 >
                   Cancel
                 </Button>
@@ -1140,18 +1136,15 @@ const EmployeesPage: React.FC = () => {
                     emailExists ||
                     checkingEmail
                   }
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
         shadow-md transition-all duration-300 ease-in-out 
-        hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+        hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
         disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editMode ? "Update User" : "Create User"}
                 </button>
               </div>
             </div>
-
-
-
           </div>
         </div>
       )}
@@ -1163,7 +1156,7 @@ const EmployeesPage: React.FC = () => {
               <CardTitle>Delete Employee</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4">
+              <p className="mb-4 text-foreground">
                 Are you sure you want to delete the employee{" "}
                 <span className="font-semibold">{employeeToDelete.name}</span>?
                 This action cannot be undone.
@@ -1186,7 +1179,6 @@ const EmployeesPage: React.FC = () => {
                 >
                   Yes, Delete
                 </Button>
-
               </div>
             </CardContent>
           </Card>
@@ -1195,9 +1187,9 @@ const EmployeesPage: React.FC = () => {
 
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-lg flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
               <CardTitle className="text-1xl font-semibold text-primary-gradient">
                 Import from Excel
               </CardTitle>
@@ -1206,25 +1198,25 @@ const EmployeesPage: React.FC = () => {
             {/* Body */}
             <div className="flex-1 px-8 py-6">
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                  Select Excel File <span className="text-red-500">*</span>
+                <label className="block text-[13px] font-semibold text-foreground mb-2">
+                  Select Excel File <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 {importFile && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Selected: <span className="font-medium text-foreground">{importFile.name}</span>
                   </p>
                 )}
               </div>
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -1238,9 +1230,9 @@ const EmployeesPage: React.FC = () => {
                 <button
                   onClick={handleImportFromExcel}
                   disabled={!importFile || importLoading}
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {importLoading ? (

@@ -430,7 +430,7 @@ const GroupLeadTasksPage: React.FC = () => {
 
                                 {!task.lab && isFirstOccurrence && (
                                   <button
-                                    className="rounded-lg text-[#eea11d]"
+                                    className="rounded-lg text-[#eea11d] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                     onClick={() => handleOpenLabChangeModal(task)}
                                     aria-label="Change lab"
                                     title="Change Lab"
@@ -440,7 +440,7 @@ const GroupLeadTasksPage: React.FC = () => {
                                 )}
                               </div>
                               <button
-                                className="rounded-lg text-[#474BDD]"
+                                className="rounded-lg text-[#474BDD] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                 onClick={() =>
                                   router.push(`/group-lead/tasks/${task.id}`)
                                 }
@@ -452,7 +452,7 @@ const GroupLeadTasksPage: React.FC = () => {
                               {/* View Answers button - only show for first occurrence of employees who have questions */}
                               {isFirstOccurrence && hasQuestions && (
                                 <button
-                                  className="rounded-lg shrink-0 text-[#3b82f6]"
+                                  className="rounded-lg shrink-0 text-[#3b82f6] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                   onClick={() =>
                                     handleViewQuestions(taskId, employeeName)
                                   }
@@ -479,21 +479,21 @@ const GroupLeadTasksPage: React.FC = () => {
 
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-background rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Change Lab
               </CardTitle>
             </div>
 
             {/* Body */}
-            <div className="flex-1 px-8 py-6">
+            <div className="flex-1 px-8 py-6 bg-background">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Select Lab <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Select Lab <span className="text-destructive">*</span>
                   </label>
 
                   {loadingLabs ? (
@@ -519,7 +519,7 @@ const GroupLeadTasksPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-secondary border-t border-border">
               <div className="flex items-center gap-3">
                 {/* Cancel Button */}
                 <Button
@@ -541,7 +541,7 @@ const GroupLeadTasksPage: React.FC = () => {
                   disabled={!selectedLabId}
                   className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
             shadow-md transition-all duration-300 ease-in-out 
-            hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+            hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
             disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Update Lab
@@ -553,7 +553,6 @@ const GroupLeadTasksPage: React.FC = () => {
           </div>
         </div>
       )}
-
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -668,23 +667,48 @@ const GroupLeadTasksPage: React.FC = () => {
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
-              <h2 className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between border-b border-border">
+              <h2 className="text-xl font-semibold text-primary">
                 Employee Questions - {selectedEmployeeName}
               </h2>
 
-              {/* Progress counter */}
+              {/* Progress counter and Close X */}
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-indigo-600">
+                  <div className="text-lg font-bold text-primary">
                     {completedQuestionCount} / {totalQuestionCount}
                   </div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-[11px] text-muted-foreground">
                     Questions
                   </div>
                 </div>
+
+                {/* Close X button */}
+                <button
+                  onClick={() => {
+                    setShowQuestionsModal(false);
+                    setSelectedTaskQuestions([]);
+                    setSelectedEmployeeName("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Close"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -692,8 +716,8 @@ const GroupLeadTasksPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-8 py-6">
               {selectedTaskQuestions.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">
+                  <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
                     No questions found for this employee.
                   </p>
                 </div>
@@ -703,18 +727,18 @@ const GroupLeadTasksPage: React.FC = () => {
                     <div key={question.id || index} className="space-y-2">
 
                       {/* Question number + text */}
-                      <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                      <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-5">
                         {index + 1}. {question.question || "No question text available"}
                       </p>
 
                       {/* Answer below question */}
-                      <p className="text-[14px] text-gray-700 leading-relaxed pl-4">
+                      <p className="text-[14px] text-card-foreground leading-relaxed pl-4">
                         {question.response || "No response provided"}
                       </p>
 
                       {/* Divider */}
                       {index < selectedTaskQuestions.length - 1 && (
-                        <div className="border-b border-gray-200 pt-3"></div>
+                        <div className="border-b border-border pt-3"></div>
                       )}
                     </div>
                   ))}
@@ -722,24 +746,10 @@ const GroupLeadTasksPage: React.FC = () => {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowQuestionsModal(false);
-                  setSelectedTaskQuestions([]);
-                  setSelectedEmployeeName("");
-                }}
-                variant="outline"
-              >
-                Close
-              </Button>
-            </div>
+            {/* Footer removed */}
           </div>
         </div>
       )}
-
 
     </div>
   );
