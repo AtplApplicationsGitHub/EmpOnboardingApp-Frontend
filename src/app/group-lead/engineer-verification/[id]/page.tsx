@@ -58,7 +58,7 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
   const [comments, setComments] = useState<Record<string, string>>({});
   const [verifications, setVerifications] = useState<Record<string, "yes" | "no" | null>>({});
   const [verifiedQuestions, setVerifiedQuestions] = useState<Set<string>>(new Set());
-
+  const [commentErrors, setCommentErrors] = useState<Record<string, boolean>>({});
   const [respValues, setRespValues] = useState<Record<string, string>>({});
   const [respSaving, setRespSaving] = useState<Record<string, boolean>>({});
   const commentInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
@@ -123,6 +123,14 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
       ...prev,
       [questionId]: value,
     }));
+
+    // Clear error when user types
+    if (value.trim() !== "") {
+      setCommentErrors((prev) => ({
+        ...prev,
+        [questionId]: false,
+      }));
+    }
   };
   const handleCommentSave = (questionId: string, value: string) => {
     setComments((prev) => ({
@@ -141,9 +149,23 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
 
     // Focus on comment input if "no" is selected
     if (value === "no") {
+      // Show error if comment is empty
+      if (!comments[questionId] || comments[questionId].trim() === "") {
+        setCommentErrors((prev) => ({
+          ...prev,
+          [questionId]: true,
+        }));
+      }
+
       setTimeout(() => {
         commentInputRefs.current[questionId]?.focus();
       }, 0);
+    } else {
+      // Clear error if "yes" is selected
+      setCommentErrors((prev) => ({
+        ...prev,
+        [questionId]: false,
+      }));
     }
   };
   // Check if submit button should be enabled
@@ -354,19 +376,28 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                           </TableCell>
 
                           <TableCell>
-                            <input
-                              type="text"
-                              ref={(el) => { commentInputRefs.current[questionId] = el; }}
-                              value={comments[questionId] || ""}
-                              onChange={(e) => handleCommentChange(questionId, e.target.value)}
-                              disabled={verifiedQuestions.has(questionId)}
-                              onBlur={(e) => handleCommentSave(questionId, e.target.value)}
-                              placeholder="Enter comments..."
-                              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
-                                ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
-                                : 'bg-background border-input'
-                                }`}
-                            />
+                            <div>
+                              <input
+                                type="text"
+                                ref={(el) => { commentInputRefs.current[questionId] = el; }}
+                                value={comments[questionId] || ""}
+                                onChange={(e) => handleCommentChange(questionId, e.target.value)}
+                                disabled={verifiedQuestions.has(questionId)}
+                                onBlur={(e) => handleCommentSave(questionId, e.target.value)}
+                                placeholder="Enter comments..."
+                                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
+                                    ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
+                                    : commentErrors[questionId]
+                                      ? 'border-red-500 bg-background'
+                                      : 'bg-background border-input'
+                                  }`}
+                              />
+                              {commentErrors[questionId] && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  Comments are mandatory
+                                </p>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
