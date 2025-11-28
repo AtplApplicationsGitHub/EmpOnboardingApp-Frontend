@@ -715,12 +715,14 @@ export const adminService = {
     commonListDto: Employee[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Employee[];
       totalElements: number;
-    }>(`/employee/findFilteredEmployee/${search}/${page}`);
+    }>(`/employee/findFilteredEmployee/${page}`,
+      {search:search}
+    );
     return response.data;
   },
 

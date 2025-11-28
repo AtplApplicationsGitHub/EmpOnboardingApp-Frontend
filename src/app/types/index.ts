@@ -372,6 +372,7 @@ export interface TaskStepperUser {
   status: string;
   totalQuestions: number;
   completedQuestions: number;
+  lastUpdatedTime:string;
 }
 
 export interface TaskStepperGroup {
