@@ -47,28 +47,28 @@ const GroupLeadTaskPage: React.FC = () => {
     {
       label: "Tasks",
       value: totalCount,
-      icon: <User className="w-5 h-5 text-white" />,
+      icon: <User className="w-4 h-4 text-white" />,
       gradient: "from-indigo-400 to-blue-500",
       route: "/tasks",
     },
     {
       label: "Completed",
       value: completedCount,
-      icon: <CheckCircle className="w-5 h-5 text-white" />,
+      icon: <CheckCircle className="w-4 h-4 text-white" />,
       gradient: "from-green-400 to-emerald-500",
       route: "/tasks/completed",
     },
     {
       label: "Pending",
       value: pendingCount,
-      icon: <Clock className="w-5 h-5 text-white" />,
+      icon: <Clock className="w-4 h-4 text-white" />,
       gradient: "from-amber-400 to-orange-500",
       route: "/tasks/pending",
     },
     {
       label: "Overdue",
       value: overdueCount,
-      icon: <AlertCircle className="w-5 h-5 text-white" />,
+      icon: <AlertCircle className="w-4 h-4 text-white" />,
       gradient: "from-red-400 to-pink-500",
       route: "/tasks/overdue",
     },
@@ -78,28 +78,28 @@ const GroupLeadTaskPage: React.FC = () => {
     {
       label: "Verification",
       value: totalVerificationsCount,
-      icon: <ClipboardCheck className="w-5 h-5 text-white" />,
+      icon: <ClipboardCheck className="w-4 h-4 text-white" />,
       gradient: "from-purple-400 to-violet-500",
       route: "/verification",
     },
     {
       label: "Completed",
       value: completedVerificationCount,
-      icon: <CheckCircle className="w-5 h-5 text-white" />,
+      icon: <CheckCircle className="w-4 h-4 text-white" />,
       gradient: "from-green-400 to-emerald-500",
       route: "/verification/completed",
     },
     {
       label: "Pending",
       value: pendingVerificationCount,
-      icon: <Clock className="w-5 h-5 text-white" />,
+      icon: <Clock className="w-4 h-4 text-white" />,
       gradient: "from-amber-400 to-orange-500",
       route: "/verification/pending",
     },
     {
       label: "Overdue",
       value: overdueVerificationCount,
-      icon: <AlertCircle className="w-5 h-5 text-white" />,
+      icon: <AlertCircle className="w-4 h-4 text-white" />,
       gradient: "from-red-400 to-pink-500",
       route: "/verification/overdue",
     },
@@ -160,54 +160,34 @@ const GroupLeadTaskPage: React.FC = () => {
       </div>
 
       {/* Task Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         {taskCards.map((item, index) => {
-          const CardWrapper = item.route ? 'a' : 'div';
-          const wrapperProps = item.route
-            ? {
-              href: item.route,
-              onClick: (e: React.MouseEvent) => {
-                e.preventDefault();
-                window.location.href = item.route;
-              }
-            }
-            : {};
+          const CardWrapper = 'div';
+          const wrapperProps = {};
 
           return (
-            <CardWrapper key={index} className="group block" {...wrapperProps}>
+            <CardWrapper key={index}  {...wrapperProps}>
               <div
-                className="bg-card border border-border rounded-2xl shadow-lg p-4 
+                className="bg-card border border-border rounded-lg shadow-lg p-4 
                 hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
                 transition-all duration-300 relative overflow-hidden cursor-pointer"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg shadow-md 
-                      group-hover:shadow-lg transition-shadow duration-300`}
-                    >
-                      {item.icon}
-                    </div>
-
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
                     <div className="flex flex-col">
-                      <p className="text-xs font-medium text-muted-foreground">
+                      <p className="text-sm font-medium text-muted-foreground">
                         {item.label}
                       </p>
-                      <p className="text-2xl font-bold text-foreground 
+                      <p className="text-xl font-bold text-foreground 
                       transition-transform duration-500 group-hover:scale-110">
                         {item.value}
                       </p>
                     </div>
                   </div>
 
-                  {item.route && (
-                    <button
-                      className="p-2 bg-secondary hover:bg-secondary/80 
-                      rounded-full transition-colors duration-200 shadow-sm"
-                    >
-                      <ArrowRight className="w-5 h-5 text-foreground" />
-                    </button>
-                  )}
+                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
+                    {item.icon}
+                  </div>
                 </div>
               </div>
             </CardWrapper>
@@ -216,54 +196,34 @@ const GroupLeadTaskPage: React.FC = () => {
       </div>
 
       {/* Verification Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-3">
         {verificationCards.map((item, index) => {
-          const CardWrapper = item.route ? 'a' : 'div';
-          const wrapperProps = item.route
-            ? {
-              href: item.route,
-              onClick: (e: React.MouseEvent) => {
-                e.preventDefault();
-                window.location.href = item.route;
-              }
-            }
-            : {};
+          const CardWrapper = 'div';
+          const wrapperProps = {};
 
           return (
-            <CardWrapper key={index} className="group block" {...wrapperProps}>
+            <CardWrapper key={index} {...wrapperProps}>
               <div
-                className="bg-card border border-border rounded-2xl shadow-lg p-4 
+                className="bg-card border border-border rounded-lg shadow-lg p-4 
                 hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
                 transition-all duration-300 relative overflow-hidden cursor-pointer"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg shadow-md 
-                      group-hover:shadow-lg transition-shadow duration-300`}
-                    >
-                      {item.icon}
-                    </div>
-
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
                     <div className="flex flex-col">
-                      <p className="text-xs font-medium text-muted-foreground">
+                      <p className="text-sm font-medium text-muted-foreground">
                         {item.label}
                       </p>
-                      <p className="text-2xl font-bold text-foreground 
+                      <p className="text-xl font-bold text-foreground 
                       transition-transform duration-500 group-hover:scale-110">
                         {item.value}
                       </p>
                     </div>
                   </div>
 
-                  {item.route && (
-                    <button
-                      className="p-2 bg-secondary hover:bg-secondary/80 
-                      rounded-full transition-colors duration-200 shadow-sm"
-                    >
-                      <ArrowRight className="w-5 h-5 text-foreground" />
-                    </button>
-                  )}
+                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
+                    {item.icon}
+                  </div>
                 </div>
               </div>
             </CardWrapper>
