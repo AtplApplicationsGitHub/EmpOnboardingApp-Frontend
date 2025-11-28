@@ -758,63 +758,67 @@ const EmployeesPage: React.FC = () => {
               <div className="text-sm text-muted-foreground">
                 Page {page + 1} of {totalPages}
               </div>
-
               <div className="flex items-center justify-between px-4 py-2">
                 <div className="text-sm text-muted-foreground">
                   Showing {employees.length > 0 ? page * PAGE_SIZE + 1 : 0} to{" "}
                   {Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements} employees
                 </div>
               </div>
-
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(0)}
                   disabled={page === 0}
-                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2"
                 >
-                  <ChevronsLeft size={18} />
-                </button>
-                <button
+                  <ChevronsLeft size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 0}
-                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2"
                 >
-                  <ChevronLeft size={18} />
-                </button>
-
-                {generatePageNumbers().map((pageNum, idx) =>
-                  typeof pageNum === "number" ? (
-                    <button
-                      key={idx}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${page === pageNum
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                    >
-                      {pageNum + 1}
-                    </button>
-                  ) : (
-                    <span key={idx} className="px-2 text-muted-foreground">
-                      {pageNum}
-                    </span>
-                  )
-                )}
-
-                <button
+                  <ChevronLeft size={16} />
+                </Button>
+                {generatePageNumbers().map((pageNum, index) => (
+                  <React.Fragment key={index}>
+                    {pageNum === "..." ? (
+                      <span className="px-3 py-2 text-muted-foreground">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        variant={pageNum === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum as number)}
+                        className="min-w-[40px]"
+                      >
+                        {(pageNum as number) + 1}
+                      </Button>
+                    )}
+                  </React.Fragment>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(page + 1)}
-                  disabled={page >= totalPages - 1}
-                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={page === totalPages - 1}
+                  className="p-2"
                 >
-                  <ChevronRight size={18} />
-                </button>
-                <button
+                  <ChevronRight size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(totalPages - 1)}
-                  disabled={page >= totalPages - 1}
-                  className="p-2 rounded-lg border border-border text-foreground transition-all hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={page === totalPages - 1}
+                  className="p-2"
                 >
-                  <ChevronsRight size={18} />
-                </button>
+                  <ChevronsRight size={16} />
+                </Button>
               </div>
             </div>
           </CardContent>
