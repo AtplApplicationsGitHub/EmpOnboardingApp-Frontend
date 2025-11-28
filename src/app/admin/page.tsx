@@ -64,28 +64,28 @@ const AdminDashboard: React.FC = () => {
     {
       label: "Total Groups",
       value: totalGroupsCount,
-      icon: <Users className="w-7 h-7 text-white" />,
+      icon: <Users className="w-4 h-4 text-white" />,
       gradient: "from-blue-500 to-blue-600",
       route: "/admin/groups",
     },
     {
       label: "Total Users",
       value: totalUsersCount,
-      icon: <UserPlus className="w-7 h-7 text-white" />,
+      icon: <UserPlus className="w-4 h-4 text-white" />,
       gradient: "from-green-500 to-emerald-600",
       route: "/admin/users",
     },
     {
       label: "Total Questions",
       value: totalQuestionsCount,
-      icon: <MessageSquare className="w-7 h-7 text-white" />,
+      icon: <MessageSquare className="w-4 h-4 text-white" />,
       gradient: "from-purple-500 to-purple-600",
       route: "/admin/groups",
     },
     {
       label: "Total Tasks",
       value: totalTasksCount,
-      icon: <Clock className="w-7 h-7 text-white" />,
+      icon: <Clock className="w-4 h-4 text-white" />,
       gradient: "from-orange-500 to-orange-600",
       route: null,
     },
@@ -149,58 +149,38 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Statistics Cards - Using CSS variables for automatic dark mode support */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cardData.map((item, index) => {
-          const CardWrapper = item.route ? 'a' : 'div';
-          const wrapperProps = item.route
-            ? {
-              href: item.route, onClick: (e: React.MouseEvent) => {
-                e.preventDefault();
-                window.location.href = item.route;
-              }
-            }
-            : {};
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">        {cardData.map((item, index) => {
+        const CardWrapper = 'div';
+        const wrapperProps = {};
 
-          return (
-            <CardWrapper key={index} className="group block" {...wrapperProps}>
-              <div
-                className="bg-card border border-border rounded-2xl shadow-lg p-4 
+        return (
+          <CardWrapper key={index} {...wrapperProps}>
+            <div
+              className="bg-card border border-border rounded-lg shadow-lg p-4 
                 hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
                 transition-all duration-300 relative overflow-hidden cursor-pointer"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg shadow-md 
-    group-hover:shadow-lg transition-shadow duration-300`}
-                    >
-                      {item.icon}
-                    </div>
-
-                    <div className="flex flex-col">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground 
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center">
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className="text-xl font-bold text-foreground 
       transition-transform duration-500 group-hover:scale-110">
-                        {item.value}
-                      </p>
-                    </div>
+                      {item.value}
+                    </p>
                   </div>
+                </div>
 
-                  {item.route && (
-                    <button
-                      className="p-2 bg-secondary hover:bg-secondary/80 
-                      rounded-full transition-colors duration-200 shadow-sm"
-                    >
-                      <ArrowRight className="w-5 h-5 text-foreground" />
-                    </button>
-                  )}
+                <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
+                  {item.icon}
                 </div>
               </div>
-            </CardWrapper>
-          );
-        })}
+            </div>
+          </CardWrapper>
+        );
+      })}
       </div>
     </div>
   );

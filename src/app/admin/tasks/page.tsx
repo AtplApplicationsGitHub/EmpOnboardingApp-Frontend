@@ -272,7 +272,7 @@ const TasksPage: React.FC = () => {
           department: group.groupName,
           completed: user.completedQuestions,
           total: user.totalQuestions,
-          lastUpdatedTime:user.lastUpdatedTime,
+          lastUpdatedTime: user.lastUpdatedTime,
           status: user.status,
         }))
       );
@@ -867,31 +867,30 @@ const TasksPage: React.FC = () => {
       bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden">
 
             {/* Header */}
-            <div className="flex-shrink-0 px-6 py-4 shadow-md flex items-center justify-between 
+            <div className="flex-shrink-0 px-6 py-4 shadow-md flex items-center justify-between relative
   bg-card text-foreground border-b border-border">
               <h2 className="text-xl font-semibold text-primary">
                 Task Progress Overview
               </h2>
-              <div className="flex items-center gap-4">
-                {/* Total Progress Counter */}
-                <div className="text-center">
-                  <div className="text-1xl font-bold ">
-                    {stepperModalData.reduce((sum, task) => sum + task.completed, 0)} / {stepperModalData.reduce((sum, task) => sum + task.total, 0)}
-                  </div>
-                  <div className="text-[13px]">
-                    Total Progress
-                  </div>
+
+              <div className="absolute left-1/2 -translate-x-1/2 text-center">
+                <div className="text-1xl font-bold ">
+                  {stepperModalData.reduce((sum, task) => sum + task.completed, 0)} / {stepperModalData.reduce((sum, task) => sum + task.total, 0)}
                 </div>
-                <button
-                  onClick={() => {
-                    setShowStepperModal(false);
-                    setStepperModalData([]);
-                  }}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X size={24} />
-                </button>
+                <div className="text-[13px]">
+                  Total Progress
+                </div>
               </div>
+
+              <button
+                onClick={() => {
+                  setShowStepperModal(false);
+                  setStepperModalData([]);
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={24} />
+              </button>
             </div>
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">

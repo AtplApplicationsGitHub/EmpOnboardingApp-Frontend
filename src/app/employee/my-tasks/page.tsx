@@ -21,6 +21,7 @@ import {
   Star,
   User2,
   Users,
+  X
 } from "lucide-react";
 import { EmployeeFeedback, Task } from "@/app/types";
 import {
@@ -47,8 +48,7 @@ const MyTasksPage: React.FC = () => {
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [feedBack, setFeedBack] = useState<EmployeeFeedback | null>(null);
-
+  const [feedBack, setFeedBack] = useState<Record<string, EmployeeFeedback>>({});
   const PAGE_SIZE = 10;
 
   const fetchTasks = useCallback(async () => {
@@ -59,6 +59,25 @@ const MyTasksPage: React.FC = () => {
       const list = response?.commonListDto ?? [];
       setTasks(Array.isArray(list) ? list : []);
       setTotal(Number(response?.totalElements ?? 0));
+
+      // Fetch feedback for each task
+      if (Array.isArray(list) && list.length > 0) {
+        const feedbackMap: Record<string, EmployeeFeedback> = {};
+        for (const task of list) {
+          if (task?.id) {
+            try {
+              const feedbackResponse = await employeeService.getFeedBackByTask(String(task.id));
+              if (feedbackResponse) {
+                feedbackMap[String(task.id)] = feedbackResponse;
+              }
+            } catch (e) {
+              // Feedback doesn't exist for this task, continue
+            }
+          }
+        }
+        setFeedBack(feedbackMap);
+      }
+
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
         console.log("Fetched tasks:", list);
@@ -75,19 +94,21 @@ const MyTasksPage: React.FC = () => {
   const fetchFeedback = useCallback(async (taskId: string) => {
     try {
       const response = await employeeService.getFeedBackByTask(taskId);
-      setFeedBack(response ?? null);
 
-      // Pre-fill form fields if feedback exists
-      const starNum =
-        typeof response?.star === "string"
-          ? parseInt(response.star as unknown as string, 10) || 0
-          : (response?.star as number) || 0;
+      if (response) {
+        setFeedBack(prev => ({ ...prev, [taskId]: response }));
 
-      setFeedbackRating(starNum);
-      setFeedbackComment(response?.feedback ?? "");
+        // Pre-fill form fields if feedback exists
+        const starNum =
+          typeof response?.star === "string"
+            ? parseInt(response.star as unknown as string, 10) || 0
+            : (response?.star as number) || 0;
+
+        setFeedbackRating(starNum);
+        setFeedbackComment(response?.feedback ?? "");
+      }
     } catch (e: any) {
       // If no feedback or error, clear to defaults
-      setFeedBack(null);
       setFeedbackRating(0);
       setFeedbackComment("");
       // eslint-disable-next-line no-console
@@ -115,6 +136,10 @@ const MyTasksPage: React.FC = () => {
         alert("Please provide a rating before submitting.");
         return;
       }
+      if (feedbackComment.trim() === "") {
+        alert("Please provide comments before submitting.");
+        return;
+      }
       if (!selectedTaskId) {
         alert("No task selected for feedback.");
         return;
@@ -127,21 +152,15 @@ const MyTasksPage: React.FC = () => {
       await employeeService.saveFeedBack(feedBackDTO);
 
       // Reflect success locally
-      setFeedBack((prev) =>
-        prev && prev.taskId === selectedTaskId
-          ? {
-            ...prev,
-            star: feedbackRating,
-            feedback: feedbackComment,
-            completed: true,
-          }
-          : ({
-            taskId: selectedTaskId,
-            star: feedbackRating,
-            feedback: feedbackComment,
-            completed: true,
-          } as any)
-      );
+      setFeedBack(prev => ({
+        ...prev,
+        [selectedTaskId]: {
+          taskId: selectedTaskId,
+          star: feedbackRating,
+          feedback: feedbackComment,
+          completed: true,
+        } as any
+      }));
 
       setFeedbackRating(0);
       setFeedbackComment("");
@@ -209,7 +228,6 @@ const MyTasksPage: React.FC = () => {
     fetchTasks();
   }, [fetchTasks]);
 
-  // ✅ When modal opens for a given task, fetch existing feedback & prefill
   useEffect(() => {
     if (showFeedbackModal && selectedTaskId) {
       void fetchFeedback(selectedTaskId);
@@ -289,26 +307,41 @@ const MyTasksPage: React.FC = () => {
                     <CardTitle className="text-xl">
                       <span className="font-semibold px-2 py-1 rounded">
                         {t?.groupName ?? "Group"} — {t?.id ?? "—"} —{" "}
-                        {t?.assignedTo ?? "Unassigned"}  — {" "} {t?.lab ?? "—"}
+                        {t?.assignedTo ?? "Unassigned"}
+                        {/* {" "} {t?.lab ?? "—"} */}
                       </span>
                     </CardTitle>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* Feedback button */}
-                  <Button
-                    variant="outline"
-                    disabled={t.status !== "Completed"}
-                    className="gap-2"
-                    onClick={() => {
-                      setSelectedTaskId(String(t?.id ?? ""));
-                      setShowFeedbackModal(true);
-                    }}
-                  >
-                    <Star className="w-4 h-4" />
-                    Feedback
-                  </Button>
+                  {/* Feedback button or rating display */}
+                  {feedBack[String(t?.id)]?.completed ? (
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${star <= Number(feedBack[String(t?.id)]?.star ?? 0)
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      disabled={t.status !== "Completed"}
+                      className="gap-2"
+                      onClick={() => {
+                        setSelectedTaskId(String(t?.id ?? ""));
+                        setShowFeedbackModal(true);
+                      }}
+                    >
+                      <Star className="w-4 h-4" />
+                      Feedback
+                    </Button>
+                  )}
 
                   <div className="text-center">
                     <div className="text-3xl font-bold">{totalQuestions}</div>
@@ -414,16 +447,16 @@ const MyTasksPage: React.FC = () => {
           <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Feedback for Task {selectedTaskId ?? "—"}</CardTitle>
-              <Button
-                variant="outline"
+              <button
                 onClick={() => setShowFeedbackModal(false)}
-                className="ml-3"
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+                aria-label="Close"
               >
-                Close
-              </Button>
+                <X size={20} />
+              </button>
             </div>
 
-            {feedBack?.completed ? (
+            {selectedTaskId && feedBack[selectedTaskId]?.completed ? (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-sm font-medium text-green-800 dark:text-green-300">
@@ -433,7 +466,7 @@ const MyTasksPage: React.FC = () => {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-4 h-4 ${star <= Number(feedBack?.star ?? 0)
+                        className={`w-4 h-4 ${star <= Number(feedBack[selectedTaskId]?.star ?? 0)
                           ? "text-yellow-400 fill-current"
                           : "text-gray-300"
                           }`}
@@ -442,7 +475,7 @@ const MyTasksPage: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  {feedBack?.feedback || "No comments provided."}
+                  {feedBack[selectedTaskId]?.feedback || "No comments provided."}
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-2">
                   Feedback submitted successfully
@@ -478,7 +511,7 @@ const MyTasksPage: React.FC = () => {
                 {/* Comment */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Comments (optional)
+                    Comments
                   </label>
                   <textarea
                     value={feedbackComment}
@@ -495,7 +528,8 @@ const MyTasksPage: React.FC = () => {
                   disabled={
                     submittingFeedback ||
                     feedbackRating === 0 ||
-                    !selectedTaskId
+                    !selectedTaskId ||
+                    feedbackComment.trim() === ""
                   }
                   className="flex items-center space-x-2"
                 >
