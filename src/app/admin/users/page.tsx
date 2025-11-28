@@ -96,7 +96,7 @@ const UsersPage: React.FC = () => {
       setTotal(response.totalElements || 0);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load users");
-    } 
+    }
   };
 
   // 1. CREATE
@@ -237,12 +237,12 @@ const UsersPage: React.FC = () => {
     if (!userId) return;
     try {
       const response = await adminService.deactivateUser(userId);
-        if (response)
-          toast.success(`User deactivated successfully`);
-        else
-          toast.error("Failed to deactivate the user");
-        setShowDeleteModal(false);
-        fetchUsers();
+      if (response)
+        toast.success(`User deactivated successfully`);
+      else
+        toast.error("Failed to deactivate the user");
+      setShowDeleteModal(false);
+      fetchUsers();
     } catch (err: any) {
       toast.error("Failed to load user");
     }
@@ -511,7 +511,7 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="flex items-center gap-3">
                       <button
-                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
+                        className="rounded-lg text-indigo-600 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                         onClick={() => handleEditUser(user.id)}
                         title="Edit"
                       >
@@ -519,7 +519,7 @@ const UsersPage: React.FC = () => {
                       </button>
 
                       <button
-                        className=" rounded-lg text-indigo-600 transition-all hover:bg-indigo-50 "
+                        className="rounded-lg text-indigo-600 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                         onClick={() => canDeactivateUser(user.id, user.role)}
                         title="Deactivate"
                       >
@@ -613,10 +613,10 @@ const UsersPage: React.FC = () => {
       {/* Create/Update User Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl flex border border-border flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-xl font-semibold text-primary">
                 {editMode ? "Edit User" : "Create New User"}
               </CardTitle>
             </div>
@@ -626,7 +626,7 @@ const UsersPage: React.FC = () => {
               <div className="grid grid-cols-1 gap-5">
                 {/* Name Field */}
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -640,13 +640,13 @@ const UsersPage: React.FC = () => {
                     onChange={(e) => {
                       if (!editMode) setFormData({ ...formData, name: e.target.value });
                     }}
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 disabled:bg-muted disabled:cursor-not-allowed placeholder:text-muted-foreground"
                   />
                 </div>
 
                 {/* Email Field */}
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -657,7 +657,7 @@ const UsersPage: React.FC = () => {
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="Enter user's email address"
                     required
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 disabled:bg-muted disabled:cursor-not-allowed placeholder:text-muted-foreground"
                   />
                   {!editMode && emailExists && (
                     <p className="text-red-500 text-sm mt-1">Email already exists</p>
@@ -666,7 +666,7 @@ const UsersPage: React.FC = () => {
 
                 {/* Role Field */}
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Role <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -677,7 +677,7 @@ const UsersPage: React.FC = () => {
                         role: e.target.value as "admin" | "group_lead",
                       });
                     }}
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100 bg-white"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     required
                   >
                     {roles.map((role) => (
@@ -691,7 +691,7 @@ const UsersPage: React.FC = () => {
                 {/* Password Field - Only for Create */}
                 {!editMode && (
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                    <label className="block text-[13px] font-semibold text-foreground mb-2">
                       Password <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -705,7 +705,7 @@ const UsersPage: React.FC = () => {
                       }}
                       placeholder="Enter password"
                       required
-                      className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                      className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-muted-foreground"
                     />
                     {passwordError && (
                       <p className="text-red-500 text-sm mt-1">{passwordError}</p>
@@ -716,7 +716,7 @@ const UsersPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"

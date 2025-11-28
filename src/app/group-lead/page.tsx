@@ -1,15 +1,109 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { taskService } from "../services/api";
-import { GLDashboard, Task } from "../types";
-import { Card, CardContent } from "../components/ui/card";
-import { CheckCircle, Clock, AlertCircle, User } from "lucide-react";
+import { GLDashboard } from "../types";
+import { CheckCircle, Clock, AlertCircle, User, ArrowRight, ClipboardCheck } from "lucide-react";
+
+const useCountUp = (value: number | undefined, duration = 700) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!value) return;
+    let start = 0;
+    const increment = value / (duration / 16);
+    const animate = () => {
+      start += increment;
+      if (start < value) {
+        setCount(Math.floor(start));
+        requestAnimationFrame(animate);
+      } else {
+        setCount(value);
+      }
+    };
+    animate();
+  }, [value, duration]);
+
+  return count;
+};
 
 const GroupLeadTaskPage: React.FC = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<GLDashboard>();
+
+  const totalCount = useCountUp(dashboard?.totalTasks);
+  const completedCount = useCountUp(dashboard?.totalCompletedTasks);
+  const pendingCount = useCountUp(dashboard?.totalPendingTasks);
+  const overdueCount = useCountUp(dashboard?.overdueTasks);
+  const totalVerificationsCount = useCountUp(dashboard?.totalVerifications);
+  const completedVerificationCount = useCountUp(dashboard?.completedVerificationCount);
+  const pendingVerificationCount = useCountUp(dashboard?.pendingVerificationCount);
+  const overdueVerificationCount = useCountUp(dashboard?.overdueVerificationCount);
+
+  const taskCards = [
+    {
+      label: "Tasks",
+      value: totalCount,
+      icon: <User className="w-4 h-4 text-white" />,
+      gradient: "from-indigo-400 to-blue-500",
+      route: "/tasks",
+    },
+    {
+      label: "Completed",
+      value: completedCount,
+      icon: <CheckCircle className="w-4 h-4 text-white" />,
+      gradient: "from-green-400 to-emerald-500",
+      route: "/tasks/completed",
+    },
+    {
+      label: "Pending",
+      value: pendingCount,
+      icon: <Clock className="w-4 h-4 text-white" />,
+      gradient: "from-amber-400 to-orange-500",
+      route: "/tasks/pending",
+    },
+    {
+      label: "Overdue",
+      value: overdueCount,
+      icon: <AlertCircle className="w-4 h-4 text-white" />,
+      gradient: "from-red-400 to-pink-500",
+      route: "/tasks/overdue",
+    },
+  ];
+
+  const verificationCards = [
+    {
+      label: "Verification",
+      value: totalVerificationsCount,
+      icon: <ClipboardCheck className="w-4 h-4 text-white" />,
+      gradient: "from-purple-400 to-violet-500",
+      route: "/verification",
+    },
+    {
+      label: "Completed",
+      value: completedVerificationCount,
+      icon: <CheckCircle className="w-4 h-4 text-white" />,
+      gradient: "from-green-400 to-emerald-500",
+      route: "/verification/completed",
+    },
+    {
+      label: "Pending",
+      value: pendingVerificationCount,
+      icon: <Clock className="w-4 h-4 text-white" />,
+      gradient: "from-amber-400 to-orange-500",
+      route: "/verification/pending",
+    },
+    {
+      label: "Overdue",
+      value: overdueVerificationCount,
+      icon: <AlertCircle className="w-4 h-4 text-white" />,
+      gradient: "from-red-400 to-pink-500",
+      route: "/verification/overdue",
+    },
+  ];
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -17,11 +111,9 @@ const GroupLeadTaskPage: React.FC = () => {
         setLoading(true);
         const tasksData = await taskService.getDashboardForGL();
         setDashboard(tasksData);
-                console.log("Fetched tasks data", tasksData);
-        console.log("Fetched tasks data", dashboard);
+        console.log("Fetched GL Dashboard Data:", tasksData);
       } catch (err: any) {
         setError(err.response?.data?.message ?? "Failed to load tasks");
-        console.error("Tasks fetch error", err);
       } finally {
         setLoading(false);
       }
@@ -29,28 +121,26 @@ const GroupLeadTaskPage: React.FC = () => {
 
     fetchTasks();
 
-    const handleFocus = () => {
-      fetchTasks();
-    };
-
+    const handleFocus = () => fetchTasks();
     window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
-
+  // Loading UI
   if (loading) {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading tasks...</div>
+          <div className="text-muted-foreground flex items-center gap-2 animate-pulse">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            Loading tasks...
+          </div>
         </div>
       </div>
     );
   }
 
+  // Error UI
   if (error) {
     return (
       <div className="p-8">
@@ -63,82 +153,82 @@ const GroupLeadTaskPage: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-[17px] font-bold text-[#4c51bf]">My Tasks</h1>
+      <div className="mb-4 animate-fade-in">
+        <h1 className="text-[17px] font-bold text-primary">
+          Task Dashboard
+        </h1>
       </div>
 
-      {/* Task Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Employees
-                </p>
-                <p className="text-2xl font-bold">{dashboard?.totalEmployees}</p>
-              </div>
-              <div className="p-3 bg-primary/10 rounded-full">
-                <User size={20} className="text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Task Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        {taskCards.map((item, index) => {
+          const CardWrapper = 'div';
+          const wrapperProps = {};
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Pending Tasks
-                </p>
-                <p className="text-2xl font-bold text-yellow-500">
-                  {dashboard?.totalPendingTasks}
-                </p>
-              </div>
-              <div className="p-3 bg-yellow-500/10 rounded-full">
-                <Clock size={20} className="text-yellow-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          return (
+            <CardWrapper key={index}  {...wrapperProps}>
+              <div
+                className="bg-card border border-border rounded-lg shadow-lg p-4 
+                hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
+                transition-all duration-300 relative overflow-hidden cursor-pointer"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <p className="text-xl font-bold text-foreground 
+                      transition-transform duration-500 group-hover:scale-110">
+                        {item.value}
+                      </p>
+                    </div>
+                  </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Completed Tasks
-                </p>
-                <p className="text-2xl font-bold text-green-500">
-                  {dashboard?.totalCompletedTasks}
-                </p>
+                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
+                    {item.icon}
+                  </div>
+                </div>
               </div>
-              <div className="p-3 bg-green-500/10 rounded-full">
-                <CheckCircle size={20} className="text-green-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardWrapper>
+          );
+        })}
+      </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Overdue
-                </p>
-                <p className="text-2xl font-bold text-red-500">
-                  {dashboard?.overdueTasks}
-                </p>
+      {/* Verification Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-3">
+        {verificationCards.map((item, index) => {
+          const CardWrapper = 'div';
+          const wrapperProps = {};
+
+          return (
+            <CardWrapper key={index} {...wrapperProps}>
+              <div
+                className="bg-card border border-border rounded-lg shadow-lg p-4 
+                hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
+                transition-all duration-300 relative overflow-hidden cursor-pointer"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <p className="text-xl font-bold text-foreground 
+                      transition-transform duration-500 group-hover:scale-110">
+                        {item.value}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
+                    {item.icon}
+                  </div>
+                </div>
               </div>
-              <div className="p-3 bg-red-500/10 rounded-full">
-                <AlertCircle size={20} className="text-red-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardWrapper>
+          );
+        })}
       </div>
     </div>
   );

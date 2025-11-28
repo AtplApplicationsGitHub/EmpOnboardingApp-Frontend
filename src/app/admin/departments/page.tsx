@@ -10,14 +10,12 @@ import {
   ChevronsRight,
   Search,
   Edit,
-  Delete,
   Trash2,
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import { employeeService } from "@/app/services/api";
 import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-
 
 const PAGE_SIZE = 10;
 
@@ -41,9 +39,7 @@ const emptyForm: FormState = {
 const DepartmentsPage: React.FC = () => {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-
   const [loading, setLoading] = useState(false);
-
   const [departments, setDepartments] = useState<Department[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -54,14 +50,12 @@ const DepartmentsPage: React.FC = () => {
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [departmentToDelete, setDepartmentToDelete] = useState<any | null>(
-    null
-  );
+  const [departmentToDelete, setDepartmentToDelete] = useState<any | null>(null);
+  
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
     [total]
   );
-
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +94,6 @@ const DepartmentsPage: React.FC = () => {
     setForm({ ...emptyForm });
   };
 
-  // Fetch departments
   const fetchDepartments = async () => {
     setLoading(true);
     try {
@@ -115,18 +108,25 @@ const DepartmentsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
   React.useEffect(() => {
     fetchDepartments();
   }, [currentPage, searchFilter]);
 
-
-  // Handle create department
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const location = form.name.trim();
     if (!location) {
       toast.error("Department name is required");
+      return;
+    }
+
+    const isDuplicate = departments.some(
+      (dept) => dept.location.toLowerCase() === location.toLowerCase()
+    );
+    if (isDuplicate) {
+      toast.error("This department already exists");
       return;
     }
 
@@ -152,6 +152,14 @@ const DepartmentsPage: React.FC = () => {
       return;
     }
 
+    const isDuplicate = departments.some(
+      (dept) => dept.id !== selectedDeptId && dept.location.toLowerCase() === location.toLowerCase()
+    );
+    if (isDuplicate) {
+      toast.error("This department name already exists");
+      return;
+    }
+
     try {
       await employeeService.createDepartment({
         id: selectedDeptId,
@@ -163,7 +171,7 @@ const DepartmentsPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update department");
     }
-  };;
+  };
 
   const handlePageChange = (page: number) => {
     if (page >= 0 && page < totalPages) setCurrentPage(page);
@@ -209,7 +217,7 @@ const DepartmentsPage: React.FC = () => {
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="relative w-80">
           <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
             size={18}
           />
           <input
@@ -217,14 +225,12 @@ const DepartmentsPage: React.FC = () => {
             placeholder="Search by department..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+            className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg text-sm bg-background text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </form>
 
         {/* Add button */}
-        <Button
-          onClick={openCreateModal}
-        >
+        <Button onClick={openCreateModal}>
           <Plus size={16} style={{ marginRight: '8px' }} />
           <span>Add New Department</span>
         </Button>
@@ -250,19 +256,19 @@ const DepartmentsPage: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
-                    <p className="text-gray-500 text-sm">Loading departments...</p>
+                    <p className="text-muted-foreground text-sm">Loading departments...</p>
                   </td>
                 </tr>
               ) : departments.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <MapPin size={48} className="text-gray-300" />
-                      <p className="text-gray-500 text-sm font-medium">
+                      <MapPin size={48} className="text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-sm font-medium">
                         No departments found
                       </p>
                     </div>
@@ -270,20 +276,20 @@ const DepartmentsPage: React.FC = () => {
                 </tr>
               ) : (
                 departments.map((dept) => (
-                  <tr key={dept.id} className="hover:bg-gray-50 transition-all">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <tr key={dept.id} className="hover:bg-accent transition-all">
+                    <td className="px-6 py-4 text-sm font-medium text-foreground">
                       {dept.location}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {dept.createdTime}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {dept.updatedTime}
                     </td>
                     <td className="px-6 py-4 flex items-center gap-3">
                       <button
                         onClick={() => openEditModal(dept.id)}
-                        className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                        className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
                         title="Edit Department"
                       >
                         <Edit size={18} />
@@ -294,8 +300,8 @@ const DepartmentsPage: React.FC = () => {
                             setDepartmentToDelete(dept.id);
                             setShowDeleteModal(true);
                           }}
-                          className="rounded-lg text-red-500 transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]"
-                          title="Delete Employee"
+                          className="rounded-lg text-destructive transition-colors duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground hover:bg-indigo-50 dark:hover:bg-muted"
+                          title="Delete Department"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -308,6 +314,7 @@ const DepartmentsPage: React.FC = () => {
           </table>
         </CardContent>
       </Card>
+
       {/* Pagination */}
       {totalPages > 1 && (
         <Card>
@@ -319,21 +326,21 @@ const DepartmentsPage: React.FC = () => {
               <div className="flex items-center justify-between px-4 py-2">
                 <div className="text-sm text-muted-foreground">
                   Showing {departments.length > 0 ? currentPage * PAGE_SIZE + 1 : 0} to{" "}
-                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} users
+                  {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} departments
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(0)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
                 >
                   <ChevronsLeft size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -343,15 +350,16 @@ const DepartmentsPage: React.FC = () => {
                     <button
                       key={idx}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${currentPage === pageNum
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }`}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${
+                        currentPage === pageNum
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background border border-input text-foreground hover:bg-accent"
+                      }`}
                     >
                       {pageNum + 1}
                     </button>
                   ) : (
-                    <span key={idx} className="px-2 text-gray-400">
+                    <span key={idx} className="px-2 text-muted-foreground">
                       {pageNum}
                     </span>
                   )
@@ -360,38 +368,38 @@ const DepartmentsPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
                 >
                   <ChevronRight size={18} />
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages - 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
                 >
                   <ChevronsRight size={18} />
                 </button>
               </div>
             </div>
-
           </CardContent>
         </Card>
       )}
 
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
+              <CardTitle className="text-xl font-semibold text-primary">
                 {editMode ? "Update Department" : "Create New Department"}
               </CardTitle>
             </div>
 
             {/* Body */}
             <div className="flex-1 px-8 py-6">
-              <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                Department Name <span className="text-red-500">*</span>
+              <label className="block text-[13px] font-semibold text-foreground mb-2">
+                Department Name <span className="text-destructive">*</span>
               </label>
               <input
                 ref={nameInputRef}
@@ -401,22 +409,18 @@ const DepartmentsPage: React.FC = () => {
                   setForm((prev) => ({ ...prev, name: e.target.value }))
                 }
                 placeholder="Enter department name"
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                className="w-full px-3.5 py-2.5 border border-input rounded-lg text-sm bg-background text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={closeModal}
-                >
+                <Button variant="outline" onClick={closeModal}>
                   Cancel
                 </Button>
                 <Button
-                  className="
-                shadow-md transition-all duration-300 ease-in-out hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                  className="shadow-md transition-all duration-300 ease-in-out hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                   onClick={editMode ? handleUpdate : handleCreate}
                 >
                   {editMode ? "Update Department" : "Create Department"}
@@ -427,6 +431,7 @@ const DepartmentsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && departmentToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-sm mx-4">
@@ -434,8 +439,8 @@ const DepartmentsPage: React.FC = () => {
               <CardTitle>Delete Department</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4">
-                Are you sure you want to delete?
+              <p className="mb-4 text-foreground">
+                Are you sure you want to delete this department?
               </p>
               <div className="flex gap-3">
                 <Button

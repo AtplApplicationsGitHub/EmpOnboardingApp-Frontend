@@ -12,7 +12,7 @@ import {
   Users,
   UserPlus,
   Settings,
-  ClipboardList, // Changed from ClipboardListIcon
+  ClipboardList,
   FlaskConical,
   Archive,
   FileCheck,
@@ -20,26 +20,27 @@ import {
   Building2,
   FileQuestion,
   Menu,
-  X,
   ChevronLeft,
   User
 } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
+// ✅ UPDATED: Using CSS variables for automatic light/dark mode support
 const itemBase =
   "group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all";
 const itemIdle =
-  "text-[#4a5568] hover:text-[#3448c3] hover:bg-[rgba(76,81,191,0.08)] hover:translate-x-1";
+  "text-muted-foreground hover:text-primary hover:bg-primary/10 hover:translate-x-1";
 const itemActive =
-  "bg-[#4c51bf] text-white shadow-md translate-x-2";
+  "bg-primary text-primary-foreground shadow-md translate-x-2";
 const iconBase = "h-5 w-5 shrink-0";
-const iconIdle = "text-[#6b6fcf] group-hover:text-inherit";
-const iconActive = "text-white";
+const iconIdle = "text-muted-foreground group-hover:text-inherit";
+const iconActive = "text-primary-foreground";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isVisible = useAnimation();
-  const { isCollapsed, toggleSidebar } = useSidebar(); // Use the sidebar context
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   if (!user) return null;
 
@@ -65,27 +66,28 @@ export default function Navbar() {
     <Link
       href={href}
       className={cn(itemBase, active ? itemActive : itemIdle)}
-      title={isCollapsed ? label : ''} // Show tooltip when collapsed
+      title={isCollapsed ? label : ''}
     >
       {active && !isCollapsed && (
-        <span className="absolute -left-3 top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-r bg-[#4c51bf]" />
+        <span className="absolute -left-3 top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-r bg-primary" />
       )}
       <Icon className={cn(iconBase, active ? iconActive : iconIdle)} />
-      {!isCollapsed && <span>{label}</span>} {/* Hide label when collapsed */}
+      {!isCollapsed && <span>{label}</span>}
     </Link>
   );
 
   return (
     <div
       className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-white border-r border-[#e2e8f0] shadow-[4px_0_12px_rgba(0,0,0,0.08)] transition-all duration-300",
-        isCollapsed ? "w-20" : "w-56", // Dynamic width
+        // ✅ CHANGED: bg-white → bg-card, border-[#e2e8f0] → border-border
+        "fixed inset-y-0 left-0 z-50 bg-card border-r border-border shadow-lg transition-all duration-300",
+        isCollapsed ? "w-20" : "w-56",
         isVisible ? animationClasses.slideInLeft : "opacity-0"
       )}
     >
       <div className="flex h-full flex-col">
         {/* Title with toggle button */}
-        <div className="flex h-20 items-center justify-between border-b border-[#e2e8f0] px-5">
+        <div className="flex h-20 items-center justify-between border-b border-border px-5">
           {!isCollapsed && (
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <img 
@@ -93,7 +95,8 @@ export default function Navbar() {
                 alt="Company Logo" 
                 className="h-8 w-auto object-contain flex-shrink-0"
               />
-              <span className="text-[17px] font-bold tracking-wide text-[#4c51bf] whitespace-nowrap">
+              {/* ✅ CHANGED: text-[#4c51bf] → text-primary */}
+              <span className="text-[17px] font-bold tracking-wide text-primary whitespace-nowrap">
                 Onboarding
               </span>
             </div>
@@ -101,15 +104,16 @@ export default function Navbar() {
           <button
             onClick={toggleSidebar}
             className={cn(
-              "p-2 rounded-lg hover:bg-[rgba(76,81,191,0.08)] transition-colors flex-shrink-0",
+              // ✅ CHANGED: hover:bg-[rgba(76,81,191,0.08)] → hover:bg-primary/10
+              "p-2 rounded-lg hover:bg-primary/10 transition-colors flex-shrink-0",
               isCollapsed && "mx-auto"
             )}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
-              <Menu className="h-5 w-5 text-[#4c51bf]" />
+              <Menu className="h-5 w-5 text-primary" />
             ) : (
-              <ChevronLeft className="h-5 w-5 text-[#4c51bf]" />
+              <ChevronLeft className="h-5 w-5 text-primary" />
             )}
           </button>
         </div>
@@ -225,26 +229,30 @@ export default function Navbar() {
         </nav>
 
         {/* Bottom user card */}
-        <div className="border-t border-[#e2e8f0] bg-[#f8fafc] p-5">
+        <div className="border-t border-border bg-muted/30 p-5">
           {!isCollapsed ? (
             <>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-[#4c51bf] text-[16px] font-bold text-white">
+                  {/* ✅ CHANGED: bg-[#4c51bf] text-white → bg-primary text-primary-foreground */}
+                  <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-primary text-[16px] font-bold text-primary-foreground">
                     {initial}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[14px] font-semibold text-[#2d3748]">
+                    {/* ✅ CHANGED: text-[#2d3748] → text-foreground */}
+                    <span className="text-[14px] font-semibold text-foreground">
                       {user.name}
                     </span>
-                    <span className="text-[12px] text-[#718096]">{roleLabel}</span>
+                    {/* ✅ CHANGED: text-[#718096] → text-muted-foreground */}
+                    <span className="text-[12px] text-muted-foreground">{roleLabel}</span>
                   </div>
                 </div>
-                {/* <ThemeToggle /> */}
+                <ThemeToggle />
               </div>
               <button
                 onClick={logout}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
+                // ✅ CHANGED: All hardcoded colors → CSS variables
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign out</span>
@@ -252,12 +260,12 @@ export default function Navbar() {
             </>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-[#4c51bf] text-[16px] font-bold text-white">
+              <div className="grid h-[42px] w-[42px] place-items-center rounded-full bg-primary text-[16px] font-bold text-primary-foreground">
                 {initial}
               </div>
               <button
                 onClick={logout}
-                className="p-2 rounded-lg border border-[#e2e8f0] bg-white text-[#4a5568] transition-colors hover:bg-[#f7fafc]"
+                className="p-2 rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-accent"
                 title="Sign out"
               >
                 <LogOut className="h-4 w-4" />

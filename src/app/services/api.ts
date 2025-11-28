@@ -21,7 +21,8 @@ import {
   LdapResponse,
   TaskQuestions,
   Department,
-  Questionnaire
+  Questionnaire,
+  TaskStepperGroup
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -60,7 +61,6 @@ class LoadingManager {
       <div style="
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.4);
         z-index: 9999;
         display: flex;
         align-items: center;
@@ -548,6 +548,13 @@ export const adminService = {
     return response.data;
   },
 
+   getDepartmentLabs: async (deptId: number): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/location/getLabsForDepartment/${deptId}`
+    );
+    return response.data;
+  },
+
   getLookupItems: async (type: string): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/lookup/getCategoryItemByName/${type}`
@@ -694,8 +701,10 @@ export const adminService = {
     return response.data;
   },
 
-  isEmployeeEmailExists: async (email: string): Promise<boolean> => {
-    const response = await api.get<boolean>(`/employee/emailExists/${email}`);
+  isEmployeeEmailExists: async (id:number, email: string): Promise<boolean> => {
+    const response = await api.post<boolean>(`/employee/emailExists/${id}`,
+      {search:email}
+    );
     return response.data;
   },
 
@@ -706,23 +715,25 @@ export const adminService = {
     commonListDto: Employee[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Employee[];
       totalElements: number;
-    }>(`/employee/findFilteredEmployee/${search}/${page}`);
+    }>(`/employee/findFilteredEmployee/${page}`,
+      {search:search}
+    );
     return response.data;
   },
 
   createEmployee: async (data: {
     name: string;
     date: string;
-    department: string;
+    departmentId: number;
+    labId:number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
-    labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
     email: string;
@@ -735,11 +746,11 @@ export const adminService = {
     id: number;
     name: string;
     date: string;
-    department: string;
+    departmentId: number;
+    labId:number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
-    labAllocation: string;
     pastOrganization: string;
     complianceDay: string;
     email: string;
@@ -750,6 +761,11 @@ export const adminService = {
 
   findByEmployee: async (id: number): Promise<Employee> => {
     const response = await api.get<Employee>(`/employee/findById/${id}`);
+    return response.data;
+  },
+
+  resendWelcomeMail: async (id: number): Promise<any> => {
+    const response = await api.get<any>(`/employee/resendWelcomeMail/${id}`);
     return response.data;
   },
 
@@ -907,10 +923,12 @@ export const labService = {
 
   createLab: async (data: {
     location: string;
+    departmentId:number,
     lab: string[];
   }): Promise<boolean> => {
     const response = await api.post<boolean>("/location/saveLocation", {
       location: data.location,
+      departmentId:data.departmentId,
       lab: data.lab,
     });
     return response.data;
@@ -925,12 +943,6 @@ export const labService = {
     const response = await api.post<void>(`/location/labInlineSave/${id}`, {
       lab,
     });
-    return response.data;
-  },
-
-
-  getDepartments: async (): Promise<DropDownDTO[]> => {
-    const response = await api.get<DropDownDTO[]>(`/location/findAllLocation`);
     return response.data;
   },
 };
@@ -1040,6 +1052,29 @@ export const auditService = {
 
 //Achieve Services
 export const archiveService = {
+
+  getTasksWithFilter: async (params?: {
+    search?: string;
+    department?: string;
+    level?: string;
+    page?: number;
+  }): Promise<{
+    commonListDto: any[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const department = params?.department ?? "";
+    const level = params?.level ?? "";
+    const page = params?.page ?? 0;
+    const response = await api.post<{
+      commonListDto: any[];
+      totalElements: number;
+    }>(`/task/filteredArchiveTaskForAdmin/${page}`,
+      { search: search, department: department, level: level }
+    );
+    return response.data;
+  },
+
   getArchiveTask: async (params?: {
     search?: string;
     page?: number;
@@ -1092,9 +1127,7 @@ export const taskService = {
     level?: string;
     page?: number;
   }): Promise<{
-    commonListDto: {
-      content: TaskProjection[];
-    };
+    commonListDto: any[];
     totalElements: number;
   }> => {
     const search = params?.search ?? "";
@@ -1102,9 +1135,7 @@ export const taskService = {
     const level = params?.level ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
-      commonListDto: {
-        content: TaskProjection[];
-      };
+      commonListDto: any[];
       totalElements: number;
     }>(`/task/filteredTaskForAdminWithFilter/${page}`,
       { search: search, department: department, level: level }
@@ -1162,10 +1193,10 @@ export const taskService = {
 
   labAllocation: async (
     id: number,
-    labAllocation: string
+    labId: number
   ): Promise<boolean> => {
     const response = await api.post<boolean>(
-      `/employee/labSave/${labAllocation}/${id}`
+      `/employee/labSave/${labId}/${id}`
     );
     return response.data;
   },
@@ -1204,7 +1235,12 @@ export const taskService = {
   const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
   return response.data;
 },
-
+  getEmployeeTaskStepper: async (empId: number): Promise<TaskStepperGroup[]> => {
+    const response = await api.get<TaskStepperGroup[]>(
+      `/task/getEmployeeTaskStepper/${empId}`
+    );
+    return response.data;
+  },
 };
 
 // Helper function to convert TaskProjection to Task

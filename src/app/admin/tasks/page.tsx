@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { TaskProjection, DropDownDTO } from "@/app/types";
+import { DropDownDTO, TaskStepperGroup } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -31,6 +31,9 @@ import {
   Verified,
   FlaskConical,
   X,
+  CheckCircle2,
+  Circle,
+  Clock
 } from "lucide-react";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
@@ -40,8 +43,27 @@ const PAGE_SIZE = 10;
 
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return 'bg-green-100 text-green-700';
+    case 'in progress':
+      return 'bg-blue-100 text-blue-700';
+    case 'overdue':
+      return 'bg-red-100 text-red-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+};
+
+const getProgressColor = (completed: number, total: number) => {
+  const percentage = (completed / total) * 100;
+  if (percentage === 100) return 'bg-green-500';
+  if (percentage >= 50) return 'bg-blue-500';
+  return 'bg-red-500';
+};
 const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<TaskProjection[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -71,6 +93,10 @@ const TasksPage: React.FC = () => {
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
+  const [taskStepperData, setTaskStepperData] = useState<TaskStepperGroup[]>([]);
+  const [showStepperModal, setShowStepperModal] = useState(false);
+  const [stepperModalData, setStepperModalData] = useState<any[]>([]);
+  const [loadingStepper, setLoadingStepper] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -104,16 +130,11 @@ const TasksPage: React.FC = () => {
         size: PAGE_SIZE,
       };
 
-      if (searchFilter.trim()) {
+      if (searchFilter.trim())
         params.search = searchFilter.trim();
-      }
 
-      if (selectedDepartment && departmentOptions.length > 0) {
-        const dept = departmentOptions.find(d => d.id === selectedDepartment);
-        if (dept) {
-          params.department = dept.value;
-        }
-      }
+      if (selectedDepartment)
+        params.department = selectedDepartment;
 
       if (selectedLevel && levelOptions.length > 0) {
         const lvl = levelOptions.find(l => l.id === selectedLevel);
@@ -123,8 +144,8 @@ const TasksPage: React.FC = () => {
       }
 
       const response = await taskService.getTasksWithFilter(params);
-      const taskList = response.commonListDto.content ?? [];
-      setTasks(taskList);
+      console.log("Fetched tasks:", response);
+      setTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
 
       try {
@@ -150,26 +171,26 @@ const TasksPage: React.FC = () => {
 
   // Function to fetch labs based on department
   const fetchLabsByDepartment = async (
-    department: string,
-    currentLab?: string
+    departmentId: number,
+    currentLab?: number
   ) => {
-    if (!department) {
+    if (!departmentId) {
       setLabOptions([]);
       return;
     }
     try {
-      const labs = await adminService.getLab(department);
-      const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
-        id: index + 1,
-        value: lab as string,
-        key: lab as string,
+      const labs = await adminService.getDepartmentLabs(departmentId);
+      const transformedLabs = labs.map(lab => ({
+        ...lab,
+        value: lab.value || lab.key
       }));
+      setLabOptions(transformedLabs);
 
-      setLabOptions(labOptionsFormatted);
+      setLabOptions(transformedLabs);
 
       if (currentLab) {
-        const matchingLab = labOptionsFormatted.find(
-          (lab) => lab.value === currentLab
+        const matchingLab = transformedLabs.find(
+          (lab) => lab.id === currentLab
         );
         if (matchingLab) {
           setSelectedLabId(matchingLab.id);
@@ -204,9 +225,8 @@ const TasksPage: React.FC = () => {
   const handleOpenLabChangeModal = async (employee: any) => {
     setSelectedEmployeeForLabChange(employee);
     setShowLabChangeModal(true);
-
-    if (employee.department) {
-      await fetchLabsByDepartment(employee.department, employee.lab);
+    if (employee.departmentId) {
+      await fetchLabsByDepartment(employee.departmentId, employee.labId);
     } else {
       setLabOptions([]);
       setSelectedLabId(undefined);
@@ -223,7 +243,7 @@ const TasksPage: React.FC = () => {
     try {
       await taskService.labAllocation(
         selectedEmployeeForLabChange.employeeId,
-        selectedLab.value
+        selectedLabId
       );
 
       toast.success("Lab updated successfully");
@@ -235,6 +255,35 @@ const TasksPage: React.FC = () => {
       setLabOptions([]);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update lab");
+    }
+  };
+
+  // Fetch Task Stepper Data
+  const fetchTaskStepper = async (employeeId: number) => {
+    try {
+      setLoadingStepper(true);
+      const stepperData = await taskService.getEmployeeTaskStepper(employeeId);
+      console.log("Fetched stepper data:", stepperData);
+
+      // Transform the API data into the format needed for the modal
+      const transformedData = stepperData.flatMap(group =>
+        group.users.map(user => ({
+          employeeName: user.userName,
+          department: group.groupName,
+          completed: user.completedQuestions,
+          total: user.totalQuestions,
+          lastUpdatedTime: user.lastUpdatedTime,
+          status: user.status,
+        }))
+      );
+
+      setStepperModalData(transformedData);
+      setShowStepperModal(true);
+    } catch (error) {
+      console.error("Failed to fetch task stepper:", error);
+      toast.error("Failed to load task stepper data");
+    } finally {
+      setLoadingStepper(false);
     }
   };
 
@@ -414,7 +463,7 @@ const TasksPage: React.FC = () => {
                     >
                       {/* Employee Name */}
                       <TableCell className="font-semibold min-w-[140px]">
-                        {(task as any).name}
+                        {(task as any).employeeName}
                       </TableCell>
                       {/* Level */}
                       <TableCell>{(task as any).level}</TableCell>
@@ -431,29 +480,7 @@ const TasksPage: React.FC = () => {
                       </TableCell>
                       {/* DOJ */}
                       <TableCell className="min-w-[100px]">
-                        {(() => {
-                          const dojArray = (task as any).doj;
-                          if (
-                            Array.isArray(dojArray) &&
-                            dateFormat &&
-                            dojArray.length >= 3
-                          ) {
-                            try {
-                              const dateObject = new Date(
-                                dojArray[0],
-                                dojArray[1] - 1,
-                                dojArray[2]
-                              );
-                              if (isNaN(dateObject.getTime())) {
-                                return "Invalid Date";
-                              }
-                              return format(dateObject, dateFormat);
-                            } catch (error) {
-                              return "Invalid Date";
-                            }
-                          }
-                          return "Invalid Date";
-                        })()}
+                        {(task as any).doj}
                       </TableCell>
                       {/* Lab */}
                       <TableCell className="min-w-[80px]">
@@ -478,11 +505,15 @@ const TasksPage: React.FC = () => {
                         {(() => {
                           const status = (task.status || "").toLowerCase();
                           const base =
-                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium";
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:shadow-md transition-all";
+
+                          const handleClick = () => fetchTaskStepper(parseInt(task.employeeId, 10));
+
                           if (completed === 0) {
                             return (
                               <span
-                                className={`${base} bg-blue-600/20 text-blue-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-blue-600/20 text-blue-600 hover:bg-blue-600/30`}
                               >
                                 Open
                               </span>
@@ -491,7 +522,8 @@ const TasksPage: React.FC = () => {
                           if (status === "overdue") {
                             return (
                               <span
-                                className={`${base} bg-red-600/20 text-red-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-red-600/20 text-red-600 hover:bg-red-600/30`}
                               >
                                 Overdue
                               </span>
@@ -501,7 +533,8 @@ const TasksPage: React.FC = () => {
                           if (status === "completed") {
                             return (
                               <span
-                                className={`${base} bg-green-600/20 text-green-600`}
+                                onClick={handleClick}
+                                className={`${base} bg-green-600/20 text-green-600 hover:bg-green-600/30`}
                               >
                                 Completed
                               </span>
@@ -510,7 +543,8 @@ const TasksPage: React.FC = () => {
 
                           return (
                             <span
-                              className={`${base} bg-amber-500/20 text-amber-600`}
+                              onClick={handleClick}
+                              className={`${base} bg-amber-500/20 text-amber-600 hover:bg-amber-500/30`}
                             >
                               In Progress
                             </span>
@@ -523,7 +557,7 @@ const TasksPage: React.FC = () => {
                           <div className="w-[18px]">
                             {!task.lab && (
                               <button
-                                className="rounded-lg text-[#eea11d]"
+                                className="rounded-lg text-[#eea11d] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                 onClick={() => handleOpenLabChangeModal(task)}
                                 aria-label="Change lab"
                                 title="Change Lab"
@@ -534,7 +568,7 @@ const TasksPage: React.FC = () => {
                             )}
                           </div>
                           <button
-                            className="rounded-lg p-2 text-[#474BDD]"
+                            className="rounded-lg p-2 text-[#474BDD] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                             onClick={() => (window.location.href = `/admin/tasks/${task.taskIds}`)}
                             aria-label="View details"
                           >
@@ -544,10 +578,10 @@ const TasksPage: React.FC = () => {
                           {/* View Answers button - only show for employees who have questions assigned */}
                           {employeesWithQuestions.has(parseInt(task.employeeId, 10)) && (
                             <button
-                              className="rounded-lg text-[#3b82f6]"
+                              className="rounded-lg text-[#3b82f6] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                               onClick={() => {
                                 const firstTaskId = task.taskIds.split(",")[0];
-                                handleViewQuestions(firstTaskId, (task as any).name);
+                                handleViewQuestions(firstTaskId, (task as any).employeeName);
                               }}
                               disabled={questionsLoading}
                               aria-label="View answers"
@@ -557,32 +591,20 @@ const TasksPage: React.FC = () => {
                             </button>
                           )}
 
-                          {/* {task.status?.toLowerCase() === "completed" &&
-                            task.freeze === "N" &&
-                            (task.lab ?? "").toString().trim() !== "" && (
-                              <button
-                                className="rounded-lg"
-                                aria-label="Archive and Freeze"
-                                title="Archive Employee"
-                                onClick={() => {
-                                  setSelectedTaskId(task.taskIds);
-                                  setSelectedEmployeeId(parseInt(task.employeeId, 10));
-                                  setShowFreezeModal(true);
-                                }}
-                              >
-                                <Unlock size={18} />
-                              </button>
-                            )}
-                          {task.status?.toLowerCase() === "completed" &&
-                            task.freeze === "Y" && (
-                              <button
-                                className="rounded-lg ml-2"
-                                aria-label="Frozen"
-                                disabled
-                              >
-                                <Lock size={18} />
-                              </button>
-                            )} */}
+                          {task.status?.toLowerCase() === "completed" && task.labId && (
+                            <button
+                              className="rounded-lg"
+                              aria-label="Archive and Freeze"
+                              title="Archive and Freeze Employee"
+                              onClick={() => {
+                                setSelectedTaskId(task.taskIds);
+                                setSelectedEmployeeId(parseInt(task.employeeId, 10));
+                                setShowFreezeModal(true);
+                              }}
+                            >
+                              <Unlock size={18} />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -677,7 +699,7 @@ const TasksPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                Do you want to archive this employee?
+                Do you want to Archive and Freeze this employee?
               </p>
               <div className="flex flex-col gap-3">
                 <Button
@@ -689,7 +711,7 @@ const TasksPage: React.FC = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleFreezeTask(false)}
+                  onClick={() => setShowFreezeModal(false)}
                   className="w-full"
                 >
                   No
@@ -702,9 +724,9 @@ const TasksPage: React.FC = () => {
       )}
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
+              <CardTitle className="text-xl font-semibold text-primary">
                 Change Lab
               </CardTitle>
             </div>
@@ -712,8 +734,8 @@ const TasksPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-8 py-6">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Select Lab <span className="text-red-500">*</span>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Select Lab <span className="text-destructive">*</span>
                   </label>
                   {loadingLabs ? (
                     <div className="flex items-center justify-center py-4">
@@ -737,7 +759,7 @@ const TasksPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/50 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -755,9 +777,9 @@ const TasksPage: React.FC = () => {
                 <button
                   onClick={handleLabChangeSubmit}
                   disabled={!selectedLabId}
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Update Lab
@@ -767,35 +789,45 @@ const TasksPage: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
 
-            <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
-              <h2 className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-primary">
                 Employee Task Questions
               </h2>
 
               {/* Progress counter */}
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-indigo-600">
+                  <div className="text-lg font-bold text-primary">
                     {completedQuestionCount} / {totalQuestionCount}
                   </div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-[11px] text-muted-foreground">
                     Completed
                   </div>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setShowQuestionsModal(false);
+                    setSelectedTaskQuestions([]);
+                    setSelectedEmployeeName("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={24} />
+                </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-8 py-6">
               {selectedTaskQuestions.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">
+                  <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
                     No questions found for this employee.
                   </p>
                 </div>
@@ -805,19 +837,19 @@ const TasksPage: React.FC = () => {
                     <div key={question.id || index} className="space-y-2">
 
                       {/* Question number + text */}
-                      <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
+                      <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-5">
                         {index + 1}. {question.question || "No question text available"}
                       </p>
 
                       {/* Answer below question */}
-                      <p className="text-[14px] text-gray-700 leading-relaxed pl-4 ">
+                      <p className="text-[14px] text-muted-foreground leading-relaxed pl-4">
                         {question.response || "No response provided"}
                       </p>
 
 
                       {/* Divider */}
                       {index < selectedTaskQuestions.length - 1 && (
-                        <div className="border-b border-gray-200 pt-3"></div>
+                        <div className="border-b border-border pt-3"></div>
                       )}
                     </div>
                   ))}
@@ -825,23 +857,146 @@ const TasksPage: React.FC = () => {
 
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Stepper Modal */}
+      {showStepperModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col 
+      bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden">
 
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
-              <Button
-                type="button"
+            {/* Header */}
+            <div className="flex-shrink-0 px-6 py-4 shadow-md flex items-center justify-between relative
+  bg-card text-foreground border-b border-border">
+              <h2 className="text-xl font-semibold text-primary">
+                Task Progress Overview
+              </h2>
+
+              <div className="absolute left-1/2 -translate-x-1/2 text-center">
+                <div className="text-1xl font-bold ">
+                  {stepperModalData.reduce((sum, task) => sum + task.completed, 0)} / {stepperModalData.reduce((sum, task) => sum + task.total, 0)}
+                </div>
+                <div className="text-[13px]">
+                  Total Progress
+                </div>
+              </div>
+
+              <button
                 onClick={() => {
-                  setShowQuestionsModal(false);
-                  setSelectedTaskQuestions([]);
-                  setSelectedEmployeeName("");
+                  setShowStepperModal(false);
+                  setStepperModalData([]);
                 }}
-                variant="outline"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Close
-              </Button>
+                <X size={24} />
+              </button>
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const groupedTasks = stepperModalData.reduce((acc: any, task: any) => {
+                  const key = task.department || 'Unknown Department';
+                  if (!acc[key]) acc[key] = [];
+                  acc[key].push(task);
+                  return acc;
+                }, {});
+
+                return Object.entries(groupedTasks).map(([groupName, tasks], groupIndex) => (
+                  <div key={groupIndex} className="mb-6 last:mb-0">
+
+                    {/* Group Name */}
+                    <h3 className="text-lg font-bold text-foreground mb-3">
+                      {groupName}
+                    </h3>
+
+                    <Card className="overflow-hidden bg-card text-card-foreground border border-border">
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-secondary">
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Assigned To / Verified By
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Progress
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Last Updated
+                                </TableHead>
+                                <TableHead className="font-semibold text-secondary-foreground">
+                                  Status
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
+                              {(tasks as any[]).map((task: any, taskIndex: number) => {
+                                const progressPercent = task.total > 0 ? (task.completed / task.total) * 100 : 0;
+                                return (
+                                  <TableRow key={taskIndex}
+                                    className="hover:bg-muted/50 transition-colors text-foreground">
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        <div className="font-semibold text-base">
+                                          {task.employeeName}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                                          <div
+                                            className={`h-full transition-all duration-500 ${getProgressColor(
+                                              task.completed,
+                                              task.total
+                                            )}`}
+                                            style={{ width: `${progressPercent}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-sm font-semibold min-w-[60px] text-muted-foreground">
+                                          {task.completed}/{task.total}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        <div className="font-semibold text-base">
+                                          {task.lastUpdatedTime}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <span
+                                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(
+                                          task.status
+                                        )}`}
+                                      >
+                                        {task.status.toLowerCase() === 'completed' && <CheckCircle2 size={16} />}
+                                        {task.status.toLowerCase() === 'in progress' && <Clock size={16} />}
+                                        {task.status.toLowerCase() === 'overdue' && <Circle size={16} />}
+                                        {task.status}
+                                      </span>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

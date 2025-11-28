@@ -31,6 +31,8 @@ export interface Employee {
   id: number;
   name: string;
   date: string;
+  departmentId: number;
+  labId: number;
   department: string;
   role: string;
   email: string;
@@ -54,6 +56,7 @@ export interface EmployeeImportResult {
 
 export interface Lab {
   id: string;
+  departmentId: number,
   location: string;
   lab: string[];
   createdTime: string;
@@ -112,6 +115,11 @@ export interface GLDashboard {
   totalPendingTasks: number;
   totalCompletedTasks: number;
   overdueTasks: number;
+  totalTasks: number;
+  totalVerifications: number;
+  completedVerificationCount: number;
+  pendingVerificationCount: number;
+  overdueVerificationCount: number;
 }
 
 export interface Task {
@@ -142,6 +150,7 @@ export interface Task {
   updatedTime: string;
   answer?: "yes" | "no"
   assignedFreezeTask?: boolean;
+  departmentId?: number;
 
   // Additional fields that might come from API
   // mock_employee_id?: string;
@@ -357,3 +366,16 @@ export interface Questionnaire {
   createdDate?: string;
   updatedTime?: string;
 };
+
+export interface TaskStepperUser {
+  userName: string;
+  status: string;
+  totalQuestions: number;
+  completedQuestions: number;
+  lastUpdatedTime:string;
+}
+
+export interface TaskStepperGroup {
+  groupName: string;
+  users: TaskStepperUser[];
+}

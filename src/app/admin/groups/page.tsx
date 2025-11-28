@@ -275,28 +275,30 @@ const GroupsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[17px] font-bold tracking-wide text-[#4c51bf]">Manage Groups</h1>
+          <h1 className="text-[17px] font-bold tracking-wide text-primary">Manage Groups</h1>
           <p className="text-[15px] text-muted-foreground mt-2">
             Create and manage department groups for the onboarding process
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
+            className="gap-x-1"
             onClick={() => setShowCreateModal(true)}
           >
             <Plus size={16} />
             Add New Group
           </Button>
           <Button
-             onClick={() =>
-                      (window.location.href = `/admin/groups/search`)
-                    }
+            className="gap-x-1"
+            onClick={() =>
+              (window.location.href = `/admin/groups/search`)
+            }
           >
             <Search size={16} />
             Search
           </Button>
         </div>
-        
+
       </div>
 
       {/* Error Display */}
@@ -325,13 +327,13 @@ const GroupsPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => openEditModal(group)}
-                    className="rounded-lg text-[#4c51bf] transition-colors duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)]"
+                    className="rounded-lg text-[#4c51bf]  duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                   >
                     <Edit size={18} />
                   </button>
                   <button
                     onClick={() => clone(group)}
-                    className="rounded-lg text-[#7c3aed] transition-colors duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)]"
+                    className="rounded-lg text-[#7c3aed] duration-300 hover:text-[#5b21b6] hover:bg-[rgba(124,58,237,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                   >
                     <Copy size={18} />
                   </button>
@@ -492,10 +494,10 @@ const GroupsPage: React.FC = () => {
 
       {/* Create Group Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out] border border-border">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Create New Group
               </CardTitle>
             </div>
@@ -503,7 +505,7 @@ const GroupsPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
               <form onSubmit={handleCreateGroup} id="createGroupForm" className="space-y-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Group Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -512,13 +514,13 @@ const GroupsPage: React.FC = () => {
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="e.g., Engineering, Marketing, Sales"
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-muted-foreground"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
@@ -538,9 +540,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-gray-500 font-normal">(Optional)</span>
+                    <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     value={newEscalationGroupLeadId}
@@ -559,7 +561,7 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Assign Task
                   </label>
                   <SearchableDropdown
@@ -587,7 +589,7 @@ const GroupsPage: React.FC = () => {
               </form>
             </div>
 
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -606,10 +608,10 @@ const GroupsPage: React.FC = () => {
                 <button
                   type="submit"
                   form="createGroupForm"
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-              shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
-              disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+          shadow-md transition-all duration-300 ease-in-out 
+          hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+          disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Group
                 </button>
@@ -621,10 +623,10 @@ const GroupsPage: React.FC = () => {
 
       {/* Edit Group Modal */}
       {showEditModal && editingGroup && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out] border border-border">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Edit Group
               </CardTitle>
             </div>
@@ -632,7 +634,7 @@ const GroupsPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
               <form onSubmit={handleEditGroup} id="editGroupForm" className="space-y-5">
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Group Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -641,13 +643,13 @@ const GroupsPage: React.FC = () => {
                     value={editGroupName}
                     onChange={(e) => setEditGroupName(e.target.value)}
                     placeholder="e.g., Engineering, Marketing, Sales"
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-300 rounded-lg text-sm transition-all focus:outline-none focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-100"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input bg-background text-foreground rounded-lg text-sm transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-muted-foreground"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Primary Group Lead <span className="text-red-500">*</span>
                   </label>
                   <SearchableDropdown
@@ -667,9 +669,9 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Escalation Group Lead{" "}
-                    <span className="text-sm text-gray-500 font-normal">(Optional)</span>
+                    <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
                   </label>
                   <SearchableDropdown
                     value={editEscalationGroupLeadId}
@@ -688,7 +690,7 @@ const GroupsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-2">
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Assign Task
                   </label>
                   <SearchableDropdown
@@ -716,7 +718,7 @@ const GroupsPage: React.FC = () => {
               </form>
             </div>
 
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted/30 border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -736,10 +738,10 @@ const GroupsPage: React.FC = () => {
                 <button
                   type="submit"
                   form="editGroupForm"
-                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
-              shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
-              disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+          shadow-md transition-all duration-300 ease-in-out 
+          hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+          disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Update Group
                 </button>

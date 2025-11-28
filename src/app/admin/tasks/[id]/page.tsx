@@ -112,24 +112,27 @@ const TaskDetailsPage: React.FC = () => {
   };
 
   const fetchLabsByDepartment = useCallback(
-    async (department?: string, currentLab?: string) => {
-      if (!department) {
+    async (deptId?: number, currentLab?: string) => {
+      if (!deptId) {
         setLabOptions([]);
         return;
       }
       try {
-        const labs = await adminService.getLab(department);
-        const labOptionsFormatted: DropDownDTO[] = labs.map((lab, index) => ({
-          id: index + 1,
-          value: lab as string,
-          key: lab as string,
+        // Pass the department ID (number) to the API
+        const labs = await adminService.getDepartmentLabs(deptId);
+
+        // Transform labs
+        const transformedLabs = labs.map(lab => ({
+          ...lab,
+          value: lab.value || lab.key
         }));
 
-        setLabOptions(labOptionsFormatted);
+        setLabOptions(transformedLabs);
 
+        // Set currently selected lab
         if (currentLab) {
-          const matchingLab = labOptionsFormatted.find(
-            (lab) => lab.value === currentLab
+          const matchingLab = transformedLabs.find(
+            (lab) => lab.value === currentLab || lab.key === currentLab
           );
           if (matchingLab) {
             setSelectedLabId(matchingLab.id);
@@ -170,42 +173,50 @@ const TaskDetailsPage: React.FC = () => {
   const employeeName = tasks[0]?.employeeName;
   const employeeLevel = tasks[0]?.level;
   const department = tasks[0]?.department;
+  const departmentId = tasks[0]?.departmentId;
   const role = tasks[0]?.role;
   const doj = tasks[0]?.doj;
   const lab = tasks[0]?.lab;
   const freezeTask = tasks[0]?.freezeTask;
 
   useEffect(() => {
-    if (department) {
-      fetchLabsByDepartment(department, lab);
+    if (departmentId) {
+      fetchLabsByDepartment(departmentId, lab);
     }
-  }, [department, lab, fetchLabsByDepartment]);
+  }, [departmentId, lab, fetchLabsByDepartment]);
 
-  // lab change handler
   const handleSaveLab = async (id?: number) => {
     setSelectedLabId(id);
-    const selectedLabValue = labOptions.find((o) => o.id === id)?.value;
-    if (!selectedLabValue) {
+
+    const selectedLab = labOptions.find((o) => o.id === id);
+
+    if (!selectedLab) {
       toast.error("Invalid lab selection.");
       return;
     }
+
     if (!employeeId) {
       toast.error("Missing employee id.");
       return;
     }
-    if (selectedLabValue === lab) {
+
+    // Check if same lab
+    if (selectedLab.value === lab || selectedLab.key === lab) {
       toast.success("Lab already up to date.");
       return;
     }
+
     try {
-      await taskService.labAllocation(employeeId, selectedLabValue);
+      // Call API with employeeId and labId
+      await taskService.labAllocation(Number(employeeId), selectedLab.id);
+
       toast.success("Lab updated");
       await fetchTasks();
     } catch (e: any) {
       toast.error(
         e?.response?.data?.message ?? "Failed to update lab allocation"
       );
-      const prevId = labOptions.find((o) => o.value === lab)?.id;
+      const prevId = labOptions.find((o) => o.value === lab || o.key === lab)?.id;
       setSelectedLabId(prevId);
     }
   };
@@ -338,7 +349,7 @@ const TaskDetailsPage: React.FC = () => {
 
       <div className="flex items-center justify-between">
 
-        <h3 className="text-xl font-semibold ml-2 text-[#4c51bf]">
+        <h3 className="text-xl font-semibold ml-2 text-primary">
           Tasks for {employeeName} ({employeeLevel})
         </h3>
 
@@ -571,7 +582,7 @@ const TaskDetailsPage: React.FC = () => {
                           )}
                           <TableCell className="text-right">
                             <button
-                              className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
+                              className=" rounded-lg text-red-500 duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted "
                               disabled={freezeTask === "Y"}
                               onClick={() => {
                                 setQuestionToDelete(q.id);
@@ -644,10 +655,10 @@ const TaskDetailsPage: React.FC = () => {
       {/* Reassign Task Modal with Async Search */}
       {showReassignModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-md flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 shadow-md">
-              <h2 className="text-1xl font-semibold text-primary-gradient">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b">
+              <h2 className="text-xl font-semibold text-primary">
                 Reassign Task
               </h2>
             </div>
@@ -655,8 +666,8 @@ const TaskDetailsPage: React.FC = () => {
             {/* Body */}
             <div className="flex-1 px-8 py-6">
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                  Primary Group Lead <span className="text-red-500">*</span>
+                <label className="block text-[13px] font-semibold text-foreground mb-2">
+                  Primary Group Lead <span className="text-destructive">*</span>
                 </label>
                 <SearchableDropdown
                   value={primaryGroupLeadId}
@@ -677,7 +688,7 @@ const TaskDetailsPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-accent/30 border-t">
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -696,7 +707,7 @@ const TaskDetailsPage: React.FC = () => {
                   disabled={!primaryGroupLeadId}
                   className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
-              hover:bg-[#3f46a4] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
+              hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Reassign Task

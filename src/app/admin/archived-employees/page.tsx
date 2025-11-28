@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
 import {
@@ -22,13 +20,13 @@ import {
     ChevronsRight,
     Eye,
     Users,
-    TicketCheck,
-    X
+    TicketCheck, X
 } from "lucide-react";
-import { TaskProjection } from "@/app/types";
-import { archiveService, taskService, EQuestions } from "../../services/api";
+import { DropDownDTO, TaskProjection } from "@/app/types";
+import { archiveService, taskService, EQuestions, adminService } from "../../services/api";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 
 const PAGE_SIZE = 10;
@@ -36,12 +34,11 @@ const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 
 const ArchivedEmployeesPage: React.FC = () => {
-    const [employees, setEmployees] = useState<TaskProjection[]>([]);
+    const [employees, setEmployees] = useState<any[]>([]);
     const [totalElements, setTotalElements] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [searchFilter, setSearchFilter] = useState("");
-    const [dateFormat, setDateFormat] = useState<string | null>(null);
     const [employeesWithQuestions, setEmployeesWithQuestions] = useState<Set<number>>(new Set());
     const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<any[]>([]);
@@ -49,12 +46,34 @@ const ArchivedEmployeesPage: React.FC = () => {
     const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
     const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
     const [totalQuestionCount, setTotalQuestionCount] = useState(0);
-
+    const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
+    const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+    const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
+    const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
         [totalElements]
     );
+
+    useEffect(() => {
+        const fetchLookupData = async () => {
+            try {
+                const levels = await adminService.getLookupItems("Level");
+                setLevelOptions(levels);
+
+                const departments = await adminService.findAllDepartment();
+                const transformedDepartments = departments.map(dept => ({
+                    ...dept,
+                    value: dept.value || dept.key
+                }));
+                setDepartmentOptions(transformedDepartments);
+            } catch (error) {
+                toast.error("Failed to load dropdown options.");
+            }
+        };
+        fetchLookupData();
+    }, []);
 
     const fetchArchivedEmployees = useCallback(async () => {
         try {
@@ -63,15 +82,21 @@ const ArchivedEmployeesPage: React.FC = () => {
                 page: currentPage,
                 size: PAGE_SIZE,
             };
-            const search = searchFilter.trim();
-            if (search) params.search = search;
-            const [response, formatResponse] = await Promise.all([
-                archiveService.getArchiveTask(params),
-                taskService.getDateFormat()
-            ]);
-            setEmployees(response.commonListDto.content ?? []);
+            if (searchFilter.trim())
+                params.search = searchFilter.trim();
+
+            if (selectedDepartment)
+                params.department = selectedDepartment;
+
+            if (selectedLevel && levelOptions.length > 0) {
+                const lvl = levelOptions.find(l => l.id === selectedLevel);
+                if (lvl) {
+                    params.level = lvl.value;
+                }
+            }
+            const response = await archiveService.getTasksWithFilter(params);
+            setEmployees(response.commonListDto ?? []);
             setTotalElements(response.totalElements ?? 0);
-            setDateFormat(formatResponse);
 
             try {
                 const employeesWithQuestionsArray = await EQuestions.getEmployeesArchWithQuestions();
@@ -85,7 +110,7 @@ const ArchivedEmployeesPage: React.FC = () => {
             setEmployees([]);
             setTotalElements(0);
         }
-    }, [currentPage, searchFilter]);
+    }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
     useEffect(() => {
         fetchArchivedEmployees();
@@ -154,6 +179,40 @@ const ArchivedEmployeesPage: React.FC = () => {
         <div className="space-y-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                    <SearchableDropdown
+                        options={departmentOptions}
+                        value={selectedDepartment}
+                        required={false}
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                        onChange={(department) => {
+                            if (department === undefined) {
+                                setSelectedDepartment(undefined);
+                                setCurrentPage(0);
+                            } else if (!Array.isArray(department)) {
+                                setSelectedDepartment(department as number);
+                                setCurrentPage(0);
+                            }
+                        }}
+                        placeholder="Select department"
+                    />
+                    <SearchableDropdown
+                        options={levelOptions}
+                        value={selectedLevel}
+                        required={false}
+                        displayFullValue={false}
+                        isEmployeePage={true}
+                        onChange={(level) => {
+                            if (level === undefined) {
+                                setSelectedLevel(undefined);
+                                setCurrentPage(0);
+                            } else if (!Array.isArray(level)) {
+                                setSelectedLevel(level as number);
+                                setCurrentPage(0);
+                            }
+                        }}
+                        placeholder="Select level"
+                    />
                     <input
                         type="text"
                         value={searchFilter}
@@ -163,7 +222,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                         }}
                         placeholder="Search…"
                         className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
-                        aria-label="Search archived employees"
+                        aria-label="Search tasks"
                     />
                 </div>
             </div>
@@ -225,10 +284,10 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     }
 
                                     return (
-                                        <TableRow key={employee.taskIds}>
+                                        <TableRow key={employee.employeeId}>
                                             {/* Employee Name */}
                                             <TableCell className="font-semibold min-w-[140px]">
-                                                {employee.name}
+                                                {employee.employeeName}
                                             </TableCell>
 
                                             {/* Level */}
@@ -246,29 +305,7 @@ const ArchivedEmployeesPage: React.FC = () => {
 
                                             {/* DOJ */}
                                             <TableCell className="min-w-[100px]">
-                                                {(() => {
-                                                    const dojArray = (employee as any).doj;
-                                                    if (
-                                                        Array.isArray(dojArray) &&
-                                                        dateFormat &&
-                                                        dojArray.length >= 3
-                                                    ) {
-                                                        try {
-                                                            const dateObject = new Date(
-                                                                dojArray[0],
-                                                                dojArray[1] - 1,
-                                                                dojArray[2]
-                                                            );
-                                                            if (isNaN(dateObject.getTime())) {
-                                                                return "Invalid Date";
-                                                            }
-                                                            return format(dateObject, dateFormat);
-                                                        } catch (error) {
-                                                            return "Invalid Date";
-                                                        }
-                                                    }
-                                                    return "Invalid Date";
-                                                })()}
+                                                {employee.doj}
                                             </TableCell>
 
                                             {/* Lab */}
@@ -309,7 +346,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                 <div className="flex items-center gap-5">
                                                     {/* View Details */}
                                                     <button
-                                                        className="rounded-lg p-2 text-[#474BDD]"
+                                                        className="rounded-lg p-2 text-[#474BDD] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                         onClick={() =>
                                                             (window.location.href = `/admin/archived-employees/${employee.taskIds}`)
                                                         }
@@ -322,10 +359,9 @@ const ArchivedEmployeesPage: React.FC = () => {
                                                     {/* View Answers */}
                                                     {employeesWithQuestions.has(parseInt(employee.employeeId, 10)) && (
                                                         <button
-                                                            className="rounded-lg text-[#3b82f6]"
+                                                            className="rounded-lg text-[#3b82f6] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                             onClick={() => {
-                                                                const firstTaskId = employee.taskIds.split(",")[0];
-                                                                handleViewQuestions(firstTaskId, employee.name);
+                                                                handleViewQuestions(employee.taskIds, employee.employeeName);
                                                             }}
                                                             disabled={questionsLoading}
                                                             aria-label="View answers"
@@ -422,80 +458,74 @@ const ArchivedEmployeesPage: React.FC = () => {
                     </CardContent>
                 </Card>
             )}
-          {showQuestionsModal && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="relative w-full max-w-4xl flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            {showQuestionsModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
+                    <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
-      {/* Header */}
-      <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between">
-        <h2 className="text-1xl font-semibold text-primary-gradient">
-          Employee Questions - {selectedEmployeeName}
-        </h2>
+                        <div className="flex-shrink-0 px-5 py-4 shadow-md flex items-center justify-between border-b border-border">
+                            <h2 className="text-1xl font-semibold text-primary">
+                                Employee Task Questions
+                            </h2>
 
-        {/* Progress */}
-        <div className="flex items-center gap-4">
-          <div className="text-center">
-            <div className="text-lg font-bold text-indigo-600">
-              {completedQuestionCount} / {totalQuestionCount}
-            </div>
-            <div className="text-[11px] text-gray-500">
-              Questions
-            </div>
-          </div>
-        </div>
-      </div>
+                            {/* Progress counter */}
+                            <div className="flex items-center gap-4">
+                                <div className="text-center">
+                                    <div className="text-lg font-bold text-primary">
+                                        {completedQuestionCount} / {totalQuestionCount}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground">
+                                        Completed
+                                    </div>
+                                </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
-        {selectedTaskQuestions.length === 0 ? (
-          <div className="text-center py-12">
-            <Users size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500">
-              No questions found for this employee.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {selectedTaskQuestions.map((question, index) => (
-              <div key={question.id || index} className="space-y-2">
+                                <button
+                                    onClick={() => {
+                                        setShowQuestionsModal(false);
+                                        setSelectedTaskQuestions([]);
+                                        setSelectedEmployeeName("");
+                                    }}
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+                        </div>
 
-                {/* Question text */}
-                <p className="text-[15px] font-semibold text-gray-800 leading-relaxed mb-5">
-                  {index + 1}. {question.question || "No question text available"}
-                </p>
+                        <div className="flex-1 overflow-y-auto px-8 py-6">
+                            {selectedTaskQuestions.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">
+                                        No questions found for this employee.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {selectedTaskQuestions.map((question, index) => (
+                                        <div key={question.id || index} className="space-y-2">
 
-                {/* Response */}
-                <p className="text-[14px] text-gray-700 leading-relaxed pl-4">
-                  {question.response || "No response provided"}
-                </p>
+                                            {/* Question number + text */}
+                                            <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-5">
+                                                {index + 1}. {question.question || "No question text available"}
+                                            </p>
 
-                {/* Divider */}
-                {index < selectedTaskQuestions.length - 1 && (
-                  <div className="border-b border-gray-200 pt-3"></div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                                            {/* Answer below question */}
+                                            <p className="text-[14px] text-foreground leading-relaxed pl-4">
+                                                {question.response || "No response provided"}
+                                            </p>
 
-      {/* Footer */}
-      <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-gray-50 border-t border-gray-200">
-        <Button
-          type="button"
-          onClick={() => {
-            setShowQuestionsModal(false);
-            setSelectedTaskQuestions([]);
-            setSelectedEmployeeName("");
-          }}
-          variant="outline"
-        >
-          Close
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
+                                            {/* Divider */}
+                                            {index < selectedTaskQuestions.length - 1 && (
+                                                <div className="border-b border-border pt-3"></div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

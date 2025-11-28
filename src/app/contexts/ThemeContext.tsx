@@ -34,24 +34,41 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  // Update localStorage and document class when theme changes
-  useEffect(() => {
-    if (mounted) {
-      try {
-        localStorage.setItem('theme', theme);
-        const root = document.documentElement;
+  // // Update localStorage and document class when theme changes
+  // useEffect(() => {
+  //   if (mounted) {
+  //     try {
+  //       localStorage.setItem('theme', theme);
+  //       const root = document.documentElement;
         
-        if (theme === 'dark') {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      } catch (error) {
-        // Handle localStorage errors
-        console.warn('Failed to save theme to localStorage:', error);
-      }
-    }
-  }, [theme, mounted]);
+  //       if (theme === 'dark') {
+  //         root.classList.add('dark');
+  //       } else {
+  //         root.classList.remove('dark');
+  //       }
+  //     } catch (error) {
+  //       // Handle localStorage errors
+  //       console.warn('Failed to save theme to localStorage:', error);
+  //     }
+  //   }
+  // }, [theme, mounted]);
+
+  useEffect(() => {
+  try {
+    localStorage.setItem('theme', theme);
+    const root = document.documentElement;
+    
+    // Remove both classes first to ensure clean state
+    root.classList.remove('dark', 'light');
+    
+    // Add the current theme class
+    root.classList.add(theme);
+  } catch (error) {
+    // Handle localStorage errors
+    console.warn('Failed to save theme to localStorage:', error);
+  }
+}, [theme]);
+
 
   const toggleTheme = () => {
     setThemeState(prev => prev === 'light' ? 'dark' : 'light');

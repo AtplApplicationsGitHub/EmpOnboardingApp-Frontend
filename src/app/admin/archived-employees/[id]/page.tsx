@@ -125,7 +125,7 @@ const ArchivedTaskDetails: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
 
-        <h3 className="text-xl font-semibold text-[#4c51bf] ml-2">
+        <h3 className="text-xl font-semibold text-primary ml-2">
           Archived Tasks — {firstTask.employeeName} ({firstTask.level}) — {tasks.length} task
           {tasks.length === 1 ? "" : "s"} - {firstTask.department} - {firstTask.role} - {firstTask.doj}
         </h3>
