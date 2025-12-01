@@ -97,6 +97,7 @@ const TasksPage: React.FC = () => {
   const [showStepperModal, setShowStepperModal] = useState(false);
   const [stepperModalData, setStepperModalData] = useState<any[]>([]);
   const [loadingStepper, setLoadingStepper] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -162,6 +163,9 @@ const TasksPage: React.FC = () => {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setTasks([]);
       setTotalElements(0);
+    }
+    finally {
+      setIsInitialLoad(false);
     }
   }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
@@ -309,6 +313,9 @@ const TasksPage: React.FC = () => {
     else if (currentPage < totalPages - 3) pages.push(totalPages - 1);
     return pages;
   };
+  if (isInitialLoad) {
+    return null;
+  }
 
   const handleFreezeTask = async (shouldArchive: boolean) => {
     if (!selectedTaskId || selectedEmployeeId === null) return;
@@ -460,6 +467,7 @@ const TasksPage: React.FC = () => {
                   return (
                     <TableRow
                       key={(task as any).id ?? (task as any).employeeId}
+                      className="hover:bg-[var(--custom-gray)] transition-all"
                     >
                       {/* Employee Name */}
                       <TableCell className="font-semibold min-w-[140px]">
@@ -936,7 +944,7 @@ const TasksPage: React.FC = () => {
                                 const progressPercent = task.total > 0 ? (task.completed / task.total) * 100 : 0;
                                 return (
                                   <TableRow key={taskIndex}
-                                    className="hover:bg-muted/50 transition-colors text-foreground">
+                                    className="hover:bg-[var(--custom-gray)] transition-all text-foreground">
                                     <TableCell>
                                       <div className="space-y-1">
                                         <div className="font-semibold text-base">

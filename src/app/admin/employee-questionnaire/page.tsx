@@ -37,7 +37,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
     const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
     const [total, setTotal] = useState(0);
     const [currentPage, setCurrentPage] = useState(0);
-    const [loading, setLoading] = useState(false);
     const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -45,9 +44,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
 
     const [searchFilter, setSearchFilter] = useState("");
     const [searchInput, setSearchInput] = useState("");
-
     const [form, setForm] = useState<FormState>(emptyForm);
-
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
         [total]
@@ -69,7 +67,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
 
     // Fetch questionnaires from API
     const fetchQuestionnaires = async (page = currentPage, search = searchFilter) => {
-        setLoading(true);
 
         try {
             const response = await employeeService.getMasterEQuestions(page, search);
@@ -81,7 +78,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
             setQuestionnaires([]);
             setTotal(0);
         } finally {
-            setLoading(false);
+            setIsInitialLoad(false);
         }
     };
 
@@ -202,13 +199,8 @@ const EmployeeQuestionnairePage: React.FC = () => {
         }
         return pages;
     };
-
-    if (loading && questionnaires.length === 0) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <p className="text-lg text-foreground">Loading questionnaires...</p>
-            </div>
-        );
+    if (isInitialLoad) {
+        return null;
     }
 
     return (
@@ -272,8 +264,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                 questionnaires.map((questionnaire) => (
                                     <tr
                                         key={questionnaire.id}
-                                        className="transition-all hover:bg-accent/50 group"
-                                    >
+                                        className="transition-all hover:bg-[var(--custom-gray)] group"                                    >
                                         <td className="px-6 py-4">
                                             <span className="text-sm font-medium text-foreground">
                                                 {questionnaire.question}
@@ -286,10 +277,10 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${questionnaire.levels?.[0] === "Basic"
-                                                    ? "bg-green-50 text-green-700 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
-                                                    : questionnaire.levels?.[0] === "Intermediate"
-                                                        ? "bg-yellow-50 text-yellow-700 border border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
-                                                        : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                                                ? "bg-green-50 text-green-700 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
+                                                : questionnaire.levels?.[0] === "Intermediate"
+                                                    ? "bg-yellow-50 text-yellow-700 border border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                                                    : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
                                                 }`}>
                                                 {questionnaire.levels?.[0] || 'N/A'}
                                             </span>

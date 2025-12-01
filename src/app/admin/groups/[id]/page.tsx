@@ -26,7 +26,6 @@ const GroupDetailsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -35,6 +34,7 @@ const GroupDetailsPage: React.FC = () => {
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // State for verified by options (for display purposes)
   const [verifiedBySelectedOption, setVerifiedBySelectedOption] = useState<DropDownDTO[]>([]);
@@ -152,7 +152,6 @@ const GroupDetailsPage: React.FC = () => {
 
   const fetchGroupData = async () => {
     try {
-      setLoading(true);
       const groupData = await adminService.findGroupById(groupId);
       const questionRes = await adminService.getQuestions(groupId, questionPage);
 
@@ -162,7 +161,7 @@ const GroupDetailsPage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load group data");
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -199,7 +198,7 @@ const GroupDetailsPage: React.FC = () => {
         complainceDay: question.complainceDay || "1",
         questionDepartment: question.questionDepartment,
         questionLevel: question.questionLevel,
-        verifiedBy:question.verifiedById,
+        verifiedBy: question.verifiedById,
         groupId: question.groupId.toString(),
         ...(question.response === "yes_no" && question.defaultFlag && { defaultFlag: question.defaultFlag }),
       };
@@ -319,17 +318,9 @@ const GroupDetailsPage: React.FC = () => {
 
     return email;
   };
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-start justify-center py-12">
-          <div className="text-muted-foreground">Loading group data...</div>
-        </div>
-      </div>
-    );
+  if (isInitialLoad) {
+    return null;
   }
-
   if (!group) {
     return (
       <div className="p-8">
@@ -392,12 +383,12 @@ const GroupDetailsPage: React.FC = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                 <CardTitle className="flex items-center gap-4 text-md">
-  <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] dark:from-white dark:to-gray-200 text-white dark:text-gray-900 font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform duration-300">
-    {questionPage * PAGE_SIZE + index + 1}
-  </span>
-  <span className="flex-1 break-words">{question.text}</span>
-</CardTitle>
+                  <CardTitle className="flex items-center gap-4 text-md">
+                    <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] dark:from-white dark:to-gray-200 text-white dark:text-gray-900 font-semibold shadow-[0_4px_12px_rgba(118,75,162,0.5)] dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform duration-300">
+                      {questionPage * PAGE_SIZE + index + 1}
+                    </span>
+                    <span className="flex-1 break-words">{question.text}</span>
+                  </CardTitle>
                   <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded">
                       {question.response === "yes_no"

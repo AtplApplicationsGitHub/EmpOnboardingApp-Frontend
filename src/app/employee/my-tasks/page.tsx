@@ -36,7 +36,6 @@ import { employeeService } from "@/app/services/api";
 import toast from "react-hot-toast";
 
 const MyTasksPage: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,11 +48,11 @@ const MyTasksPage: React.FC = () => {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [feedBack, setFeedBack] = useState<Record<string, EmployeeFeedback>>({});
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const PAGE_SIZE = 10;
 
   const fetchTasks = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const response = await employeeService.getMyTasks(currentPage);
       const list = response?.commonListDto ?? [];
@@ -86,7 +85,7 @@ const MyTasksPage: React.FC = () => {
       setError(e?.response?.data?.message || "Failed to load task(s)");
       setTasks([]);
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   }, [currentPage]);
 
@@ -234,18 +233,14 @@ const MyTasksPage: React.FC = () => {
     }
   }, [showFeedbackModal, selectedTaskId, fetchFeedback]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
-      </div>
-    );
-  }
 
   const handleStarClick = (rating: number) => {
     setFeedbackRating(rating);
   };
 
+  if (isInitialLoad) {
+    return null;
+  }
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

@@ -50,6 +50,7 @@ const ArchivedEmployeesPage: React.FC = () => {
     const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
     const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
     const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -109,6 +110,9 @@ const ArchivedEmployeesPage: React.FC = () => {
             setError(err?.response?.data?.message ?? "Failed to load archived employees");
             setEmployees([]);
             setTotalElements(0);
+        }
+        finally {
+            setIsInitialLoad(false);
         }
     }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
 
@@ -172,7 +176,9 @@ const ArchivedEmployeesPage: React.FC = () => {
         else if (currentPage < totalPages - 3) pages.push(totalPages - 1);
         return pages;
     };
-
+    if (isInitialLoad) {
+        return null;
+    }
 
 
     return (
@@ -284,7 +290,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                                     }
 
                                     return (
-                                        <TableRow key={employee.employeeId}>
+                                        <TableRow key={employee.employeeId} className="hover:bg-[var(--custom-gray)] transition-all">
                                             {/* Employee Name */}
                                             <TableCell className="font-semibold min-w-[140px]">
                                                 {employee.employeeName}

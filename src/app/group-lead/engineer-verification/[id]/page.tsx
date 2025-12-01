@@ -332,13 +332,12 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                       const initial = getInitialResp(q);
 
                       return (
-                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`}>
-                          <TableCell className="font-medium">
-                            {q.questionId || `Q${q.id}`}
-                            <div className="text-xs text-muted-foreground">
-                              {isTextType(q) ? "Text" : "Yes/No"}
-                            </div>
-                          </TableCell>
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`} className="hover:bg-[var(--custom-gray)] transition-all">                          <TableCell className="font-medium">
+                          {q.questionId || `Q${q.id}`}
+                          <div className="text-xs text-muted-foreground">
+                            {isTextType(q) ? "Text" : "Yes/No"}
+                          </div>
+                        </TableCell>
 
                           <TableCell>
                             <StatusPills q={q} />
@@ -386,10 +385,10 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                                 onBlur={(e) => handleCommentSave(questionId, e.target.value)}
                                 placeholder="Enter comments..."
                                 className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${verifiedQuestions.has(questionId)
-                                    ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
-                                    : commentErrors[questionId]
-                                      ? 'border-red-500 bg-background'
-                                      : 'bg-background border-input'
+                                  ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600 opacity-80'
+                                  : commentErrors[questionId]
+                                    ? 'border-red-500 bg-background'
+                                    : 'bg-background border-input'
                                   }`}
                               />
                               {commentErrors[questionId] && (

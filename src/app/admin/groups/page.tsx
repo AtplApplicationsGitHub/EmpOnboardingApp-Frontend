@@ -32,7 +32,6 @@ const GroupsPage: React.FC = () => {
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -45,6 +44,7 @@ const GroupsPage: React.FC = () => {
   const [editEscalationGroupLeadId, setEditEscalationGroupLeadId] = useState<number | undefined>();
   const [newAutoAssign, setNewAutoAssign] = useState<string>("Yes");
   const [editAutoAssign, setEditAutoAssign] = useState<string>("Yes");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Store selected options for each dropdown separately
   const [newPrimarySelectedOptions, setNewPrimarySelectedOptions] = useState<DropDownDTO[]>([]);
@@ -82,7 +82,6 @@ const GroupsPage: React.FC = () => {
 
   const fetchPage = useCallback(async (page: number) => {
     try {
-      setLoading(true);
       setError(null);
       const groupsResponse = await adminService.getGroups(page);
       setGroups(groupsResponse.commonListDto || []);
@@ -90,7 +89,7 @@ const GroupsPage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load data");
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   }, []);
 
@@ -260,14 +259,8 @@ const GroupsPage: React.FC = () => {
     return pages;
   };
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading groups...</div>
-        </div>
-      </div>
-    );
+  if (isInitialLoad) {
+    return null;
   }
 
   return (

@@ -40,7 +40,6 @@ const LabsPage: React.FC = () => {
   const [labs, setLabs] = useState<Lab[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [showModal, setShowModal] = useState(false);
@@ -52,6 +51,7 @@ const LabsPage: React.FC = () => {
   const [locationOptions, setLocationOptions] = useState<DropDownDTO[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [existingLabCount, setExistingLabCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -59,7 +59,6 @@ const LabsPage: React.FC = () => {
   );
 
   const fetchLabs = async (page = currentPage, search = searchFilter) => {
-    setLoading(true);
     setError(null);
     try {
       const result = await labService.getLabs(page, search);
@@ -80,7 +79,7 @@ const LabsPage: React.FC = () => {
       setTotal(0);
     } finally {
       fetchLookupData();
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -258,12 +257,8 @@ const LabsPage: React.FC = () => {
     return pages;
   };
 
-  if (loading && labs.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-foreground">Loading labs...</p>
-      </div>
-    );
+  if (isInitialLoad) {
+    return null;
   }
 
   return (
@@ -290,7 +285,7 @@ const LabsPage: React.FC = () => {
           <span>Add New Lab</span>
         </Button>
       </div>
-   {/* Results Count */}
+      {/* Results Count */}
       {/* {labs.length > 0 && (
         <div className="mb-4 text-sm text-gray-600">
           Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, total)} of {total} labs
@@ -327,7 +322,7 @@ const LabsPage: React.FC = () => {
                 labs.map((lab) => (
                   <tr
                     key={lab.id}
-                    className="transition-all hover:bg-muted/50 group"
+                    className="hover:bg-[var(--custom-gray)] group"
                   >
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-foreground">
@@ -404,11 +399,10 @@ const LabsPage: React.FC = () => {
                     <button
                       key={idx}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${
-                        currentPage === pageNum
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-background border border-input text-foreground hover:bg-muted"
-                      }`}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium transition-all ${currentPage === pageNum
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background border border-input text-foreground hover:bg-muted"
+                        }`}
                     >
                       {pageNum + 1}
                     </button>

@@ -37,7 +37,7 @@ const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0); // 0-based paging
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchFilter, setSearchFilter] = useState<string>("");
@@ -200,7 +200,6 @@ const UsersPage: React.FC = () => {
   // For update: open modal, load user data by id
   const handleEditUser = async (userId: number) => {
     try {
-      // setLoading(true);
       const user = await adminService.findById(userId);
       setFormData({
         name: user.name || "",
@@ -214,7 +213,6 @@ const UsersPage: React.FC = () => {
     } catch (err: any) {
       toast.error("Failed to load user");
     } finally {
-      // setLoading(false);
     }
   };
 
@@ -395,16 +393,6 @@ const UsersPage: React.FC = () => {
     return pages;
   };
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading users...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       {/* Header with Search and Add User */}
@@ -487,8 +475,7 @@ const UsersPage: React.FC = () => {
                 </TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user.id}>
-
+                  <TableRow key={user.id} className="hover:bg-[var(--custom-gray)] transition-all">
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
