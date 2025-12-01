@@ -22,7 +22,8 @@ import {
   TaskQuestions,
   Department,
   Questionnaire,
-  TaskStepperGroup
+  TaskStepperGroup,
+  AdminDashboardCount
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -158,10 +159,6 @@ export const authService = {
         signInId: email,
         password,
       });
-
-      console.log("Login response:", response.data); // Debug log
-
-      // Validate response structure
       if (!response.data) {
         throw new Error("Invalid response from server");
       }
@@ -519,11 +516,6 @@ export const adminService = {
 
   // Dashboard
 
-  getUserCount: async (): Promise<number> => {
-    const response = await api.get<number>("/user/countUser");
-    return response.data;
-  },
-
   getGroupsCount: async (): Promise<number> => {
     const response = await api.get<number>("/group/countGroup");
     return response.data;
@@ -534,8 +526,23 @@ export const adminService = {
     return response.data;
   },
 
-  getTaskCount: async (): Promise<number> => {
-    const response = await api.get<number>("/task/taskCountForAdmin");
+  getDepartmentCount: async (): Promise<number> => {
+    const response = await api.get<number>("/department/totalDepartmentsCount");
+    return response.data;
+  },
+
+  getLabsCount: async (): Promise<number> => {
+    const response = await api.get<number>("/location/totalLocationsCount");
+    return response.data;
+  },
+
+   getTaskCountForAdmin: async (): Promise<AdminDashboardCount> => {
+    const response = await api.get<AdminDashboardCount>(`/task/taskCountForAdmin`);
+    return response.data;
+  },
+
+  getEmployeeCountForAdmin: async (): Promise<AdminDashboardCount> => {
+    const response = await api.get<AdminDashboardCount>(`/employee/employeeCountForAdmin`);
     return response.data;
   },
 
@@ -1615,8 +1622,6 @@ export const employeeService = {
         rating: feedback.rating,
         comment: feedback.comment,
       });
-
-      console.log("📥 API: Feedback submission response:", response.data);
 
       return {
         success: true,
