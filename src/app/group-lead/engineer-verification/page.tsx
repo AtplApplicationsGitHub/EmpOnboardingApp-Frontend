@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { adminService, taskService } from "../../services/api";
 import { toast } from "react-hot-toast";
-import { Task } from "../../types";
+import { DropDownDTO, Task } from "../../types";
 import { useRouter } from "next/navigation";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 
 const PAGE_SIZE = 10;
@@ -29,11 +30,19 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [page, setPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [taskStatus, setTaskStatus] = useState(0);
+  const [statusOptions, setStatusOptions] = useState<DropDownDTO[]>([]);
+
+  useEffect(() => {
+    setStatusOptions([
+      { id: 1, key: "Open", value: "Open" },
+      { id: 2, key: "Completed", value: "Completed" }
+    ]);
+    setTaskStatus(1);
+  }, []);
 
   const fetchAcknowledgementTasks = useCallback(async () => {
     try {
-      setLoading(true);
       const params: any = { page, size: PAGE_SIZE };
 
       const search = searchFilter.trim();
@@ -41,22 +50,30 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
         params.search = search;
       }
 
-      const data = await adminService.findFilteredTaskAck(params);
-      console.log("Fetched acknowledgement tasks:", data);
+      if (taskStatus) {
+        const selectedStatus = statusOptions.find(opt => opt.id === taskStatus);
+        if (selectedStatus) {
+          params.taskStatus = selectedStatus.key;
+        }
+      }
+      const data = await taskService.getAllTasksForVerification(params);
       setTasks(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load tasks");
       setTasks([]);
       setTotalElements(0);
-    } finally {
-      setLoading(false);
     }
-  }, [page, searchFilter]);
+  }, [page, searchFilter, taskStatus, statusOptions]);
 
   useEffect(() => {
-    fetchAcknowledgementTasks();
+    const timeoutId = setTimeout(() => {
+      fetchAcknowledgementTasks();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [fetchAcknowledgementTasks]);
+
 
 
   const totalPages = Math.ceil(totalElements / PAGE_SIZE);
@@ -86,19 +103,41 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
   return (
     <div className="space-y-2">
 
-      <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <SearchableDropdown
+            options={statusOptions}
+            value={taskStatus}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(status) => {
+              if (status === undefined) {
+                setTaskStatus(0);
+                setPage(0);
+                setSearchFilter("");
+              } else if (!Array.isArray(status)) {
+                setTaskStatus(status as number);
+                setPage(0);
+                setSearchFilter("");
+              }
+            }}
+            placeholder="Select level"
+            allowRemove={false}
+          />
           <input
             type="text"
             value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            placeholder="Search by employee, group, department, or role..."
-            className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
+            onChange={(e) => {
+              setSearchFilter(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search…"
+            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
             aria-label="Search tasks"
           />
         </div>
-      </CardContent>
-
+      </div>
 
       {/* Table */}
       <Card>
@@ -131,7 +170,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                   <TableRow key={task.id}>
                     <TableCell>{task.id}</TableCell>
                     <TableCell>{task.employeeName}</TableCell>
-                     <TableCell>{task.department}</TableCell>
+                    <TableCell>{task.department}</TableCell>
                     <TableCell>{task.level}</TableCell>
 
                     {/* Progress Section */}
