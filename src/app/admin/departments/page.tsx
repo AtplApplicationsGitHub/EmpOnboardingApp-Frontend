@@ -39,7 +39,6 @@ const emptyForm: FormState = {
 const DepartmentsPage: React.FC = () => {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -51,7 +50,8 @@ const DepartmentsPage: React.FC = () => {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState<any | null>(null);
-  
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
     [total]
@@ -95,7 +95,6 @@ const DepartmentsPage: React.FC = () => {
   };
 
   const fetchDepartments = async () => {
-    setLoading(true);
     try {
       const searchTerm = searchFilter || undefined;
       const data = await employeeService.getDepartments(currentPage, searchTerm);
@@ -105,7 +104,7 @@ const DepartmentsPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to fetch departments");
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -196,6 +195,10 @@ const DepartmentsPage: React.FC = () => {
     return pages;
   };
 
+  if (isInitialLoad) {
+    return null;
+  }
+
   const handleDeleteDepartment = async () => {
     if (!departmentToDelete) return;
 
@@ -257,13 +260,7 @@ const DepartmentsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center">
-                    <p className="text-muted-foreground text-sm">Loading departments...</p>
-                  </td>
-                </tr>
-              ) : departments.length === 0 ? (
+              {departments.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -276,7 +273,9 @@ const DepartmentsPage: React.FC = () => {
                 </tr>
               ) : (
                 departments.map((dept) => (
-                  <tr key={dept.id} className="hover:bg-accent transition-all">
+                  // <tr key={dept.id} className="hover:bg-accent transition-all">
+                  <tr key={dept.id} className="hover:bg-[var(--custom-gray)] transition-all">
+
                     <td className="px-6 py-4 text-sm font-medium text-foreground">
                       {dept.location}
                     </td>
@@ -350,11 +349,10 @@ const DepartmentsPage: React.FC = () => {
                     <button
                       key={idx}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${
-                        currentPage === pageNum
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-background border border-input text-foreground hover:bg-accent"
-                      }`}
+                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${currentPage === pageNum
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background border border-input text-foreground hover:bg-accent"
+                        }`}
                     >
                       {pageNum + 1}
                     </button>

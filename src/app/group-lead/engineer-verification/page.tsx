@@ -167,7 +167,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
                 </TableRow>
               ) : (
                 tasks.map((task) => (
-                  <TableRow key={task.id}>
+                  <TableRow key={task.id} className="hover:bg-[var(--custom-gray)] transition-all">
                     <TableCell>{task.id}</TableCell>
                     <TableCell>{task.employeeName}</TableCell>
                     <TableCell>{task.department}</TableCell>

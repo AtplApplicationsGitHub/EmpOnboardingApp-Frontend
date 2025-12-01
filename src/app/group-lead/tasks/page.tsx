@@ -365,7 +365,7 @@ const GroupLeadTasksPage: React.FC = () => {
                       }
 
                       return (
-                        <TableRow key={(task as any).id ?? (task as any).id}>
+                        <TableRow key={(task as any).id ?? (task as any).id} className="hover:bg-[var(--custom-gray)] transition-all">
                           <TableCell className="font-semibold">
                             {(task as any).id}
                           </TableCell>
