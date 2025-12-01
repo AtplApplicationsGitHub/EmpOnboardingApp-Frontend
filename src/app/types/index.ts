@@ -122,6 +122,13 @@ export interface GLDashboard {
   overdueVerificationCount: number;
 }
 
+export interface AdminDashboardCount {
+  total: number;
+  completedCount: number;
+  pendingCount: number;
+  overdueCount: number;
+}
+
 export interface Task {
   id: number;
   employeeId: number;
