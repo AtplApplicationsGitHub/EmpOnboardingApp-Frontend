@@ -1084,7 +1084,7 @@ export const archiveService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {
@@ -1111,7 +1111,7 @@ export const taskService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {
@@ -1149,7 +1149,7 @@ export const taskService = {
     commonListDto: Task[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Task[];
@@ -1159,6 +1159,46 @@ export const taskService = {
     );
     return response.data;
   },
+  getAllTasksForGroupLead: async (params?: {
+    search?: string;
+    page?: number;
+    taskStatus?:string;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const page = params?.page ?? 0;
+    const taskStatus = params?.taskStatus ?? "Open";
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/getAllTasksForGroupLead/${page}/${taskStatus}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
+  getAllTasksForVerification: async (params?: {
+    search?: string;
+    page?: number;
+    taskStatus?:string;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const page = params?.page ?? 0;
+    const taskStatus = params?.taskStatus ?? "Open";
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/getAllTasksForVerification/${page}/${taskStatus}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
   getDashboardForGL: async (): Promise<GLDashboard> => {
     const response = await api.get<GLDashboard>(`/task/taskCountForGL`);
     return response.data;
@@ -1323,7 +1363,7 @@ export const groupLeadService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {

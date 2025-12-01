@@ -20,6 +20,7 @@ interface SearchableDropdownProps {
   onSearch?: (searchTerm: string) => Promise<Array<{ id: number; key: string; value: string }>>;
   minSearchLength?: number;
   initialSelectedOptions?: Array<{ id: number; key: string; value: string }>;
+  allowRemove?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -39,6 +40,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   onSearch,
   minSearchLength = 3,
   initialSelectedOptions = [],
+  allowRemove = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -359,7 +361,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         </div>
       )}
 
-      {!required && (
+      {!required && allowRemove && (
         <div
           role="option"
           tabIndex={0}
@@ -496,13 +498,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                   {selectedOptions[0] && (
                     <div key={selectedOptions[0].id} className="inline-flex items-center gap-1 bg-secondary rounded-full px-2 py-0.5 text-xs text-secondary-foreground font-medium">
                       {selectedOptions[0].value}
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveItem(e, selectedOptions[0].id)}
-                        className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                      >
-                        <X size={10} />
-                      </button>
+                      {allowRemove && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleRemoveItem(e, selectedOptions[0].id)}
+                          className="ml-1 p-0.5 rounded-full hover:bg-muted"
+                        >
+                          <X size={10} />
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -524,7 +528,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         )}
 
         <div className="flex items-center gap-1 ml-1">
-          {selectedOptions.length > 0 && !required && !disabled && !isOpen && (
+          {selectedOptions.length > 0 && !required && allowRemove && !disabled && !isOpen && (
             <button
               type="button"
               onClick={(e) => {
