@@ -865,7 +865,7 @@ const EmployeesPage: React.FC = () => {
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, date: e.target.value })
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm text-foreground bg-background transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm text-foreground bg-background dark:[color-scheme:dark] [color-scheme:light] transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     max="9999-12-31"
                     min="1900-01-01"
                   />
