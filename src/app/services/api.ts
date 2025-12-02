@@ -1132,6 +1132,7 @@ export const taskService = {
     search?: string;
     department?: string;
     level?: string;
+    date?:string;
     page?: number;
   }): Promise<{
     commonListDto: any[];
@@ -1140,12 +1141,13 @@ export const taskService = {
     const search = params?.search ?? "";
     const department = params?.department ?? "";
     const level = params?.level ?? "";
+    const date = params?.date ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: any[];
       totalElements: number;
     }>(`/task/filteredTaskForAdminWithFilter/${page}`,
-      { search: search, department: department, level: level }
+      { search: search, department: department, level: level, date:date }
     );
     return response.data;
   },
