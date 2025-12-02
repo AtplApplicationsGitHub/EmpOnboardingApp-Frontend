@@ -73,7 +73,7 @@ const AdminDashboard: React.FC = () => {
     totalLabs: 0
   });
 
-  const [tasksCount, setTasksCount] = useState<AdminDashboardCount>();
+  const [dashboardCount, setDashboardCount] = useState<AdminDashboardCount>();
   const [employessCount, setEmployessCount] = useState<AdminDashboardCount>();
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
           totalLabs
         });
         const tasksData = await adminService.getTaskCountForAdmin();
-        setTasksCount(tasksData);
+        setDashboardCount(tasksData);
 
         const empData = await adminService.getEmployeeCountForAdmin();
         setEmployessCount(empData);
@@ -108,8 +108,8 @@ const AdminDashboard: React.FC = () => {
   const totalLabsCount = useCountUp(stats.totalLabs);
 
   // Calculate percentages for visual representation with safety checks
-  const taskCompletionRate = tasksCount?.total
-    ? Math.round((tasksCount.completedCount / tasksCount.total) * 100)
+  const taskCompletionRate = dashboardCount?.total
+    ? Math.round((dashboardCount.completedCount / dashboardCount.total) * 100)
     : 0;
   const employeeActiveRate = employessCount?.total
     ? Math.round(((employessCount.total - employessCount.overdueCount) / employessCount.total) * 100)
@@ -251,7 +251,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Tasks Overview</h3>
-                  <p className="text-sm text-muted-foreground">{tasksCount?.total || 0} total tasks</p>
+                  <p className="text-sm text-muted-foreground">{dashboardCount?.total || 0} total tasks</p>
                 </div>
               </div>
               <div className="text-right">
@@ -265,7 +265,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mb-2">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{tasksCount?.total || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardCount?.total || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">Total Tasks</p>
               </div>
 
@@ -273,7 +273,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
                   <Clock className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{tasksCount?.pendingCount || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardCount?.pendingCount || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">In Progress</p>
               </div>
 
@@ -281,7 +281,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
                   <AlertCircle className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{tasksCount?.overdueCount || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardCount?.overdueCount || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">Overdue</p>
               </div>
 
@@ -289,7 +289,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
                   <CheckCircle className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{tasksCount?.completedCount || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{dashboardCount?.completedCount || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">Completed</p>
               </div>
             </div>
@@ -301,12 +301,12 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-card-foreground">Completed Tasks</span>
-                    <span className="text-sm font-bold text-green-600">{tasksCount?.completedCount || 0} / {tasksCount?.total || 0}</span>
+                    <span className="text-sm font-bold text-green-600">{dashboardCount?.completedCount || 0} / {dashboardCount?.total || 0}</span>
                   </div>
                   <div className="bg-muted rounded-full h-3">
                     <div
                       className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${tasksCount?.total ? (tasksCount.completedCount / tasksCount.total) * 100 : 0}%` }}
+                      style={{ width: `${dashboardCount?.total ? (dashboardCount.completedCount / dashboardCount.total) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -314,12 +314,12 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-card-foreground">In Progress Tasks</span>
-                    <span className="text-sm font-bold text-amber-600">{tasksCount?.pendingCount || 0} / {tasksCount?.total || 0}</span>
+                    <span className="text-sm font-bold text-amber-600">{dashboardCount?.pendingCount || 0} / {dashboardCount?.total || 0}</span>
                   </div>
                   <div className="bg-muted rounded-full h-3">
                     <div
                       className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${tasksCount?.total ? (tasksCount.pendingCount / tasksCount.total) * 100 : 0}%` }}
+                      style={{ width: `${dashboardCount?.total ? (dashboardCount.pendingCount / dashboardCount.total) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -327,18 +327,164 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-card-foreground">Overdue Tasks</span>
-                    <span className="text-sm font-bold text-red-600">{tasksCount?.overdueCount || 0} / {tasksCount?.total || 0}</span>
+                    <span className="text-sm font-bold text-red-600">{dashboardCount?.overdueCount || 0} / {dashboardCount?.total || 0}</span>
                   </div>
                   <div className="bg-muted rounded-full h-3">
                     <div
                       className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${tasksCount?.total ? (tasksCount.overdueCount / tasksCount.total) * 100 : 0}%` }}
+                      style={{ width: `${dashboardCount?.total ? (dashboardCount.overdueCount / dashboardCount.total) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Groups Overview Section - Full Width Enhanced Design */}
+          {dashboardCount?.groupData && dashboardCount.groupData.length > 0 && (
+            <div className="col-span-full bg-gradient-to-br from-card to-card/50 rounded-2xl shadow-xl border border-border/50 overflow-hidden">
+              {/* Header Section */}
+              <div className="bg-gradient-to-r from-indigo-500/10 via-blue-500/10 to-purple-500/10 border-b border-border/50 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-xl shadow-lg">
+                      <TrendingUp className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">
+                        Groups Overview
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="hidden md:flex items-center gap-4">
+                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50">
+                      <p className="text-xs text-muted-foreground">Total Groups</p>
+                      <p className="text-lg font-bold text-foreground">{dashboardCount.groupData.length}</p>
+                    </div>
+                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50">
+                      <p className="text-xs text-muted-foreground">Avg. Compliance</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {Math.round(dashboardCount.groupData.reduce((acc, g) => acc + (g.total > 0 ? ((g.total - g.overdueCount) / g.total) * 100 : 0), 0) / dashboardCount.groupData.length)}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Section */}
+              <div className="overflow-x-auto p-6">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-border">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Group
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Group Head
+                      </th>
+                      <th className="text-center py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Total Tasks
+                      </th>
+                      <th className="text-center py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        On Time
+                      </th>
+                      <th className="text-center py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Overdue
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Compliance Rate
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboardCount.groupData.map((group, index) => {
+                      const compliance = group.total > 0
+                        ? Math.round(((group.total - group.overdueCount) / group.total) * 100)
+                        : 0;
+                      const onTime = group.total - group.overdueCount;
+
+                      let complianceColor = 'from-green-500 to-emerald-500';
+                      let complianceBg = 'bg-green-50 dark:bg-green-950/20';
+                      let complianceText = 'text-green-700 dark:text-green-400';
+                      let complianceBadge = 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+
+                      if (compliance < 70) {
+                        complianceColor = 'from-red-500 to-pink-500';
+                        complianceBg = 'bg-red-50 dark:bg-red-950/20';
+                        complianceText = 'text-red-700 dark:text-red-400';
+                        complianceBadge = 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+                      } else if (compliance < 80) {
+                        complianceColor = 'from-orange-500 to-amber-500';
+                        complianceBg = 'bg-orange-50 dark:bg-orange-950/20';
+                        complianceText = 'text-orange-700 dark:text-orange-400';
+                        complianceBadge = 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400';
+                      }
+
+                      return (
+                        <tr
+                          key={index}
+                          className="border-b border-border/50 hover:bg-muted/30 transition-all duration-200 group"
+                        >
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-blue-500/20 flex items-center justify-center border border-indigo-500/30">
+                                <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                              <span className="text-sm font-semibold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {group.groupName}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">{group.groupHead}</span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex justify-center">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 text-sm font-bold border border-indigo-200 dark:border-indigo-800">
+                                {group.total}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex justify-center">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 text-sm font-bold border border-green-200 dark:border-green-800">
+                                {onTime}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex justify-center">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-sm font-bold border border-red-200 dark:border-red-800">
+                                {group.overdueCount}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-4">
+                              <span className={`inline-flex items-center justify-center min-w-[3.5rem] px-3 py-1.5 rounded-lg ${complianceBadge} text-sm font-bold border border-current/20`}>
+                                {compliance}%
+                              </span>
+                              <div className="flex-1 min-w-[140px] max-w-[220px]">
+                                <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden shadow-inner">
+                                  <div
+                                    className={`bg-gradient-to-r ${complianceColor} h-2.5 rounded-full transition-all duration-1000 ease-out shadow-sm`}
+                                    style={{ width: `${compliance}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

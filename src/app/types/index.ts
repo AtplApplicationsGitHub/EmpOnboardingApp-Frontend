@@ -127,6 +127,9 @@ export interface AdminDashboardCount {
   completedCount: number;
   pendingCount: number;
   overdueCount: number;
+  groupName:string;
+  groupHead:string;
+  groupData: AdminDashboardCount[];
 }
 
 export interface Task {
