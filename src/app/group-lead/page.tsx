@@ -91,202 +91,208 @@ const GroupLeadTaskPage: React.FC = () => {
         </div>
 
         {/* Main Content Grid - Both Cards in Same Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           {/* Tasks Overview Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-lg">
-                  <User className="w-6 h-6 text-white" />
+          {totalCount > 0 && (
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-lg">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Tasks Overview</h3>
+                    <p className="text-sm text-gray-600">{totalCount} total tasks</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">Tasks Overview</h3>
-                  <p className="text-sm text-gray-600">{totalCount} total tasks</p>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Completion Rate</p>
+                  <p className="text-2xl font-bold text-green-600">{taskCompletionRate}%</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Completion Rate</p>
-                <p className="text-2xl font-bold text-green-600">{taskCompletionRate}%</p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mb-2">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{totalCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Total Tasks</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{completedCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Completed</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{pendingCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Pending</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{overdueCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Overdue</p>
+                </div>
+              </div>
+
+              {/* Task Status Distribution */}
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-4">Task Status Distribution</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Completed Tasks</span>
+                      <span className="text-sm font-bold text-green-600">{completedCount} / {totalCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalTasks ? (dashboard.totalCompletedTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Pending Tasks</span>
+                      <span className="text-sm font-bold text-amber-600">{pendingCount} / {totalCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalTasks ? (dashboard.totalPendingTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Overdue Tasks</span>
+                      <span className="text-sm font-bold text-red-600">{overdueCount} / {totalCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalTasks ? (dashboard.overdueTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mb-2">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{totalCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Total Tasks</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
-                  <CheckCircle className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{completedCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Completed</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{pendingCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Pending</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
-                  <AlertCircle className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{overdueCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Overdue</p>
-              </div>
-            </div>
-
-            {/* Task Status Distribution */}
-            <div className="mt-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Task Status Distribution</h4>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Completed Tasks</span>
-                    <span className="text-sm font-bold text-green-600">{completedCount} / {totalCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalTasks ? (dashboard.totalCompletedTasks / dashboard.totalTasks) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Pending Tasks</span>
-                    <span className="text-sm font-bold text-amber-600">{pendingCount} / {totalCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalTasks ? (dashboard.totalPendingTasks / dashboard.totalTasks) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Overdue Tasks</span>
-                    <span className="text-sm font-bold text-red-600">{overdueCount} / {totalCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalTasks ? (dashboard.overdueTasks / dashboard.totalTasks) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Verification Overview Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-lg">
-                  <ClipboardCheck className="w-6 h-6 text-white" />
+          {totalVerificationsCount > 0 && (
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-lg">
+                    <ClipboardCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Verification Overview</h3>
+                    <p className="text-sm text-gray-600">{totalVerificationsCount} total verifications</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">Verification Overview</h3>
-                  <p className="text-sm text-gray-600">{totalVerificationsCount} total verifications</p>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Completion Rate</p>
+                  <p className="text-2xl font-bold text-green-600">{verificationCompletionRate}%</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Completion Rate</p>
-                <p className="text-2xl font-bold text-green-600">{verificationCompletionRate}%</p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full mb-2">
+                    <ClipboardCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{totalVerificationsCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Total Verifications</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{completedVerificationCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Completed</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{pendingVerificationCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Pending</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">{overdueVerificationCount}</p>
+                  <p className="text-xs text-gray-600 mt-1">Overdue</p>
+                </div>
+              </div>
+
+              {/* Verification Status Distribution */}
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-4">Verification Status Distribution</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Completed Verifications</span>
+                      <span className="text-sm font-bold text-green-600">{completedVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.completedVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Pending Verifications</span>
+                      <span className="text-sm font-bold text-amber-600">{pendingVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.pendingVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Overdue Verifications</span>
+                      <span className="text-sm font-bold text-red-600">{overdueVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.overdueVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full mb-2">
-                  <ClipboardCheck className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{totalVerificationsCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Total Verifications</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
-                  <CheckCircle className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{completedVerificationCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Completed</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{pendingVerificationCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Pending</p>
-              </div>
-
-              <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
-                  <AlertCircle className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{overdueVerificationCount}</p>
-                <p className="text-xs text-gray-600 mt-1">Overdue</p>
-              </div>
-            </div>
-
-            {/* Verification Status Distribution */}
-            <div className="mt-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Verification Status Distribution</h4>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Completed Verifications</span>
-                    <span className="text-sm font-bold text-green-600">{completedVerificationCount} / {totalVerificationsCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalVerifications ? (dashboard.completedVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Pending Verifications</span>
-                    <span className="text-sm font-bold text-amber-600">{pendingVerificationCount} / {totalVerificationsCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalVerifications ? (dashboard.pendingVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Overdue Verifications</span>
-                    <span className="text-sm font-bold text-red-600">{overdueVerificationCount} / {totalVerificationsCount}</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
-                      style={{ width: `${dashboard?.totalVerifications ? (dashboard.overdueVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

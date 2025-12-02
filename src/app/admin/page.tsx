@@ -230,7 +230,7 @@ const AdminDashboard: React.FC = () => {
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700 font-medium">Active Rate</span>
+                <span className="text-gray-700 font-medium">On Time Completion Rate </span>
                 <span className="text-blue-600 font-bold">{employeeActiveRate}%</span>
               </div>
               <div className="mt-2 bg-gray-200 rounded-full h-2">
