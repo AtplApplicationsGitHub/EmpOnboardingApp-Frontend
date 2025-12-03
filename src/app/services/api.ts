@@ -23,11 +23,17 @@ import {
   Department,
   Questionnaire,
   TaskStepperGroup,
-  AdminDashboardCount
+  AdminDashboardCount,
+  DailyDashboardCount
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipLoading?: boolean;
+  }
+}
 
 class LoadingManager {
   private activeRequests = 0;
@@ -115,7 +121,9 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    loadingManager.show();
+     if (!config.skipLoading) {
+      loadingManager.show();
+    }
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -123,7 +131,9 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    loadingManager.hide();
+    if (!error.config?.skipLoading) {
+      loadingManager.hide();
+    }
     return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
@@ -517,32 +527,51 @@ export const adminService = {
   // Dashboard
 
   getGroupsCount: async (): Promise<number> => {
-    const response = await api.get<number>("/group/countGroup");
+    const response = await api.get<number>("/group/countGroup",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
   getQuestionsCount: async (): Promise<number> => {
-    const response = await api.get<number>("/question/countQuestions");
+    const response = await api.get<number>("/question/countQuestions",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
   getDepartmentCount: async (): Promise<number> => {
-    const response = await api.get<number>("/department/totalDepartmentsCount");
+    const response = await api.get<number>("/department/totalDepartmentsCount",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
   getLabsCount: async (): Promise<number> => {
-    const response = await api.get<number>("/location/totalLocationsCount");
+    const response = await api.get<number>("/location/totalLocationsCount",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
    getTaskCountForAdmin: async (): Promise<AdminDashboardCount> => {
-    const response = await api.get<AdminDashboardCount>(`/task/taskCountForAdmin`);
+    const response = await api.get<AdminDashboardCount>(`/task/taskCountForAdmin`,
+      { skipLoading: true }
+    );
     return response.data;
   },
 
   getEmployeeCountForAdmin: async (): Promise<AdminDashboardCount> => {
-    const response = await api.get<AdminDashboardCount>(`/employee/employeeCountForAdmin`);
+    const response = await api.get<AdminDashboardCount>(`/employee/employeeCountForAdmin`,
+      { skipLoading: true }
+    );
+    return response.data;
+  },
+
+  getOnboardingDailyCount: async (): Promise<DailyDashboardCount> => {
+    const response = await api.get<DailyDashboardCount>(`/employee/getOnboardingDailyCount`,
+      { skipLoading: true }
+    );
     return response.data;
   },
 
@@ -1209,7 +1238,9 @@ export const taskService = {
   },
 
   getDashboardForGL: async (): Promise<GLDashboard> => {
-    const response = await api.get<GLDashboard>(`/task/taskCountForGL`);
+    const response = await api.get<GLDashboard>(`/task/taskCountForGL`,
+      { skipLoading: true }
+    );
     return response.data;
   },
 

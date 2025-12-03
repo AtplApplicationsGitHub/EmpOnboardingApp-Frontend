@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, MessageSquare, Clock, User, AlertCircle, CheckCircle, TrendingUp, Activity } from 'lucide-react';
 import { adminService } from '../services/api';
-import { AdminDashboardCount } from '../types';
+import { AdminDashboardCount, DailyDashboardCount } from '../types';
 
 const useCountUp = (value: number | undefined, duration = 700) => {
   const [count, setCount] = useState(0);
@@ -75,6 +75,7 @@ const AdminDashboard: React.FC = () => {
 
   const [dashboardCount, setDashboardCount] = useState<AdminDashboardCount>();
   const [employessCount, setEmployessCount] = useState<AdminDashboardCount>();
+  const [dailyDashboard, setDailyDashboard] = useState<DailyDashboardCount>();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -89,11 +90,16 @@ const AdminDashboard: React.FC = () => {
           totalQuestions,
           totalLabs
         });
+
+        const dailyData = await adminService.getOnboardingDailyCount();
+        setDailyDashboard(dailyData);
+
         const tasksData = await adminService.getTaskCountForAdmin();
         setDashboardCount(tasksData);
 
         const empData = await adminService.getEmployeeCountForAdmin();
         setEmployessCount(empData);
+        
       } catch (err: any) {
         console.error(err.response?.data?.message || 'Failed to load dashboard data');
       }
@@ -181,7 +187,82 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+
+          {/* Onboarding Daily Snapshot - Full Width */}
+          <div className="col-span-full bg-card rounded-2xl shadow-xl border border-border/50 p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Onboarding Daily Snapshot</h3>
+                  <p className="text-sm text-muted-foreground">Today, {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* New Profiles Added Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-blue-500 p-2.5 rounded-lg shadow-md">
+                    <UserPlus className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">New Employee Profiles</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-blue-900 dark:text-blue-100">{dailyDashboard?.employeesAdded || 0}</p>
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                  </p>
+                </div>
+              </div>
+
+              {/* Onboarding Tasks Finished Card */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/30 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-green-500 p-2.5 rounded-lg shadow-md">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">Onboarding Completed</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-green-900 dark:text-green-100">{dailyDashboard?.tasksClosed || 0}</p>
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                  </p>
+                </div>
+              </div>
+              {/* Joining Today Card */}
+              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-950/30 dark:to-violet-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-purple-500 p-2.5 rounded-lg shadow-md">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Joining Today</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-purple-900 dark:text-purple-100">{dailyDashboard?.joiningToday || 0}</p>
+                </div>
+              </div>
+
+              {/* Verifications Cleared Card */}
+              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/30 dark:to-amber-900/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-orange-500 p-2.5 rounded-lg shadow-md">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">Today’s Joiners – Pending Tasks</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-orange-900 dark:text-orange-100">{dailyDashboard?.pendingTasks || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Employee Overview Card */}
           <div className="lg:col-span-1 bg-card rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -344,7 +425,7 @@ const AdminDashboard: React.FC = () => {
           {dashboardCount?.groupData && dashboardCount.groupData.length > 0 && (
             <div className="col-span-full bg-gradient-to-br from-card to-card/50 rounded-2xl shadow-xl border border-border/50 overflow-hidden">
               {/* Header Section */}
-              <div className="bg-gradient-to-r from-indigo-500/10 via-blue-500/10 to-purple-500/10 border-b border-border/50 p-3">
+              <div className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-xl shadow-lg">
@@ -357,12 +438,12 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="hidden md:flex items-center gap-4">
-                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50">
-                      <p className="text-xs text-muted-foreground">Total Groups</p>
+                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50 bg-gradient-to-r from-indigo-500/10 via-blue-500/10 to-purple-500/10">
+                      <p className="text-xs">Total Groups</p>
                       <p className="text-lg font-bold text-foreground">{dashboardCount.groupData.length}</p>
                     </div>
-                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50">
-                      <p className="text-xs text-muted-foreground">Avg. Compliance</p>
+                    <div className="text-center px-3 py-1.5 bg-card rounded-lg border border-border/50 bg-gradient-to-r from-indigo-500/10 via-blue-500/10 to-purple-500/10">
+                      <p className="text-xs">Avg. Compliance</p>
                       <p className="text-lg font-bold text-green-600">
                         {Math.round(dashboardCount.groupData.reduce((acc, g) => acc + (g.total > 0 ? ((g.total - g.overdueCount) / g.total) * 100 : 0), 0) / dashboardCount.groupData.length)}%
                       </p>
@@ -372,10 +453,10 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Table Section */}
-              <div className="overflow-x-auto p-6">
+              <div className="overflow-x-auto p-2">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-border">
+                    <tr className="border-b-2 border-border bg-gradient-to-r from-indigo-500/10 via-blue-500/10 to-purple-500/10">
                       <th className="text-left py-4 px-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Group
                       </th>
@@ -485,6 +566,115 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Department Distribution Chart - Full Width */}
+          {dashboardCount?.departmentData && dashboardCount.departmentData.length > 0 && (
+            <div className="col-span-full bg-card rounded-2xl shadow-xl border border-border/50 p-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-lg">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Department Distribution</h3>
+                  <p className="text-sm text-muted-foreground">Tasks assigned across departments</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                {/* Donut Chart */}
+                <div className="flex justify-center">
+                  <div className="relative w-72 h-72">
+                    <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
+                      {(() => {
+                        const total = dashboardCount.departmentData.reduce((sum, d) => sum + d.total, 0);
+                        let cumulativePercent = 0;
+
+                        const colors = [
+                          '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+                          '#10b981', '#06b6d4', '#f97316', '#6366f1',
+                          '#ef4444', '#14b8a6', '#a855f7', '#eab308'
+                        ];
+
+                        return dashboardCount.departmentData.map((dept, index) => {
+                          if (dept.total === 0) return null;
+
+                          const percentage = (dept.total / total) * 100;
+                          const radius = 70;
+                          const circumference = 2 * Math.PI * radius;
+                          const strokeLength = (percentage / 100) * circumference;
+                          const offset = -cumulativePercent * circumference / 100;
+
+                          cumulativePercent += percentage;
+
+                          return (
+                            <circle
+                              key={index}
+                              cx="100"
+                              cy="100"
+                              r={radius}
+                              fill="transparent"
+                              stroke={colors[index % colors.length]}
+                              strokeWidth="35"
+                              strokeDasharray={`${strokeLength} ${circumference}`}
+                              strokeDashoffset={offset}
+                              className="transition-all duration-1000 ease-out"
+                            />
+                          );
+                        });
+                      })()}
+                    </svg>
+
+                    {/* Center Text */}
+                    <div className="absolute inset-0 flex items-center justify-center flex-col">
+                      <span className="text-4xl font-bold text-foreground">
+                        {dashboardCount.departmentData.reduce((sum, d) => sum + d.total, 0)}
+                      </span>
+                      <span className="text-sm text-muted-foreground mt-1">Total Tasks</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Legend */}
+                <div className="grid grid-cols-2 gap-2">
+                  {dashboardCount.departmentData.map((dept, index) => {
+                    const colors = [
+                      '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+                      '#10b981', '#06b6d4', '#f97316', '#6366f1',
+                      '#ef4444', '#14b8a6', '#a855f7', '#eab308'
+                    ];
+
+                    const colorHex = colors[index % colors.length];
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: colorHex }}
+                          ></div>
+                          <span className="text-xs font-medium text-foreground truncate">
+                            {dept.departmentName}
+                          </span>
+                        </div>
+                        <span
+                          className="text-sm font-bold flex-shrink-0"
+                          style={{ color: colorHex }}
+                        >
+                          {dept.total}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          
         </div>
       </div>
     </div>
