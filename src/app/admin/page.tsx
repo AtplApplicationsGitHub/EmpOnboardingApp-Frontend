@@ -576,8 +576,8 @@ const AdminDashboard: React.FC = () => {
                   <Activity className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Department Distribution</h3>
-                  <p className="text-sm text-muted-foreground">Tasks assigned across departments</p>
+                  <h3 className="text-lg font-bold text-foreground">Department-Wise Pending Tasks</h3>
+                  <p className="text-sm text-muted-foreground">Pending tasks assigned across departments</p>
                 </div>
               </div>
 

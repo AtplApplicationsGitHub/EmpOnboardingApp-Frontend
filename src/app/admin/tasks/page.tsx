@@ -141,6 +141,7 @@ const TasksPage: React.FC = () => {
       const response = await taskService.getTasksWithFilter(params);
       console.log("Fetched tasks:", response);
       setTasks(response.commonListDto ?? []);
+      console.log(tasks);
       setTotalElements(response.totalElements ?? 0);
 
       try {
@@ -526,12 +527,13 @@ const TasksPage: React.FC = () => {
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
+                          console.log(task.employeeName+""+status)
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:shadow-md transition-all";
 
                           const handleClick = () => fetchTaskStepper(parseInt(task.employeeId, 10));
 
-                          if (completed === 0) {
+                          if (status === "open") {
                             return (
                               <span
                                 onClick={handleClick}
