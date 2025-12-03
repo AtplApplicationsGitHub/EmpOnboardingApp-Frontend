@@ -57,7 +57,6 @@ const EmployeesPage: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const [page, setPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -68,6 +67,7 @@ const EmployeesPage: React.FC = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     null
   );
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
     null
@@ -168,7 +168,6 @@ const EmployeesPage: React.FC = () => {
 
   const fetchEmployees = async () => {
     try {
-      setLoading(true);
       const params: any = { page };
       if (searchFilter && searchFilter.trim() !== "") {
         params.search = searchFilter.trim();
@@ -179,7 +178,7 @@ const EmployeesPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load employees");
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -558,6 +557,9 @@ const EmployeesPage: React.FC = () => {
     return pages;
   };
 
+  if (isInitialLoad) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">
@@ -681,7 +683,7 @@ const EmployeesPage: React.FC = () => {
                 </tr>
               ) : (
                 employees.map((emp) => (
-                  <tr key={emp.id}>
+                  <tr key={emp.id} className="hover:bg-[var(--custom-gray)] transition-all">
                     <td className="px-4 py-4">
                       <span className="text-sm font-medium text-foreground">{emp.name}</span>
                     </td>

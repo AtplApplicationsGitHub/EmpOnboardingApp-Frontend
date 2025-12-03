@@ -18,13 +18,13 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const router = useRouter();
   const [questions, setQuestions] = useState<EmployeeQuestions[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [savedValues, setSavedValues] = useState<RespMap>({});
   const [draftValues, setDraftValues] = useState<RespMap>({});
   const [savingByKey, setSavingByKey] = useState<BoolMap>({});
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const qKey = (qId: string | number | undefined) => String(qId ?? "");
 
@@ -44,7 +44,6 @@ const Dashboard: React.FC = () => {
 
   const loadQuestions = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const storedUser = localStorage.getItem("user");
       if (!storedUser) throw new Error("No user in localStorage");
@@ -74,7 +73,7 @@ const Dashboard: React.FC = () => {
       console.error("Error fetching Employee Questions", e);
       setError("Failed to load Employee Questions. Please try again.");
     } finally {
-      setLoading(false);
+      setIsInitialLoad(false);
     }
   }, []);
 
@@ -171,15 +170,8 @@ const Dashboard: React.FC = () => {
     }
   }, [questions, loadQuestions]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="mt-4 text-muted-foreground">Loading questions...</p>
-        </div>
-      </div>
-    );
+  if (isInitialLoad) {
+    return null;
   }
 
   if (error) {

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import Button from "../../components/ui/button";
-import { DropDownDTO, TaskStepperGroup } from "@/app/types";
+import { DropDownDTO } from "@/app/types";
 import {
   Table,
   TableBody,
@@ -23,12 +23,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Eye,
-  Info,
-  Lock,
   TicketCheck,
   Unlock,
   Users,
-  Verified,
   FlaskConical,
   X,
   CheckCircle2,
@@ -37,7 +34,6 @@ import {
 } from "lucide-react";
 import SearchableDropdown from "../../components/SearchableDropdown";
 import { toast } from "react-hot-toast";
-import { format } from "date-fns";
 
 const PAGE_SIZE = 10;
 
@@ -68,13 +64,13 @@ const TasksPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
+  const [selectedDoj, setSelectedDoj] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
     Set<number>
   >(new Set());
-  const [dateFormat, setDateFormat] = useState<string | null>(null);
   const [showLabChangeModal, setShowLabChangeModal] = useState(false);
   const [selectedEmployeeForLabChange, setSelectedEmployeeForLabChange] =
     useState<any>(null);
@@ -82,21 +78,18 @@ const TasksPage: React.FC = () => {
   const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
     undefined
   );
-  const [loadingLabs, setLoadingLabs] = useState(false);
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
   const [selectedTaskQuestions, setSelectedTaskQuestions] = useState<any[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
   const [completedQuestionCount, setCompletedQuestionCount] = useState(0);
   const [totalQuestionCount, setTotalQuestionCount] = useState(0);
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | undefined>(undefined);
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
-  const [taskStepperData, setTaskStepperData] = useState<TaskStepperGroup[]>([]);
   const [showStepperModal, setShowStepperModal] = useState(false);
   const [stepperModalData, setStepperModalData] = useState<any[]>([]);
-  const [loadingStepper, setLoadingStepper] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
@@ -133,6 +126,8 @@ const TasksPage: React.FC = () => {
       if (searchFilter.trim())
         params.search = searchFilter.trim();
 
+      params.date = selectedDoj;
+  
       if (selectedDepartment)
         params.department = selectedDepartment;
 
@@ -146,6 +141,7 @@ const TasksPage: React.FC = () => {
       const response = await taskService.getTasksWithFilter(params);
       console.log("Fetched tasks:", response);
       setTasks(response.commonListDto ?? []);
+      console.log(tasks);
       setTotalElements(response.totalElements ?? 0);
 
       try {
@@ -155,15 +151,15 @@ const TasksPage: React.FC = () => {
       } catch (error) {
         setEmployeesWithQuestions(new Set());
       }
-
-      const formatResponse = await taskService.getDateFormat();
-      setDateFormat(formatResponse);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setTasks([]);
       setTotalElements(0);
     }
-  }, [currentPage, searchFilter, selectedDepartment, selectedLevel]);
+    finally {
+      setIsInitialLoad(false);
+    }
+  }, [currentPage, searchFilter, selectedDepartment, selectedLevel, selectedDoj]);
 
   useEffect(() => {
     fetchTasks();
@@ -205,7 +201,6 @@ const TasksPage: React.FC = () => {
   const handleViewQuestions = async (taskId: string, employeeName: string) => {
     try {
       setQuestionsLoading(true);
-      setSelectedEmployeeName(employeeName);
       const questions = await EQuestions.getQuestionsByTask(taskId);
       const completedQuestions = questions.filter(
         (question) => question.completedFlag === true
@@ -261,7 +256,6 @@ const TasksPage: React.FC = () => {
   // Fetch Task Stepper Data
   const fetchTaskStepper = async (employeeId: number) => {
     try {
-      setLoadingStepper(true);
       const stepperData = await taskService.getEmployeeTaskStepper(employeeId);
       console.log("Fetched stepper data:", stepperData);
 
@@ -282,8 +276,6 @@ const TasksPage: React.FC = () => {
     } catch (error) {
       console.error("Failed to fetch task stepper:", error);
       toast.error("Failed to load task stepper data");
-    } finally {
-      setLoadingStepper(false);
     }
   };
 
@@ -309,6 +301,9 @@ const TasksPage: React.FC = () => {
     else if (currentPage < totalPages - 3) pages.push(totalPages - 1);
     return pages;
   };
+  if (isInitialLoad) {
+    return null;
+  }
 
   const handleFreezeTask = async (shouldArchive: boolean) => {
     if (!selectedTaskId || selectedEmployeeId === null) return;
@@ -388,6 +383,33 @@ const TasksPage: React.FC = () => {
             }}
             placeholder="Select level"
           />
+          <div className="relative inline-flex items-center gap-2">
+            <input
+              type="date"
+              value={selectedDoj}
+              onChange={(e) => {
+                setSelectedDoj(e.target.value);
+                setCurrentPage(0);
+              }}
+              placeholder="Date Of Joining"
+              className="w-64 rounded-md border bg-background px-3 py-2 text-sm pr-8"
+              max="9999-12-31"
+              min="1900-01-01"
+            />
+            {selectedDoj && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDoj("");
+                  setCurrentPage(0);
+                }}
+                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear date"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
           <input
             type="text"
             value={searchFilter}
@@ -460,6 +482,7 @@ const TasksPage: React.FC = () => {
                   return (
                     <TableRow
                       key={(task as any).id ?? (task as any).employeeId}
+                      className="hover:bg-[var(--custom-gray)] transition-all"
                     >
                       {/* Employee Name */}
                       <TableCell className="font-semibold min-w-[140px]">
@@ -504,12 +527,13 @@ const TasksPage: React.FC = () => {
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
+                          console.log(task.employeeName+""+status)
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:shadow-md transition-all";
 
                           const handleClick = () => fetchTaskStepper(parseInt(task.employeeId, 10));
 
-                          if (completed === 0) {
+                          if (status === "open") {
                             return (
                               <span
                                 onClick={handleClick}
@@ -737,24 +761,16 @@ const TasksPage: React.FC = () => {
                   <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Select Lab <span className="text-destructive">*</span>
                   </label>
-                  {loadingLabs ? (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="text-sm text-muted-foreground">
-                        Loading labs...
-                      </div>
-                    </div>
-                  ) : (
-                    <SearchableDropdown
-                      options={labOptions}
-                      value={selectedLabId}
-                      onChange={(value) => setSelectedLabId(value as number)}
-                      placeholder="Select a lab..."
-                      className="w-full"
-                      isEmployeePage={true}
-                      displayFullValue={false}
-                      usePortal={true}
-                    />
-                  )}
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={selectedLabId}
+                    onChange={(value) => setSelectedLabId(value as number)}
+                    placeholder="Select a lab..."
+                    className="w-full"
+                    isEmployeePage={true}
+                    displayFullValue={false}
+                    usePortal={true}
+                  />
                 </div>
               </div>
             </div>
@@ -814,7 +830,6 @@ const TasksPage: React.FC = () => {
                   onClick={() => {
                     setShowQuestionsModal(false);
                     setSelectedTaskQuestions([]);
-                    setSelectedEmployeeName("");
                   }}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -936,7 +951,7 @@ const TasksPage: React.FC = () => {
                                 const progressPercent = task.total > 0 ? (task.completed / task.total) * 100 : 0;
                                 return (
                                   <TableRow key={taskIndex}
-                                    className="hover:bg-muted/50 transition-colors text-foreground">
+                                    className="hover:bg-[var(--custom-gray)] transition-all text-foreground">
                                     <TableCell>
                                       <div className="space-y-1">
                                         <div className="font-semibold text-base">

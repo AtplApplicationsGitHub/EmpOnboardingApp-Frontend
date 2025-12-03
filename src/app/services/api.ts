@@ -22,11 +22,18 @@ import {
   TaskQuestions,
   Department,
   Questionnaire,
-  TaskStepperGroup
+  TaskStepperGroup,
+  AdminDashboardCount,
+  DailyDashboardCount
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipLoading?: boolean;
+  }
+}
 
 class LoadingManager {
   private activeRequests = 0;
@@ -114,7 +121,9 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    loadingManager.show();
+     if (!config.skipLoading) {
+      loadingManager.show();
+    }
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -122,7 +131,9 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    loadingManager.hide();
+    if (!error.config?.skipLoading) {
+      loadingManager.hide();
+    }
     return Promise.reject(new Error(error.message || "Request failed"));
   }
 );
@@ -158,10 +169,6 @@ export const authService = {
         signInId: email,
         password,
       });
-
-      console.log("Login response:", response.data); // Debug log
-
-      // Validate response structure
       if (!response.data) {
         throw new Error("Invalid response from server");
       }
@@ -519,23 +526,52 @@ export const adminService = {
 
   // Dashboard
 
-  getUserCount: async (): Promise<number> => {
-    const response = await api.get<number>("/user/countUser");
-    return response.data;
-  },
-
   getGroupsCount: async (): Promise<number> => {
-    const response = await api.get<number>("/group/countGroup");
+    const response = await api.get<number>("/group/countGroup",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
   getQuestionsCount: async (): Promise<number> => {
-    const response = await api.get<number>("/question/countQuestions");
+    const response = await api.get<number>("/question/countQuestions",
+      { skipLoading: true }
+    );
     return response.data;
   },
 
-  getTaskCount: async (): Promise<number> => {
-    const response = await api.get<number>("/task/taskCountForAdmin");
+  getDepartmentCount: async (): Promise<number> => {
+    const response = await api.get<number>("/department/totalDepartmentsCount",
+      { skipLoading: true }
+    );
+    return response.data;
+  },
+
+  getLabsCount: async (): Promise<number> => {
+    const response = await api.get<number>("/location/totalLocationsCount",
+      { skipLoading: true }
+    );
+    return response.data;
+  },
+
+   getTaskCountForAdmin: async (): Promise<AdminDashboardCount> => {
+    const response = await api.get<AdminDashboardCount>(`/task/taskCountForAdmin`,
+      { skipLoading: true }
+    );
+    return response.data;
+  },
+
+  getEmployeeCountForAdmin: async (): Promise<AdminDashboardCount> => {
+    const response = await api.get<AdminDashboardCount>(`/employee/employeeCountForAdmin`,
+      { skipLoading: true }
+    );
+    return response.data;
+  },
+
+  getOnboardingDailyCount: async (): Promise<DailyDashboardCount> => {
+    const response = await api.get<DailyDashboardCount>(`/employee/getOnboardingDailyCount`,
+      { skipLoading: true }
+    );
     return response.data;
   },
 
@@ -1084,7 +1120,7 @@ export const archiveService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {
@@ -1111,7 +1147,7 @@ export const taskService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {
@@ -1125,6 +1161,7 @@ export const taskService = {
     search?: string;
     department?: string;
     level?: string;
+    date?:string;
     page?: number;
   }): Promise<{
     commonListDto: any[];
@@ -1133,12 +1170,13 @@ export const taskService = {
     const search = params?.search ?? "";
     const department = params?.department ?? "";
     const level = params?.level ?? "";
+    const date = params?.date ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: any[];
       totalElements: number;
     }>(`/task/filteredTaskForAdminWithFilter/${page}`,
-      { search: search, department: department, level: level }
+      { search: search, department: department, level: level, date:date }
     );
     return response.data;
   },
@@ -1149,7 +1187,7 @@ export const taskService = {
     commonListDto: Task[];
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: Task[];
@@ -1159,8 +1197,50 @@ export const taskService = {
     );
     return response.data;
   },
+  getAllTasksForGroupLead: async (params?: {
+    search?: string;
+    page?: number;
+    taskStatus?:string;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const page = params?.page ?? 0;
+    const taskStatus = params?.taskStatus ?? "Open";
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/getAllTasksForGroupLead/${page}/${taskStatus}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
+  getAllTasksForVerification: async (params?: {
+    search?: string;
+    page?: number;
+    taskStatus?:string;
+  }): Promise<{
+    commonListDto: Task[];
+    totalElements: number;
+  }> => {
+    const search = params?.search ?? "";
+    const page = params?.page ?? 0;
+    const taskStatus = params?.taskStatus ?? "Open";
+    const response = await api.post<{
+      commonListDto: Task[];
+      totalElements: number;
+    }>(`/task/getAllTasksForVerification/${page}/${taskStatus}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
   getDashboardForGL: async (): Promise<GLDashboard> => {
-    const response = await api.get<GLDashboard>(`/task/taskCountForGL`);
+    const response = await api.get<GLDashboard>(`/task/taskCountForGL`,
+      { skipLoading: true }
+    );
     return response.data;
   },
 
@@ -1323,7 +1403,7 @@ export const groupLeadService = {
     };
     totalElements: number;
   }> => {
-    const search = params?.search ?? "null";
+    const search = params?.search ?? "";
     const page = params?.page ?? 0;
     const response = await api.post<{
       commonListDto: {
@@ -1575,8 +1655,6 @@ export const employeeService = {
         rating: feedback.rating,
         comment: feedback.comment,
       });
-
-      console.log("📥 API: Feedback submission response:", response.data);
 
       return {
         success: true,

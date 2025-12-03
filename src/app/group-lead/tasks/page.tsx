@@ -31,26 +31,10 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { fi } from "date-fns/locale";
 import toast from "react-hot-toast";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 const PAGE_SIZE = 10;
-
-interface GroupedTask {
-  groupId: number;
-  groupName: string;
-  employeeId: string;
-  employeeName: string;
-  level: string;
-  department: string;
-  role: string;
-  totalTasks: number;
-  completedTasks: number;
-  status: "completed" | "overdue" | "in_progress";
-  dueDate: string;
-  tasks: Task[];
-}
 
 const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
@@ -59,11 +43,12 @@ const GroupLeadTasksPage: React.FC = () => {
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [taskStatus, setTaskStatus] = useState(0);
+  const [statusOptions, setStatusOptions] = useState<DropDownDTO[]>([]);
 
   // Employee questions functionality
   const [employeesWithQuestions, setEmployeesWithQuestions] = useState<
@@ -85,12 +70,27 @@ const GroupLeadTasksPage: React.FC = () => {
   const [selectedLabId, setSelectedLabId] = useState<number | undefined>(
     undefined
   );
-  const [loadingLabs, setLoadingLabs] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalElements / PAGE_SIZE)),
     [totalElements]
   );
+
+  useEffect(() => {
+    setStatusOptions([
+      { id: 1, key: "Open", value: "Open" },
+      { id: 2, key: "Completed", value: "Completed" }
+    ]);
+    setTaskStatus(1);
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearchFilter(searchFilter);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchFilter]);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -99,13 +99,21 @@ const GroupLeadTasksPage: React.FC = () => {
         page: currentPage,
         size: PAGE_SIZE,
       };
-      const search = searchFilter.trim();
+
+      const search = searchFilter.trim(); // Use debounced search
       if (search) params.search = search;
-      const response = await taskService.getTaskForGL(params);
+
+      if (taskStatus) {
+        const selectedStatus = statusOptions.find(opt => opt.id === taskStatus);
+        if (selectedStatus) {
+          params.taskStatus = selectedStatus.key;
+        }
+      }
+
+      const response = await taskService.getAllTasksForGroupLead(params);
       setAllTasks(response.commonListDto ?? []);
       setTotalElements(response.totalElements ?? 0);
 
-      // Get list of employees who have questions assigned (from employee_question table)
       try {
         const employeesWithQuestionsArray =
           await EQuestions.getEmployeesWithQuestions();
@@ -118,9 +126,8 @@ const GroupLeadTasksPage: React.FC = () => {
       setError(err?.response?.data?.message ?? "Failed to load tasks");
       setAllTasks([]);
       setTotalElements(0);
-    } finally {
     }
-  }, [currentPage, searchFilter]);
+  }, [currentPage, searchFilter, taskStatus, statusOptions]); // Fixed dependencies
 
   useEffect(() => {
     fetchTasks();
@@ -258,48 +265,44 @@ const GroupLeadTasksPage: React.FC = () => {
     </div>
   );
 
-  const handleViewTasks = (groupedTask: GroupedTask) => {
-    router.push(
-      `/group-lead/tasks/${groupedTask.employeeId}?name=${encodeURIComponent(
-        groupedTask.employeeName
-      )}&group=${encodeURIComponent(groupedTask.groupName)}`
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading tasks...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       {/* Search Filter */}
-      <Card>
-        <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search by employee, group, department, or role..."
-              className="w-96 rounded-md border bg-background px-3 py-2 text-sm"
-              aria-label="Search tasks"
-            />
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {allTasks.length} employee task group
-            {allTasks.length !== 1 ? "s" : ""} found
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SearchableDropdown
+            options={statusOptions}
+            value={taskStatus}
+            required={false}
+            displayFullValue={false}
+            isEmployeePage={true}
+            onChange={(status) => {
+              if (status === undefined) {
+                setTaskStatus(0);
+                setCurrentPage(0);
+                setSearchFilter("");
+              } else if (!Array.isArray(status)) {
+                setTaskStatus(status as number);
+                setCurrentPage(0);
+                setSearchFilter("");
+              }
+            }}
+            placeholder="Select level"
+            allowRemove={false}
+          />
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => {
+              setSearchFilter(e.target.value);
+              setCurrentPage(0);
+            }}
+            placeholder="Search…"
+            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Search tasks"
+          />
+        </div>
+      </div>
 
       {/* Tasks Table */}
       <Card>
@@ -337,8 +340,6 @@ const GroupLeadTasksPage: React.FC = () => {
                   (() => {
                     const seenEmployees = new Set<string>();
                     return allTasks.map((task) => {
-                      console.log('fetched task from be:', allTasks);
-                      console.log("Task Data:", task);
                       const completed =
                         (task as any).completedQuetions ??
                         (task as any).completedQuestions ??
@@ -364,7 +365,7 @@ const GroupLeadTasksPage: React.FC = () => {
                       }
 
                       return (
-                        <TableRow key={(task as any).id ?? (task as any).id}>
+                        <TableRow key={(task as any).id ?? (task as any).id} className="hover:bg-[var(--custom-gray)] transition-all">
                           <TableCell className="font-semibold">
                             {(task as any).id}
                           </TableCell>
@@ -495,25 +496,16 @@ const GroupLeadTasksPage: React.FC = () => {
                   <label className="block text-[13px] font-semibold text-foreground mb-2">
                     Select Lab <span className="text-destructive">*</span>
                   </label>
-
-                  {loadingLabs ? (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="text-sm text-muted-foreground">
-                        Loading labs...
-                      </div>
-                    </div>
-                  ) : (
-                    <SearchableDropdown
-                      options={labOptions}
-                      value={selectedLabId}
-                      onChange={(value) => setSelectedLabId(value as number)}
-                      placeholder="Select a lab..."
-                      className="w-full"
-                      isEmployeePage={true}
-                      displayFullValue={false}
-                      usePortal={true}
-                    />
-                  )}
+                  <SearchableDropdown
+                    options={labOptions}
+                    value={selectedLabId}
+                    onChange={(value) => setSelectedLabId(value as number)}
+                    placeholder="Select a lab..."
+                    className="w-full"
+                    isEmployeePage={true}
+                    displayFullValue={false}
+                    usePortal={true}
+                  />
                 </div>
               </div>
             </div>

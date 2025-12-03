@@ -15,13 +15,13 @@ const EmployeeLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg">Loading...</p>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <p className="text-lg">Loading...</p>
+  //     </div>
+  //   );
+  // }
 
   if (!user || user.role !== 'employee') {
     return null;

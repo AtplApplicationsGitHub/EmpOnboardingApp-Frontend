@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { taskService } from "../services/api";
+import { CheckCircle, Clock, AlertCircle, User, ClipboardCheck, Activity, TrendingUp } from "lucide-react";
 import { GLDashboard } from "../types";
-import { CheckCircle, Clock, AlertCircle, User, ArrowRight, ClipboardCheck } from "lucide-react";
+import { taskService } from "../services/api";
 
 const useCountUp = (value: number | undefined, duration = 700) => {
   const [count, setCount] = useState(0);
@@ -29,93 +28,16 @@ const useCountUp = (value: number | undefined, duration = 700) => {
 };
 
 const GroupLeadTaskPage: React.FC = () => {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<GLDashboard>();
-
-  const totalCount = useCountUp(dashboard?.totalTasks);
-  const completedCount = useCountUp(dashboard?.totalCompletedTasks);
-  const pendingCount = useCountUp(dashboard?.totalPendingTasks);
-  const overdueCount = useCountUp(dashboard?.overdueTasks);
-  const totalVerificationsCount = useCountUp(dashboard?.totalVerifications);
-  const completedVerificationCount = useCountUp(dashboard?.completedVerificationCount);
-  const pendingVerificationCount = useCountUp(dashboard?.pendingVerificationCount);
-  const overdueVerificationCount = useCountUp(dashboard?.overdueVerificationCount);
-
-  const taskCards = [
-    {
-      label: "Tasks",
-      value: totalCount,
-      icon: <User className="w-4 h-4 text-white" />,
-      gradient: "from-indigo-400 to-blue-500",
-      route: "/tasks",
-    },
-    {
-      label: "Completed",
-      value: completedCount,
-      icon: <CheckCircle className="w-4 h-4 text-white" />,
-      gradient: "from-green-400 to-emerald-500",
-      route: "/tasks/completed",
-    },
-    {
-      label: "Pending",
-      value: pendingCount,
-      icon: <Clock className="w-4 h-4 text-white" />,
-      gradient: "from-amber-400 to-orange-500",
-      route: "/tasks/pending",
-    },
-    {
-      label: "Overdue",
-      value: overdueCount,
-      icon: <AlertCircle className="w-4 h-4 text-white" />,
-      gradient: "from-red-400 to-pink-500",
-      route: "/tasks/overdue",
-    },
-  ];
-
-  const verificationCards = [
-    {
-      label: "Verification",
-      value: totalVerificationsCount,
-      icon: <ClipboardCheck className="w-4 h-4 text-white" />,
-      gradient: "from-purple-400 to-violet-500",
-      route: "/verification",
-    },
-    {
-      label: "Completed",
-      value: completedVerificationCount,
-      icon: <CheckCircle className="w-4 h-4 text-white" />,
-      gradient: "from-green-400 to-emerald-500",
-      route: "/verification/completed",
-    },
-    {
-      label: "Pending",
-      value: pendingVerificationCount,
-      icon: <Clock className="w-4 h-4 text-white" />,
-      gradient: "from-amber-400 to-orange-500",
-      route: "/verification/pending",
-    },
-    {
-      label: "Overdue",
-      value: overdueVerificationCount,
-      icon: <AlertCircle className="w-4 h-4 text-white" />,
-      gradient: "from-red-400 to-pink-500",
-      route: "/verification/overdue",
-    },
-  ];
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        setLoading(true);
         const tasksData = await taskService.getDashboardForGL();
         setDashboard(tasksData);
-        console.log("Fetched GL Dashboard Data:", tasksData);
       } catch (err: any) {
         setError(err.response?.data?.message ?? "Failed to load tasks");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -126,19 +48,23 @@ const GroupLeadTaskPage: React.FC = () => {
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
-  // Loading UI
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground flex items-center gap-2 animate-pulse">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            Loading tasks...
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const totalCount = useCountUp(dashboard?.totalTasks);
+  const completedCount = useCountUp(dashboard?.totalCompletedTasks);
+  const pendingCount = useCountUp(dashboard?.totalPendingTasks);
+  const verificationPendingCount = useCountUp(dashboard?.totalVerificationPendingTasks);
+  const overdueCount = useCountUp(dashboard?.overdueTasks);
+  const totalVerificationsCount = useCountUp(dashboard?.totalVerifications);
+  const completedVerificationCount = useCountUp(dashboard?.completedVerificationCount);
+  const pendingVerificationCount = useCountUp(dashboard?.pendingVerificationCount);
+  const overdueVerificationCount = useCountUp(dashboard?.overdueVerificationCount);
+
+  // Calculate percentages with safety checks
+  const taskCompletionRate = dashboard?.totalTasks
+    ? Math.round((dashboard.totalCompletedTasks / dashboard.totalTasks) * 100)
+    : 0;
+  const verificationCompletionRate = dashboard?.totalVerifications
+    ? Math.round((dashboard.completedVerificationCount / dashboard.totalVerifications) * 100)
+    : 0;
 
   // Error UI
   if (error) {
@@ -152,83 +78,227 @@ const GroupLeadTaskPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="mb-4 animate-fade-in">
-        <h1 className="text-[17px] font-bold text-primary">
-          Task Dashboard
-        </h1>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Activity className="w-8 h-8 text-blue-600" />
+              Task Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">Monitor tasks and verifications at a glance</p>
+          </div>
+        </div>
 
-      {/* Task Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        {taskCards.map((item, index) => {
-          const CardWrapper = 'div';
-          const wrapperProps = {};
+        {/* Main Content Grid - Both Cards in Same Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+          {/* Tasks Overview Card */}
+          <div className="bg-card rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-lg">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Tasks Overview</h3>
+                  <p className="text-sm text-muted-foreground">{totalCount} total tasks</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold text-green-600">{taskCompletionRate}%</p>
+              </div>
+            </div>
 
-          return (
-            <CardWrapper key={index}  {...wrapperProps}>
-              <div
-                className="bg-card border border-border rounded-lg shadow-lg p-4 
-                hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
-                transition-all duration-300 relative overflow-hidden cursor-pointer"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p className="text-xl font-bold text-foreground 
-                      transition-transform duration-500 group-hover:scale-110">
-                        {item.value}
-                      </p>
-                    </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <div className="text-center p-4 bg-gradient-to-br  dark:from-indigo-950/20 dark:to-blue-950/20 rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mb-2">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{totalCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Total Tasks</p>
+              </div>
+
+              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{completedCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Completed</p>
+              </div>
+
+              <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Pending</p>
+              </div>
+
+              <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20  rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{overdueCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Overdue</p>
+              </div>
+              <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{verificationPendingCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Pending for Verification</p>
+              </div>
+            </div>
+
+            {/* Task Status Distribution */}
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-card-foreground mb-4">Task Status Distribution</h4>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-card-foreground">Completed Tasks</span>
+                    <span className="text-sm font-bold text-green-600">{completedCount} / {totalCount}</span>
                   </div>
+                  <div className="bg-muted rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${dashboard?.totalTasks ? (dashboard.totalCompletedTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
-                    {item.icon}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-card-foreground">Pending Tasks</span>
+                    <span className="text-sm font-bold text-amber-600">{pendingCount} / {totalCount}</span>
+                  </div>
+                  <div className="bg-muted rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${dashboard?.totalTasks ? (dashboard.totalPendingTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-card-foreground">Overdue Tasks</span>
+                    <span className="text-sm font-bold text-red-600">{overdueCount} / {totalCount}</span>
+                  </div>
+                  <div className="bg-muted rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${dashboard?.totalTasks ? (dashboard.overdueTasks / dashboard.totalTasks) * 100 : 0}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
-            </CardWrapper>
-          );
-        })}
-      </div>
+            </div>
+          </div>
 
-      {/* Verification Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-3">
-        {verificationCards.map((item, index) => {
-          const CardWrapper = 'div';
-          const wrapperProps = {};
+          {/* Verification Overview Card */}
+          {totalVerificationsCount > 0 && (
+            <div className="bg-card rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-lg">
+                    <ClipboardCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Verification Overview</h3>
+                    <p className="text-sm text-muted-foreground">{totalVerificationsCount} total verifications</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Completion Rate</p>
+                  <p className="text-2xl font-bold text-green-600">{verificationCompletionRate}%</p>
+                </div>
+              </div>
 
-          return (
-            <CardWrapper key={index} {...wrapperProps}>
-              <div
-                className="bg-card border border-border rounded-lg shadow-lg p-4 
-                hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 
-                transition-all duration-300 relative overflow-hidden cursor-pointer"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p className="text-xl font-bold text-foreground 
-                      transition-transform duration-500 group-hover:scale-110">
-                        {item.value}
-                      </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-indigo-950/20 dark:to-blue-950/20 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full mb-2">
+                    <ClipboardCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{totalVerificationsCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total Verifications</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-2">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{completedVerificationCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Completed</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20  rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{pendingVerificationCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pending</p>
+                </div>
+
+                <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20  rounded-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full mb-2">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{overdueVerificationCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Overdue</p>
+                </div>
+              </div>
+
+              {/* Verification Status Distribution */}
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold text-card-foreground mb-4">Verification Status Distribution</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-card-foreground">Completed Verifications</span>
+                      <span className="text-sm font-bold text-green-600">{completedVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-muted rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.completedVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
                     </div>
                   </div>
 
-                  <div className={`p-2 bg-gradient-to-br ${item.gradient} rounded-lg`}>
-                    {item.icon}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-card-foreground">Pending Verifications</span>
+                      <span className="text-sm font-bold text-amber-600">{pendingVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-muted rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.pendingVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-card-foreground">Overdue Verifications</span>
+                      <span className="text-sm font-bold text-red-600">{overdueVerificationCount} / {totalVerificationsCount}</span>
+                    </div>
+                    <div className="bg-muted rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-1000"
+                        style={{ width: `${dashboard?.totalVerifications ? (dashboard.overdueVerificationCount / dashboard.totalVerifications) * 100 : 0}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </CardWrapper>
-          );
-        })}
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
