@@ -24,7 +24,9 @@ import {
   Questionnaire,
   TaskStepperGroup,
   AdminDashboardCount,
-  DailyDashboardCount
+  DailyDashboardCount,
+  Sbu,
+  SbuDepartmentsDTO
 } from "../types";
 
 export type { EmployeeTaskFilter, EmployeeTaskResponse } from "../types";
@@ -1762,3 +1764,59 @@ export const employeeService = {
   },
 
 };
+export const sbuService = {
+  // Save or Update SBU
+  saveSbu: async (data: {
+    id?: number;
+    sbuName: string;
+    departments: SbuDepartmentsDTO[];
+  }): Promise<Sbu> => {
+    const response = await api.post<Sbu>("/sbu/saveSbu", data);
+    return response.data;
+  },
+
+  // Check if SBU name exists
+  sbuNameExists: async (id: number, search: string): Promise<boolean> => {
+    const response = await api.post<boolean>(
+      `/sbu/sbuNameExists/${id}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
+  loadSbu: async (
+    pageNo: number,
+    searchTerm?: string
+  ): Promise<{
+    commonListDto: Sbu[];
+    totalElements: number;
+  }> => {
+    const page = pageNo ?? 0;
+    const search = searchTerm || "";
+    const response = await api.post<{
+      commonListDto: Sbu[];
+      totalElements: number;
+    }>(
+      `/sbu/loadSbu/${page}`,
+      { search: search }
+    );
+    return response.data;
+  },
+
+  findById: async (id: number): Promise<Sbu> => {
+    const response = await api.get<Sbu>(`/sbu/findById/${id}`);
+    return response.data;
+  }, 
+
+   deleteSbu: async (id: number): Promise<void> => {
+    await api.get(`/sbu/deleteSbu/${id}`);
+  },
+  
+  getNonSelectedDepartmentsForSbu: async (sbuId: number): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/sbu/getNonSelectedDepartmentsForSbu/${sbuId}`
+    );
+    return response.data;
+  },
+};
+
