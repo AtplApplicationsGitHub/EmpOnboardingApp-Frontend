@@ -151,6 +151,19 @@ const SBUPage: React.FC = () => {
         }
     };
 
+    const deleteSelectedDept = async (deptId: number) => {
+        try {
+            const departments = await sbuService.deleteSbuDepartment(Number(selectedSbuId), deptId);
+            if(departments){
+                toast.success("Department deleted successfully");
+            }else{
+                toast.error("Failed to delete Department");
+            }
+        } catch (error) {
+            toast.error("Failed to delete Department");
+        }
+    };
+
     const closeModal = () => {
         setShowModal(false);
         setEditMode(false);
@@ -484,12 +497,7 @@ const SBUPage: React.FC = () => {
                                                         {!dept.disableDelete && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() => {
-                                                                    setForm(prev => ({
-                                                                        ...prev,
-                                                                        departments: prev.departments.filter(d => d.id !== dept.id)
-                                                                    }));
-                                                                }}
+                                                                onClick={() => deleteSelectedDept(dept.id)}
                                                                 className="ml-1 p-0.5 rounded-full hover:bg-muted"
                                                             >
                                                                 <X size={12} />
