@@ -46,6 +46,8 @@ export interface Employee {
   deleteFlag?: boolean;
   group?: string;
   archiveFlag?: boolean;
+  sbuId:number;
+  sbuName:string;
 }
 
 export interface EmployeeImportResult {

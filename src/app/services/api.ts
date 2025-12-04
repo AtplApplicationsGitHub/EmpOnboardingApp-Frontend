@@ -597,12 +597,28 @@ export const adminService = {
     );
     return response.data;
   },
+
   findAllDepartment: async (): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/department/findAllDepartment`
     );
     return response.data;
   },
+
+  findAllSbu: async (): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/sbu/getSbuForDropdown`
+    );
+    return response.data;
+  },
+
+  getDepartmentsBySbu: async (sbuId: number): Promise<DropDownDTO[]> => {
+    const response = await api.get<DropDownDTO[]>(
+      `/sbu/getDepartmentsForSbu/${sbuId}`
+    );
+    return response.data;
+  },
+
 
   findAllGroups: async (): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
@@ -765,6 +781,7 @@ export const adminService = {
   createEmployee: async (data: {
     name: string;
     date: string;
+    sbuId: number;
     departmentId: number;
     labId:number;
     role: string;
@@ -782,6 +799,7 @@ export const adminService = {
     id: number;
     name: string;
     date: string;
+    sbuId: number;
     departmentId: number;
     labId:number;
     role: string;
