@@ -601,7 +601,7 @@ const GroupsPage: React.FC = () => {
                 <button
                   type="submit"
                   form="createGroupForm"
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
           shadow-md transition-all duration-300 ease-in-out 
           hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
           disabled:opacity-50 disabled:cursor-not-allowed"
@@ -731,7 +731,7 @@ const GroupsPage: React.FC = () => {
                 <button
                   type="submit"
                   form="editGroupForm"
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
           shadow-md transition-all duration-300 ease-in-out 
           hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
           disabled:opacity-50 disabled:cursor-not-allowed"
