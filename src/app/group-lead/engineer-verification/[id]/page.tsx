@@ -332,12 +332,13 @@ const EmployeeAcknowledgementDetail: React.FC = () => {
                       const initial = getInitialResp(q);
 
                       return (
-                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`} className="hover:bg-[var(--custom-gray)] transition-all">                          <TableCell className="font-medium">
-                          {q.questionId || `Q${q.id}`}
-                          <div className="text-xs text-muted-foreground">
-                            {isTextType(q) ? "Text" : "Yes/No"}
-                          </div>
-                        </TableCell>
+                        <TableRow key={q.id ?? `${t.id}-${q.questionId}`} className="hover:bg-[var(--custom-gray)] transition-all">
+                          <TableCell className="font-medium">
+                            {q.questionId || `Q${q.id}`}
+                            <div className="text-xs text-muted-foreground">
+                              {isTextType(q) ? "Text" : "Yes/No"}
+                            </div>
+                          </TableCell>
 
                           <TableCell>
                             <StatusPills q={q} />

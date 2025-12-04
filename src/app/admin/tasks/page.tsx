@@ -127,7 +127,7 @@ const TasksPage: React.FC = () => {
         params.search = searchFilter.trim();
 
       params.date = selectedDoj;
-  
+
       if (selectedDepartment)
         params.department = selectedDepartment;
 
@@ -392,8 +392,7 @@ const TasksPage: React.FC = () => {
                 setCurrentPage(0);
               }}
               placeholder="Date Of Joining"
-              className="w-64 rounded-md border bg-background px-3 py-2 text-sm pr-8"
-              max="9999-12-31"
+              className="w-64 rounded-md border bg-background px-3 py-2 text-sm pr-8 text-foreground dark:text-foreground dark:bg-background dark:[color-scheme:dark] [color-scheme:light] dark:border-border" max="9999-12-31"
               min="1900-01-01"
             />
             {selectedDoj && (
@@ -403,7 +402,7 @@ const TasksPage: React.FC = () => {
                   setSelectedDoj("");
                   setCurrentPage(0);
                 }}
-                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 aria-label="Clear date"
               >
                 <X size={16} />
@@ -793,7 +792,7 @@ const TasksPage: React.FC = () => {
                 <button
                   onClick={handleLabChangeSubmit}
                   disabled={!selectedLabId}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
               hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"
