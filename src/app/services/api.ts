@@ -1818,5 +1818,12 @@ export const sbuService = {
     );
     return response.data;
   },
+
+  deleteSbuDepartment: async (sbuId: number, deptId:number): Promise<boolean> => {
+    const response = await api.get<boolean>(
+      `/sbu/deleteSbuDepartment/${sbuId}/${deptId}`
+    );
+    return response.data;
+  },
 };
 
