@@ -51,6 +51,7 @@ const GroupLeadTaskPage: React.FC = () => {
   const totalCount = useCountUp(dashboard?.totalTasks);
   const completedCount = useCountUp(dashboard?.totalCompletedTasks);
   const pendingCount = useCountUp(dashboard?.totalPendingTasks);
+  const verificationPendingCount = useCountUp(dashboard?.totalVerificationPendingTasks);
   const overdueCount = useCountUp(dashboard?.overdueTasks);
   const totalVerificationsCount = useCountUp(dashboard?.totalVerifications);
   const completedVerificationCount = useCountUp(dashboard?.completedVerificationCount);
@@ -110,7 +111,7 @@ const GroupLeadTaskPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div className="text-center p-4 bg-gradient-to-br  dark:from-indigo-950/20 dark:to-blue-950/20 rounded-xl">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mb-2">
                   <User className="w-6 h-6 text-white" />
@@ -141,6 +142,13 @@ const GroupLeadTaskPage: React.FC = () => {
                 </div>
                 <p className="text-2xl font-bold text-foreground">{overdueCount}</p>
                 <p className="text-xs text-muted-foreground mt-1">Overdue</p>
+              </div>
+              <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-xl">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mb-2">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{verificationPendingCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Pending for Verification</p>
               </div>
             </div>
 
