@@ -21,7 +21,8 @@ import {
   FileQuestion,
   Menu,
   ChevronLeft,
-  User
+  User,
+  Briefcase
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -90,9 +91,9 @@ export default function Navbar() {
         <div className="flex h-20 items-center justify-between border-b border-border px-5">
           {!isCollapsed && (
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <img 
-                src="/assets/Icon.jpg" 
-                alt="Company Logo" 
+              <img
+                src="/assets/Icon.jpg"
+                alt="Company Logo"
                 className="h-8 w-auto object-contain flex-shrink-0"
               />
               {/* ✅ CHANGED: text-[#4c51bf] → text-primary */}
@@ -152,6 +153,12 @@ export default function Navbar() {
                   label="Labs"
                   active={pathname === "/admin/labs"}
                   Icon={FlaskConical}
+                />
+                <NavItem
+                  href="/admin/sbu"
+                  label="SBU"
+                  active={pathname === "/admin/sbu"}
+                  Icon={Briefcase}
                 />
                 <NavItem
                   href="/admin/employee-questionnaire"

@@ -401,3 +401,17 @@ export interface DailyDashboardCount {
   joiningToday: number;
   pendingTasks: number;
 }
+
+export interface SbuDepartmentsDTO {
+  id: number;
+  departmentName: string;
+  disableDelete: boolean;
+}
+
+export interface Sbu {
+  id: string;
+  sbuName: string;
+  departments: SbuDepartmentsDTO[];
+  createdTime?: string;
+  disableDelete?: boolean;
+}
