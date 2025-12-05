@@ -80,6 +80,7 @@ const EmployeesPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
   const [groupChanged, setGroupChanged] = useState(false);
+   const emailDebounceRef = useRef<number | null>(null);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
@@ -395,20 +396,38 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  const handleEmailChange = async (value: string) => {
-    setNewEmployee({ ...newEmployee, email: value });
-    if (!value) return;
+  const handleEmailChange = (value: string) => {
+  // update UI immediately
+  setNewEmployee(prev => ({ ...prev, email: value }));
 
+  // clear previous timer
+  if (emailDebounceRef.current) {
+    clearTimeout(emailDebounceRef.current);
+  }
+
+  // if empty, reset flags and skip API
+  if (!value) {
+    setEmailExists(false);
+    setCheckingEmail(false);
+    return;
+  }
+
+  // set new debounce timer (e.g. 500ms)
+  emailDebounceRef.current = window.setTimeout(async () => {
     setCheckingEmail(true);
     try {
-      const res = await adminService.isEmployeeEmailExists(selectedEmployeeId || 0, value);
+      const res = await adminService.isEmployeeEmailExists(
+        selectedEmployeeId || 0,
+        value
+      );
       setEmailExists(res);
     } catch (error) {
       setEmailExists(false);
     } finally {
       setCheckingEmail(false);
     }
-  };
+  }, 500);
+};
 
   const handleSubChange = (value: number | number[] | undefined) => {
     const subId = Array.isArray(value) ? value[0] : value;
