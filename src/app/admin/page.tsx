@@ -231,7 +231,7 @@ const AdminDashboard: React.FC = () => {
               <div className="relative bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">New Employee Profiles</p>
                       <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.employeesAdded || 0}</p>
@@ -240,7 +240,6 @@ const AdminDashboard: React.FC = () => {
                       <UserPlus className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"></div>
                 </div>
               </div>
 
@@ -248,7 +247,7 @@ const AdminDashboard: React.FC = () => {
               <div className="relative bg-gradient-to-br from-white to-green-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm tracking-wider text-green-600 dark:text-green-400 font-semibold mb-1">Onboarding Completed</p>
                       <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.tasksClosed || 0}</p>
@@ -257,7 +256,6 @@ const AdminDashboard: React.FC = () => {
                       <CheckCircle className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <div className="h-1 w-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
                 </div>
               </div>
 
@@ -265,7 +263,7 @@ const AdminDashboard: React.FC = () => {
               <div className="relative bg-gradient-to-br from-white to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm tracking-wider text-purple-600 dark:text-purple-400 font-semibold mb-1">Today's New Joinees</p>
                       <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.joiningToday || 0}</p>
@@ -274,7 +272,6 @@ const AdminDashboard: React.FC = () => {
                       <Users className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full"></div>
                 </div>
               </div>
 
@@ -282,7 +279,7 @@ const AdminDashboard: React.FC = () => {
               <div className="relative bg-gradient-to-br from-white to-orange-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm tracking-wider text-orange-600 dark:text-orange-400 font-semibold mb-1">Today's Joiners – Pending Tasks</p>
                       <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.pendingTasks || 0}</p>
@@ -291,7 +288,6 @@ const AdminDashboard: React.FC = () => {
                       <CheckCircle className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"></div>
                 </div>
               </div>
             </div>
