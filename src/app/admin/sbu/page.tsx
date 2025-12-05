@@ -52,6 +52,8 @@ const SBUPage: React.FC = () => {
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [sbuToDelete, setSbuToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [isCheckingName, setIsCheckingName] = useState(false);
+    const [nameError, setNameError] = useState<string>("");
 
     const totalPages = useMemo(
         () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -120,6 +122,43 @@ const SBUPage: React.FC = () => {
             sbuNameInputRef.current?.focus();
         }, 100);
     };
+
+    const checkSbuNameExists = async (name: string) => {
+        if (!name.trim()) {
+            setNameError("");
+            return;
+        }
+
+        setIsCheckingName(true);
+        try {
+            const id = selectedSbuId ? Number(selectedSbuId) : 0;
+            const exists = await sbuService.sbuNameExists(id, name.trim());
+
+            if (exists) {
+                setNameError("This SBU name already exists");
+            } else {
+                setNameError("");
+            }
+        } catch (error) {
+            console.error("Error checking SBU name:", error);
+            setNameError("");
+        } finally {
+            setIsCheckingName(false);
+        }
+    };
+
+    // Add debounce effect for name checking
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (form.sbuName) {
+                checkSbuNameExists(form.sbuName);
+            }
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(timeoutId);
+    }, [form.sbuName, selectedSbuId]);
+
+
     // Open Edit Modal prefill form
     const openEditModal = async (sbuId: string) => {
         try {
@@ -147,16 +186,16 @@ const SBUPage: React.FC = () => {
                 }, 100);
             }
         } catch (error) {
-            toast.error("Failed to load SBU details");
+            toast.error("Failed to load SBU detais");
         }
     };
 
     const deleteSelectedDept = async (deptId: number) => {
         try {
             const departments = await sbuService.deleteSbuDepartment(Number(selectedSbuId), deptId);
-            if(departments){
+            if (departments) {
                 toast.success("Department deleted successfully");
-            }else{
+            } else {
                 toast.error("Failed to delete Department");
             }
         } catch (error) {
@@ -169,6 +208,8 @@ const SBUPage: React.FC = () => {
         setEditMode(false);
         setSelectedSbuId(null);
         setForm({ ...emptyForm });
+        setNameError("");
+        setIsCheckingName(false);
     };
 
     // Open Delete Modal
@@ -246,7 +287,7 @@ const SBUPage: React.FC = () => {
             return;
         }
         try {
-            
+
             await sbuService.saveSbu({
                 id: Number(selectedSbuId),
                 sbuName,
@@ -475,12 +516,22 @@ const SBUPage: React.FC = () => {
                                         ref={sbuNameInputRef}
                                         type="text"
                                         value={form.sbuName}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, sbuName: e.target.value }))}
+                                        onChange={(e) => {
+                                            setForm((prev) => ({ ...prev, sbuName: e.target.value }));
+                                            setNameError(""); // Clear error when user types
+                                        }}
                                         placeholder="Enter SBU name"
                                         required
                                         disabled={false}
-                                        className="w-full px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm bg-background text-foreground border-input transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 disabled:bg-muted disabled:cursor-not-allowed"
+                                        className={`w-full px-3.5 py-2.5 border-[1.5px] rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 disabled:bg-muted disabled:cursor-not-allowed ${nameError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : "border-input"
+                                            }`}
                                     />
+                                    {isCheckingName && (
+                                        <p className="mt-1 text-xs text-muted-foreground">Checking availability...</p>
+                                    )}
+                                    {nameError && (
+                                        <p className="mt-1 text-xs text-red-600">{nameError}</p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -564,7 +615,12 @@ const SBUPage: React.FC = () => {
                                 </Button>
                                 <button
                                     onClick={editMode ? handleUpdate : handleCreate}
-                                    disabled={!form.sbuName.trim() || form.departments.length === 0}
+                                    disabled={
+                                        !form.sbuName.trim() ||
+                                        form.departments.length === 0 ||
+                                        isCheckingName ||
+                                        !!nameError
+                                    }
                                     className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold shadow-md transition-all duration-300 ease-in-out hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                                 >
                                     {editMode ? "Update SBU" : "Create SBU"}
