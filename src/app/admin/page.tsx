@@ -99,7 +99,7 @@ const AdminDashboard: React.FC = () => {
 
         const empData = await adminService.getEmployeeCountForAdmin();
         setEmployessCount(empData);
-        
+
       } catch (err: any) {
         console.error(err.response?.data?.message || 'Failed to load dashboard data');
       }
@@ -136,52 +136,73 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Top Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">Total Groups</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{totalGroupsCount}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Groups Card */}
+          <div className="relative bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="text-sm tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">Total Groups</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalGroupsCount}</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl">
-                <Users className="w-8 h-8 text-white" />
-              </div>
+              <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"></div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">Total Questions</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{totalQuestionsCount}</p>
+          {/* Total Questions Card */}
+          <div className="relative bg-gradient-to-br from-white to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="text-sm tracking-wider text-purple-600 dark:text-purple-400 font-semibold mb-1">Total Questions</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalQuestionsCount}</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-xl">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
+              <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full"></div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">Total Departments</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{totalDepartmentsCount}</p>
+          {/* Total Departments Card */}
+          <div className="relative bg-gradient-to-br from-white to-green-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="text-sm tracking-wider text-green-600 dark:text-green-400 font-semibold mb-1">Total Departments</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalDepartmentsCount}</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2.5 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <UserPlus className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-xl">
-                <UserPlus className="w-8 h-8 text-white" />
-              </div>
+              <div className="h-1 w-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">Total Labs</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{totalLabsCount}</p>
+          {/* Total Labs Card */}
+          <div className="relative bg-gradient-to-br from-white to-orange-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="text-sm tracking-wider text-orange-600 dark:text-orange-400 font-semibold mb-1">Total Labs</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalLabsCount}</p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2.5 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-xl">
-                <Clock className="w-8 h-8 text-white" />
-              </div>
+              <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"></div>
             </div>
           </div>
         </div>
@@ -204,60 +225,73 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* New Profiles Added Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-blue-500 p-2.5 rounded-lg shadow-md">
-                    <UserPlus className="w-5 h-5 text-white" />
+            {/* Daily Dashboard */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* New Employee Profiles Card */}
+              <div className="relative bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="text-sm tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">New Employee Profiles</p>
+                      <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.employeesAdded || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <UserPlus className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">New Employee Profiles</span>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-5xl font-bold text-blue-900 dark:text-blue-100">{dailyDashboard?.employeesAdded || 0}</p>
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                  </p>
+                  <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"></div>
                 </div>
               </div>
 
-              {/* Onboarding Tasks Finished Card */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/30 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-green-500 p-2.5 rounded-lg shadow-md">
-                    <CheckCircle className="w-5 h-5 text-white" />
+              {/* Onboarding Completed Card */}
+              <div className="relative bg-gradient-to-br from-white to-green-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="text-sm tracking-wider text-green-600 dark:text-green-400 font-semibold mb-1">Onboarding Completed</p>
+                      <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.tasksClosed || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">Onboarding Completed</span>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-5xl font-bold text-green-900 dark:text-green-100">{dailyDashboard?.tasksClosed || 0}</p>
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                  </p>
-                </div>
-              </div>
-              {/* Joining Today Card */}
-              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-950/30 dark:to-violet-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-purple-500 p-2.5 rounded-lg shadow-md">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Joining Today</span>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-5xl font-bold text-purple-900 dark:text-purple-100">{dailyDashboard?.joiningToday || 0}</p>
+                  <div className="h-1 w-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
                 </div>
               </div>
 
-              {/* Verifications Cleared Card */}
-              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/30 dark:to-amber-900/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-orange-500 p-2.5 rounded-lg shadow-md">
-                    <CheckCircle className="w-5 h-5 text-white" />
+              {/* Today's New Joinees Card */}
+              <div className="relative bg-gradient-to-br from-white to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="text-sm tracking-wider text-purple-600 dark:text-purple-400 font-semibold mb-1">Today's New Joinees</p>
+                      <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.joiningToday || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Users className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">Today’s Joiners – Pending Tasks</span>
+                  <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full"></div>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-5xl font-bold text-orange-900 dark:text-orange-100">{dailyDashboard?.pendingTasks || 0}</p>
+              </div>
+
+              {/* Today's Joiners – Pending Tasks Card */}
+              <div className="relative bg-gradient-to-br from-white to-orange-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="text-sm tracking-wider text-orange-600 dark:text-orange-400 font-semibold mb-1">Today's Joiners – Pending Tasks</p>
+                      <p className="text-4xl font-bold text-slate-800 dark:text-white">{dailyDashboard?.pendingTasks || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"></div>
                 </div>
               </div>
             </div>
@@ -674,7 +708,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          
+
         </div>
       </div>
     </div>
