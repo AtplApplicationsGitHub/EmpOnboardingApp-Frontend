@@ -16,17 +16,9 @@ import Button from "../../components/ui/button";
 import { employeeService } from "@/app/services/api";
 import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Department } from "@/app/types";
 
 const PAGE_SIZE = 10;
-
-type Department = {
-  id: string;
-  location: string;
-  lab?: string;
-  createdTime: string;
-  updatedTime: string;
-  disableDelete: boolean;
-};
 
 type FormState = {
   name: string;
@@ -329,54 +321,62 @@ const DepartmentsPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(0)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
+                  className="p-2"
                 >
-                  <ChevronsLeft size={18} />
-                </button>
-                <button
+                  <ChevronsLeft size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 0}
-                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
+                  className="p-2"
                 >
-                  <ChevronLeft size={18} />
-                </button>
+                  <ChevronLeft size={16} />
+                </Button>
 
-                {generatePageNumbers().map((pageNum, idx) =>
-                  typeof pageNum === "number" ? (
-                    <button
-                      key={idx}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`min-w-[40px] h-10 rounded text-sm font-medium ${currentPage === pageNum
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-background border border-input text-foreground hover:bg-accent"
-                        }`}
-                    >
-                      {pageNum + 1}
-                    </button>
-                  ) : (
-                    <span key={idx} className="px-2 text-muted-foreground">
-                      {pageNum}
-                    </span>
-                  )
-                )}
+                {generatePageNumbers().map((pageNum, idx) => (
+                  <React.Fragment key={idx}>
+                    {pageNum === "..." ? (
+                      <span className="px-3 py-2 text-muted-foreground">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        variant={pageNum === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum as number)}
+                        className="min-w-[40px]"
+                      >
+                        {(pageNum as number) + 1}
+                      </Button>
+                    )}
+                  </React.Fragment>
+                ))}
 
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
+                  className="p-2"
                 >
-                  <ChevronRight size={18} />
-                </button>
-                <button
+                  <ChevronRight size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(totalPages - 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="p-2 rounded-lg border border-input text-foreground hover:bg-accent disabled:opacity-40"
+                  className="p-2"
                 >
-                  <ChevronsRight size={18} />
-                </button>
+                  <ChevronsRight size={16} />
+                </Button>
               </div>
             </div>
           </CardContent>

@@ -1108,6 +1108,7 @@ const EmployeesPage: React.FC = () => {
                       displayFullValue={false}
                       isEmployeePage={true}
                       disabled={!newEmployee.departmentId || labOptions.length === 0}
+                      
                     />
                   </div>
                 )}
@@ -1243,7 +1244,7 @@ const EmployeesPage: React.FC = () => {
           <div className="relative w-full max-w-lg flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Import from Excel
               </CardTitle>
             </div>
@@ -1269,7 +1270,7 @@ const EmployeesPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted border-t border-border">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-card border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"

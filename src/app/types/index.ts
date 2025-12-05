@@ -46,8 +46,8 @@ export interface Employee {
   deleteFlag?: boolean;
   group?: string;
   archiveFlag?: boolean;
-  sbuId:number;
-  sbuName:string;
+  sbuId: number;
+  sbuName: string;
 }
 
 export interface EmployeeImportResult {
@@ -71,6 +71,7 @@ export interface Department {
   lab?: string;
   createdTime: string;
   updatedTime: string;
+  disableDelete: boolean;
 };
 
 
@@ -115,7 +116,7 @@ export interface Question {
 export interface GLDashboard {
   totalEmployees: number;
   totalPendingTasks: number;
-  totalVerificationPendingTasks:number
+  totalVerificationPendingTasks: number
   totalCompletedTasks: number;
   overdueTasks: number;
   totalTasks: number;
@@ -130,9 +131,9 @@ export interface AdminDashboardCount {
   completedCount: number;
   pendingCount: number;
   overdueCount: number;
-  groupName:string;
-  groupHead:string;
-  departmentName:string;
+  groupName: string;
+  groupHead: string;
+  departmentName: string;
   groupData: AdminDashboardCount[];
   departmentData: AdminDashboardCount[];
 }
@@ -387,7 +388,7 @@ export interface TaskStepperUser {
   status: string;
   totalQuestions: number;
   completedQuestions: number;
-  lastUpdatedTime:string;
+  lastUpdatedTime: string;
 }
 
 export interface TaskStepperGroup {

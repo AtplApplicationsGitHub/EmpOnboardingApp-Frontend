@@ -49,7 +49,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const [searchResults, setSearchResults] = useState<Array<{ id: number; key: string; value: string }>>([]);
   const [allLoadedOptions, setAllLoadedOptions] = useState<Array<{ id: number; key: string; value: string }>>(initialSelectedOptions);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownMenuRef = useRef<HTMLDivElement>(null);
@@ -65,7 +65,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const allAvailableOptions = useMemo(() => {
     const combined = [...allLoadedOptions];
-    
+
     if (options.length > 0) {
       options.forEach(opt => {
         if (!combined.some(o => o.id === opt.id)) {
@@ -73,7 +73,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         }
       });
     }
-    
+
     return combined;
   }, [allLoadedOptions, options]);
 
@@ -104,7 +104,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         left: rect.left,
         width: rect.width,
       };
-      
+
       // Only update if position actually changed (avoid infinite loops)
       setDropdownPosition(prev => {
         if (prev.top !== newPosition.top || prev.left !== newPosition.left || prev.width !== newPosition.width) {
@@ -119,7 +119,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   useEffect(() => {
     if (usePortal && isOpen) {
       updateDropdownPosition();
-      
+
       // Update position on scroll within modal or window
       const handleScroll = (e: Event) => {
         // Check if scrolling is happening in a modal
@@ -140,10 +140,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       // Use MutationObserver to detect DOM changes that might affect position
       const observer = new MutationObserver(updateDropdownPosition);
       if (dropdownRef.current) {
-        observer.observe(document.body, { 
-          childList: true, 
-          subtree: true, 
-          attributes: true 
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true
         });
       }
 
@@ -172,7 +172,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const results = await onSearch(searchTerm);
-        
+
         setAllLoadedOptions(prevOptions => {
           const combined = [...prevOptions];
           results.forEach(result => {
@@ -182,7 +182,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           });
           return combined;
         });
-        
+
         setSearchResults(results);
       } catch (error) {
         console.error('Search error:', error);
@@ -210,29 +210,29 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       }
       return searchResults.slice(0, maxDisplayItems);
     }
-    
+
     const filtered = allAvailableOptions.filter(option =>
       option.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
       option.value.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    
+
     return filtered.slice(0, maxDisplayItems);
   }, [allAvailableOptions, searchTerm, maxDisplayItems, onSearch, minSearchLength, searchResults, selectedOptions]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      
+
       // Check if click is on the main dropdown container
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return;
       }
-      
+
       // Check if click is on the portal dropdown menu
       if (usePortal && dropdownMenuRef.current && dropdownMenuRef.current.contains(target)) {
         return;
       }
-      
+
       // Close dropdown if clicked outside
       setIsOpen(false);
       setSearchTerm('');
@@ -322,6 +322,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     if (!disabled) {
       setIsOpen(true);
       setSearchTerm('');
+      setHighlightedIndex(0); // Add this line
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -329,7 +330,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   };
 
   const dropdownContent = (
-    <div 
+    <div
       ref={dropdownMenuRef}
       className="bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
       style={usePortal ? {
@@ -432,15 +433,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         })
       ) : (
         <div className="px-3 py-2 text-sm text-muted-foreground">
-          {onSearch && searchTerm.length < minSearchLength 
-            ? selectedOptions.length > 0 
+          {onSearch && searchTerm.length < minSearchLength
+            ? selectedOptions.length > 0
               ? 'Type to search for more options'
               : `Type ${minSearchLength}+ characters to search`
-            : isSearching 
-            ? 'Searching...'
-            : searchTerm.length >= minSearchLength
-            ? 'No results found'
-            : 'No options available'}
+            : isSearching
+              ? 'Searching...'
+              : searchTerm.length >= minSearchLength
+                ? 'No results found'
+                : 'No options available'}
         </div>
       )}
 
@@ -449,7 +450,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           Showing first {maxDisplayItems} of {searchResults.length} results. Refine your search for more specific results.
         </div>
       )}
-      
+
       {!onSearch && allAvailableOptions.length > maxDisplayItems && filteredOptions.length === maxDisplayItems && (
         <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/50">
           Showing {maxDisplayItems} of {allAvailableOptions.length} items. Type to filter more.
@@ -485,6 +486,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
+                  handleSelectOption(filteredOptions[highlightedIndex]);
+                }
+              }
+            }}
             placeholder={onSearch ? `Type ${minSearchLength}+ characters to search...` : "Type to search..."}
             className="flex-1 bg-transparent outline-none"
             disabled={disabled}
