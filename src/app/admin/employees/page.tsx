@@ -19,9 +19,8 @@ import {
   ChevronsRight,
   Trash2,
   Clock,
-  Archive,
   Search,
-  AlertTriangle, X, MailPlus
+  MailPlus
 } from "lucide-react";
 import Button from "../../components/ui/button";
 import Input from "../../components/Input";
@@ -51,7 +50,6 @@ const formatDateForInput = (dateString: string | undefined | null) => {
 
 const EmployeesPage: React.FC = () => {
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
@@ -75,14 +73,13 @@ const EmployeesPage: React.FC = () => {
   const [levelOptions, setLevelOptions] = useState<DropDownDTO[]>([]);
   const [labOptions, setLabOptions] = useState<DropDownDTO[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
+  const [sbuOptions, setSbuOptions] = useState<DropDownDTO[]>([]);
   const [groupOptions, setGroupOptions] = useState<DropDownDTO[]>([]);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
   const [groupChanged, setGroupChanged] = useState(false);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
-  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
@@ -103,7 +100,26 @@ const EmployeesPage: React.FC = () => {
       const levels = await adminService.getLookupItems("Level");
       setLevelOptions(levels);
 
-      const departments = await adminService.findAllDepartment();
+      const sbus = await adminService.findAllSbu();
+      const transformedSbus = sbus.map(sbu => ({
+        ...sbu,
+        value: sbu.value || sbu.key
+      }));
+
+      setSbuOptions(transformedSbus);
+    } catch (error) {
+      toast.error("Failed to load dropdown options.");
+    }
+  };
+
+  const fetchDepartmentBySub = async (subId: number) => {
+    if (!subId) {
+      setDepartmentOptions([]);
+      return;
+    }
+
+    try {
+      const departments = await adminService.getDepartmentsBySbu(subId);
       const transformedDepartments = departments.map(dept => ({
         ...dept,
         value: dept.value || dept.key
@@ -111,7 +127,8 @@ const EmployeesPage: React.FC = () => {
 
       setDepartmentOptions(transformedDepartments);
     } catch (error) {
-      toast.error("Failed to load dropdown options.");
+      toast.error("Failed to load lab options for selected department.");
+      setLabOptions([]);
     }
   };
 
@@ -198,6 +215,7 @@ const EmployeesPage: React.FC = () => {
       await adminService.createEmployee({
         name: newEmployee.name,
         date: newEmployee.date || new Date().toISOString().split("T")[0],
+        sbuId: newEmployee.sbuId || 0,
         departmentId: newEmployee.departmentId || 0,
         labId: newEmployee.labId || 0,
         role: newEmployee.role || "Employee",
@@ -262,6 +280,7 @@ const EmployeesPage: React.FC = () => {
         name: emp.name,
         date: formattedDate,
         department: emp.department,
+        sbuId: emp.sbuId,
         departmentId: emp.departmentId,
         labId: emp.labId,
         role: emp.role,
@@ -273,6 +292,10 @@ const EmployeesPage: React.FC = () => {
         email: emp.email,
         group: emp.group || "",
       });
+
+      if (emp.sbuId) {
+        await fetchDepartmentBySub(emp.sbuId);
+      }
 
       if (emp.departmentId) {
         await fetchLabsByDepartment(emp.departmentId);
@@ -309,6 +332,7 @@ const EmployeesPage: React.FC = () => {
       const updatePayload = {
         id: selectedEmployeeId,
         name: newEmployee.name,
+        sbuId: newEmployee.sbuId,
         departmentId: newEmployee.departmentId,
         labId: newEmployee.labId,
         role: newEmployee.role,
@@ -386,6 +410,20 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
+  const handleSubChange = (value: number | number[] | undefined) => {
+    const subId = Array.isArray(value) ? value[0] : value;
+    if (subId) {
+      setNewEmployee({
+        ...newEmployee,
+        sbuId: subId,
+        departmentId: undefined,
+      });
+      fetchDepartmentBySub(subId);
+    } else {
+      setLabOptions([]);
+    }
+  };
+
   const handleDepartmentChange = (value: number | number[] | undefined) => {
     const departmentId = Array.isArray(value) ? value[0] : value;
     const selectedDept = departmentOptions.find(
@@ -438,15 +476,6 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  const archiveEmployee = async (id: number) => {
-    try {
-      await adminService.achiveEmployees(id);
-      toast.success("Employee Archival successfully!");
-      fetchEmployees();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to archive employee.");
-    }
-  };
 
   const base64ToBlob = (b64: string, mime: string) => {
     const byteString = atob(b64);
@@ -607,6 +636,7 @@ const EmployeesPage: React.FC = () => {
               setSelectedEmployeeId(null);
               setEmailExists(false);
               setCheckingEmail(false);
+              setDepartmentOptions([]);
               setLabOptions([]);
               setGroupOptions([]);
               setOriginalGroupValue("");
@@ -642,14 +672,17 @@ const EmployeesPage: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="table-heading-bg text-primary-gradient">
-                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[18%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   Name
                 </th>
                 <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   Email
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[16%]">
                   DOJ
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
+                  SBU
                 </th>
                 <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[10%]">
                   Department
@@ -683,38 +716,33 @@ const EmployeesPage: React.FC = () => {
                 </tr>
               ) : (
                 employees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-[var(--custom-gray)] transition-all">
+                  <tr key={emp.id} className="text-sm hover:bg-[var(--custom-gray)] transition-all">
                     <td className="px-4 py-4">
                       <span className="text-sm font-medium text-foreground">{emp.name}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-muted-foreground">{emp.email}</span>
+                      {emp.email}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-muted-foreground font-medium">{emp.date}</span>
+                      {emp.date}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                        {emp.department || "N/A"}
-                      </span>
+                      {emp.sbuName || ""}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-muted-foreground">
-                        {emp.labAllocation || "-"}
-                      </span>
+                      {emp.department || ""}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
-                        {emp.level || "L1"}
-                      </span>
+                      {emp.labAllocation || "-"}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-muted-foreground">{emp.role || "N/A"}</span>
+                      {emp.level || ""}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm font-medium text-foreground">
-                        {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
-                      </span>
+                      {emp.role || "N/A"}
+                    </td>
+                    <td className="px-4 py-4">
+                      {emp.complianceDay ? `Day ${emp.complianceDay}` : "-"}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-5">
@@ -854,20 +882,40 @@ const EmployeesPage: React.FC = () => {
                     placeholder="Enter full name"
                   />
                 </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Email <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    type="email"
+                    value={newEmployee.email ?? ""}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                    placeholder="Enter email address"
+                  />
+                  {emailExists && (
+                    <p className="text-destructive text-sm mt-1">
+                      Email already exists
+                    </p>
+                  )}
+                </div>
 
                 <div>
                   <label className="block text-[13px] font-semibold text-foreground mb-2">
-                    Date of Joining <span className="text-destructive">*</span>
+                    SBU <span className="text-destructive">*</span>
                   </label>
-                  <input
-                    type="date"
-                    value={newEmployee.date ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, date: e.target.value })
+                  <SearchableDropdown
+                    options={sbuOptions}
+                    value={
+                      sbuOptions.find(
+                        (option) => option.id === newEmployee.sbuId
+                      )?.id
                     }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm text-foreground bg-background transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-                    max="9999-12-31"
-                    min="1900-01-01"
+                    onChange={handleSubChange}
+                    placeholder="Select SBU"
+                    displayFullValue={false}
+                    isEmployeePage={true}
+                    disabled={editMode}
                   />
                 </div>
 
@@ -892,34 +940,17 @@ const EmployeesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-[13px] font-semibold text-foreground mb-2">
-                    Lab Allocation
+                    Date of Joining <span className="text-destructive">*</span>
                   </label>
-                  <SearchableDropdown
-                    options={labOptions}
-                    value={
-                      labOptions.find(
-                        (option) => option.id === newEmployee.labId
-                      )?.id
+                  <input
+                    type="date"
+                    value={newEmployee.date ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, date: e.target.value })
                     }
-                    onChange={(id) => {
-                      const selectedLab = labOptions.find(
-                        (option) => option.id === id
-                      )?.id;
-                      setNewEmployee({
-                        ...newEmployee,
-                        labId: selectedLab || 0,
-                      });
-                    }}
-                    placeholder={
-                      !newEmployee.departmentId
-                        ? "Select Department First"
-                        : labOptions.length === 0
-                          ? "No labs available"
-                          : "Select Lab"
-                    }
-                    displayFullValue={false}
-                    isEmployeePage={true}
-                    disabled={!newEmployee.departmentId || labOptions.length === 0}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm text-foreground bg-background transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                    max="9999-12-31"
+                    min="1900-01-01"
                   />
                 </div>
 
@@ -946,6 +977,38 @@ const EmployeesPage: React.FC = () => {
                     displayFullValue={false}
                     isEmployeePage={true}
                     disabled={editMode}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">Role</label>
+                  <input
+                    type="text"
+                    value={newEmployee.role ?? ""}
+                    onChange={(e) =>
+                      setNewEmployee({ ...newEmployee, role: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                    placeholder="e.g., Software Engineer, Manager"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-foreground mb-2">
+                    Compliance Day
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newEmployee.complianceDay ?? "3"}
+                    onChange={(e) =>
+                      setNewEmployee({
+                        ...newEmployee,
+                        complianceDay: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                    placeholder="Number of compliance days"
                   />
                 </div>
 
@@ -1014,56 +1077,41 @@ const EmployeesPage: React.FC = () => {
                     placeholder="Previous company name"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-[13px] font-semibold text-foreground mb-2">Role</label>
-                  <input
-                    type="text"
-                    value={newEmployee.role ?? ""}
-                    onChange={(e) =>
-                      setNewEmployee({ ...newEmployee, role: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-                    placeholder="e.g., Software Engineer, Manager"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-semibold text-foreground mb-2">
-                    Compliance Day
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={newEmployee.complianceDay ?? "3"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        complianceDay: e.target.value,
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-                    placeholder="Number of compliance days"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-semibold text-foreground mb-2">
-                    Email <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="email"
-                    value={newEmployee.email ?? ""}
-                    onChange={(e) => handleEmailChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-                    placeholder="Enter email address"
-                  />
-                  {emailExists && (
-                    <p className="text-destructive text-sm mt-1">
-                      Email already exists
-                    </p>
-                  )}
-                </div>
+                {editMode && (
+                  <div>
+                    <label className="block text-[13px] font-semibold text-foreground mb-2">
+                      Lab Allocation
+                    </label>
+                    <SearchableDropdown
+                      options={labOptions}
+                      value={
+                        labOptions.find(
+                          (option) => option.id === newEmployee.labId
+                        )?.id
+                      }
+                      onChange={(id) => {
+                        const selectedLab = labOptions.find(
+                          (option) => option.id === id
+                        )?.id;
+                        setNewEmployee({
+                          ...newEmployee,
+                          labId: selectedLab || 0,
+                        });
+                      }}
+                      placeholder={
+                        !newEmployee.departmentId
+                          ? "Select Department First"
+                          : labOptions.length === 0
+                            ? "No labs available"
+                            : "Select Lab"
+                      }
+                      displayFullValue={false}
+                      isEmployeePage={true}
+                      disabled={!newEmployee.departmentId || labOptions.length === 0}
+                      
+                    />
+                  </div>
+                )}
 
                 {editMode && (
                   <div>
@@ -1196,7 +1244,7 @@ const EmployeesPage: React.FC = () => {
           <div className="relative w-full max-w-lg flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
-              <CardTitle className="text-1xl font-semibold text-primary-gradient">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Import from Excel
               </CardTitle>
             </div>
@@ -1222,7 +1270,7 @@ const EmployeesPage: React.FC = () => {
             </div>
 
             {/* Footer with gradient button */}
-            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-muted border-t border-border">
+            <div className="flex-shrink-0 flex justify-end items-center px-8 py-3 bg-card border-t border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"

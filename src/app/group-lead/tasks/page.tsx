@@ -40,7 +40,7 @@ const clampPercent = (n: number) => Math.max(0, Math.min(100, n));
 
 const GroupLeadTasksPage: React.FC = () => {
   const router = useRouter();
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -322,6 +322,7 @@ const GroupLeadTasksPage: React.FC = () => {
                   <TableHead>Level</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Verification Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -418,6 +419,34 @@ const GroupLeadTasksPage: React.FC = () => {
                                   className={`${base} bg-amber-500/20 text-amber-600`}
                                 >
                                   {task.status}
+                                </span>
+                              );
+                            })
+                              ()}
+                          </TableCell>
+
+                          {/* Verification Status */}
+                          <TableCell >
+                            {(() => {
+                              const verificationStatus = (task.verificationStatus || "").toLowerCase();
+                              const base =
+                                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ";
+
+                              if (verificationStatus === "completed") {
+                                return (
+                                  <span
+                                    className={`${base} bg-green-600/20 text-green-600`}
+                                  >
+                                    Completed
+                                  </span>
+                                );
+                              }
+
+                              return (
+                                <span
+                                  className={`${base} bg-amber-500/20 text-amber-600`}
+                                >
+                                  {task.verificationStatus}
                                 </span>
                               );
                             })
