@@ -618,7 +618,7 @@ const TaskDetailsPage: React.FC = () => {
 
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">
-                  Reason for deletion
+                  Reason for deletion <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
