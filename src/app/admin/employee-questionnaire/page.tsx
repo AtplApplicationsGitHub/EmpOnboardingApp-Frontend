@@ -204,7 +204,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
     }
 
     return (
-        <div className="space-y-2 bg-background min-h-screen p-6">
+        <div className="space-y-2">
             {/* Header Section */}
             <div className="flex items-center justify-between">
                 {/* Search Box */}
@@ -216,7 +216,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring"
+                        className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
 
@@ -392,14 +392,14 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
                     <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
                         {/* Header */}
-                        <div className="flex-shrink-0 px-5 py-3 order-b border-border shadow-md">
+                        <div className="flex-shrink-0 px-5 py-3 border-b border-border shadow-md">
                             <CardTitle className="text-xl font-semibold text-primary">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
                             </CardTitle>
                         </div>
 
                         {/* Scrollable Body */}
-                        <div className="flex-1 overflow-y-auto px-8 py-6 bg-card">
+                        <div className="flex-1 overflow-y-auto px-8 py-6">
                             <div className="space-y-5">
                                 {/* Question Text */}
                                 <div>
@@ -411,7 +411,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         value={form.question}
                                         onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                                         placeholder="Enter the question here..."
-                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-border rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-ring resize-none h-24"
+                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-border rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 resize-none h-24"
                                     />
                                 </div>
 

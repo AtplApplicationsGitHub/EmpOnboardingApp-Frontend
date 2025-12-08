@@ -1207,7 +1207,7 @@ const EmployeesPage: React.FC = () => {
                     !newEmployee.departmentId ||
                     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
                     emailExists ||
-                    checkingEmail
+                    checkingEmail|| !newEmployee.date
                   }
                   className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
         shadow-md transition-all duration-300 ease-in-out 
