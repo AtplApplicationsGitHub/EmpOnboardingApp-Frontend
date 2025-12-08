@@ -133,7 +133,7 @@ const GroupLeadAcknowledgementPage: React.FC = () => {
               setPage(0);
             }}
             placeholder="Search…"
-            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            className="w-64 border border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2"
             aria-label="Search tasks"
           />
         </div>

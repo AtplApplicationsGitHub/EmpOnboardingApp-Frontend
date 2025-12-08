@@ -427,7 +427,7 @@ const GroupDetailsPage: React.FC = () => {
                         setQuestionToDelete(question);
                         setShowDeleteModal(true);
                       }}
-                      className=" rounded-lg text-red-500  transition-colors duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)]  "
+                      className=" rounded-lg text-red-500 duration-300 hover:text-[#be123c] hover:bg-[rgba(225,29,72,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                     >
                       <Trash2 size={18} />
                     </button>

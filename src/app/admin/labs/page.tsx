@@ -438,8 +438,8 @@ const LabsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Gradient Header */}
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
-              <CardTitle className="text-xl font-semibold text-primary">
+            <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 {editMode ? "Update Lab" : "Create New Lab"}
               </CardTitle>
             </div>

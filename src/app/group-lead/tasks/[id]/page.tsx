@@ -721,8 +721,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
-              <h2 className="text-xl font-semibold text-primary">
+            <div className="flex-shrink-0 px-5 py-4 border-b shadow-md border-border">
+              <h2 className="text-1xl font-semibold text-primary">
                 Reassign Task
               </h2>
             </div>
@@ -768,7 +768,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   type="button"
                   onClick={reassignTask}
                   disabled={!primaryGroupLeadId}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
               hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"

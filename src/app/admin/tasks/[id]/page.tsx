@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import Button from "../../../components/ui/button";
@@ -67,6 +67,7 @@ const TaskDetailsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<number | undefined>(undefined);
   const [deleteReason, setDeleteReason] = useState("");
+  const deleteReasonInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -308,6 +309,13 @@ const TaskDetailsPage: React.FC = () => {
 
     setShowReassignModal(true);
   };
+  useEffect(() => {
+    if (showDeleteModal) {
+      setTimeout(() => {
+        deleteReasonInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showDeleteModal]);
 
   if (loading) {
     return (
@@ -622,6 +630,7 @@ const TaskDetailsPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
+                  ref={deleteReasonInputRef}
                   value={deleteReason}
                   onChange={(e) => setDeleteReason(e.target.value)}
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
@@ -641,6 +650,7 @@ const TaskDetailsPage: React.FC = () => {
                 <Button
                   variant="destructive"
                   onClick={handleDeleteQuestion}
+                  disabled={!deleteReason.trim()}
                   className="flex-1"
                 >
                   Yes, Delete
@@ -658,7 +668,7 @@ const TaskDetailsPage: React.FC = () => {
           <div className="relative w-full max-w-md flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md border-b">
-              <h2 className="text-xl font-semibold text-primary">
+              <h2 className="text-1xl font-semibold text-primary">
                 Reassign Task
               </h2>
             </div>
