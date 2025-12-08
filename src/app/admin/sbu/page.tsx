@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
-import { sub } from "date-fns";
 
 const PAGE_SIZE = 10;
 
@@ -82,28 +81,22 @@ const SBUPage: React.FC = () => {
             setSbus([]);
             setTotal(0);
         } finally {
-            fetchLookupData();
             setIsInitialLoad(false);
         }
     };
 
     useEffect(() => {
         fetchSBUs();
-        fetchLookupData();
     }, [currentPage, searchFilter]);
 
-    // Fetch lookup data for dropdowns
-    const fetchLookupData = async () => {
-        try {
-            const departments = await adminService.findAllDepartment();
+
+    const loadDepartments = async (sbuId: any) => {
+        const departments = await sbuService.getNonSelectedDepartmentsForSbu(Number(sbuId));
             const transformedDepartments = departments.map(dept => ({
                 ...dept,
                 value: dept.value || dept.key
             }));
             setDepartmentOptions(transformedDepartments);
-        } catch {
-            toast.error("Failed to load dropdown options.");
-        }
     };
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -117,7 +110,7 @@ const SBUPage: React.FC = () => {
         setSelectedSbuId(null);
         setForm({ ...emptyForm });
         setShowModal(true);
-
+        loadDepartments(0);
         setTimeout(() => {
             sbuNameInputRef.current?.focus();
         }, 100);
@@ -162,13 +155,7 @@ const SBUPage: React.FC = () => {
     // Open Edit Modal prefill form
     const openEditModal = async (sbuId: string) => {
         try {
-            const departments = await sbuService.getNonSelectedDepartmentsForSbu(Number(sbuId));
-            const transformedDepartments = departments.map(dept => ({
-                ...dept,
-                value: dept.value || dept.key
-            }));
-            setDepartmentOptions(transformedDepartments);
-
+            loadDepartments(Number(sbuId));
             const sbu = await sbuService.findById(Number(sbuId));
 
             if (sbu) {
@@ -195,6 +182,11 @@ const SBUPage: React.FC = () => {
             const departments = await sbuService.deleteSbuDepartment(Number(selectedSbuId), deptId);
             if (departments) {
                 toast.success("Department deleted successfully");
+                setForm((prev) => ({
+                    ...prev,
+                    departments: prev.departments.filter(dept => dept.id !== deptId)
+                }));
+                loadDepartments(Number(selectedSbuId));
             } else {
                 toast.error("Failed to delete Department");
             }
@@ -210,6 +202,7 @@ const SBUPage: React.FC = () => {
         setForm({ ...emptyForm });
         setNameError("");
         setIsCheckingName(false);
+        fetchSBUs();
     };
 
     // Open Delete Modal
@@ -360,7 +353,7 @@ const SBUPage: React.FC = () => {
                     <table className="w-full">
                         <thead>
                             <tr className="table-heading-bg text-primary-gradient">
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[15%]">
                                     SBU Name
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[35%]">
