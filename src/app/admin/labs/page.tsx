@@ -473,6 +473,7 @@ const LabsPage: React.FC = () => {
                       displayFullValue={false}
                       isEmployeePage={true}
                       disabled={false}
+                      usePortal={true}
                     />
                   )}
                   <input ref={locationInputRef} className="sr-only" />

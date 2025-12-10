@@ -481,7 +481,7 @@ const TaskDetailsPage: React.FC = () => {
                   <Button
                     variant="outline"
                     className="gap-2"
-                    disabled={freezeTask === "Y"}
+                    disabled={freezeTask === "Y" || t.status?.toLowerCase() === "completed"}
                     onClick={() => openReassignModal(t)}
                   >
                     <RefreshCw size={16} />

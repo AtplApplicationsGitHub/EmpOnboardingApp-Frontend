@@ -123,7 +123,7 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-     if (!config.skipLoading) {
+    if (!config.skipLoading) {
       loadingManager.show();
     }
     const token = localStorage.getItem("token");
@@ -556,7 +556,7 @@ export const adminService = {
     return response.data;
   },
 
-   getTaskCountForAdmin: async (): Promise<AdminDashboardCount> => {
+  getTaskCountForAdmin: async (): Promise<AdminDashboardCount> => {
     const response = await api.get<AdminDashboardCount>(`/task/taskCountForAdmin`,
       { skipLoading: true }
     );
@@ -586,7 +586,7 @@ export const adminService = {
     return response.data;
   },
 
-   getDepartmentLabs: async (deptId: number): Promise<DropDownDTO[]> => {
+  getDepartmentLabs: async (deptId: number): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/location/getLabsForDepartment/${deptId}`
     );
@@ -755,9 +755,9 @@ export const adminService = {
     return response.data;
   },
 
-  isEmployeeEmailExists: async (id:number, email: string): Promise<boolean> => {
+  isEmployeeEmailExists: async (id: number, email: string): Promise<boolean> => {
     const response = await api.post<boolean>(`/employee/emailExists/${id}`,
-      {search:email}
+      { search: email }
     );
     return response.data;
   },
@@ -775,7 +775,7 @@ export const adminService = {
       commonListDto: Employee[];
       totalElements: number;
     }>(`/employee/findFilteredEmployee/${page}`,
-      {search:search}
+      { search: search }
     );
     return response.data;
   },
@@ -785,7 +785,7 @@ export const adminService = {
     date: string;
     sbuId: number;
     departmentId: number;
-    labId:number;
+    labId: number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
@@ -803,7 +803,7 @@ export const adminService = {
     date: string;
     sbuId: number;
     departmentId: number;
-    labId:number;
+    labId: number;
     role: string;
     level: "L1" | "L2" | "L3" | "L4";
     totalExperience: string;
@@ -979,12 +979,12 @@ export const labService = {
 
   createLab: async (data: {
     location: string;
-    departmentId:number,
+    departmentId: number,
     lab: string[];
   }): Promise<boolean> => {
     const response = await api.post<boolean>("/location/saveLocation", {
       location: data.location,
-      departmentId:data.departmentId,
+      departmentId: data.departmentId,
       lab: data.lab,
     });
     return response.data;
@@ -1181,7 +1181,7 @@ export const taskService = {
     search?: string;
     department?: string;
     level?: string;
-    date?:string;
+    date?: string;
     page?: number;
   }): Promise<{
     commonListDto: any[];
@@ -1196,7 +1196,7 @@ export const taskService = {
       commonListDto: any[];
       totalElements: number;
     }>(`/task/filteredTaskForAdminWithFilter/${page}`,
-      { search: search, department: department, level: level, date:date }
+      { search: search, department: department, level: level, date: date }
     );
     return response.data;
   },
@@ -1220,7 +1220,7 @@ export const taskService = {
   getAllTasksForGroupLead: async (params?: {
     search?: string;
     page?: number;
-    taskStatus?:string;
+    taskStatus?: string;
   }): Promise<{
     commonListDto: Task[];
     totalElements: number;
@@ -1240,7 +1240,7 @@ export const taskService = {
   getAllTasksForVerification: async (params?: {
     search?: string;
     page?: number;
-    taskStatus?:string;
+    taskStatus?: string;
   }): Promise<{
     commonListDto: Task[];
     totalElements: number;
@@ -1269,7 +1269,7 @@ export const taskService = {
     return response.data;
   },
 
-   getTaskByIdForVerification: async (id?: string): Promise<Task[]> => {
+  getTaskByIdForVerification: async (id?: string): Promise<Task[]> => {
     const response = await api.get<Task[]>(`/task/findByIdForVerification/${id}`);
     return response.data;
   },
@@ -1332,9 +1332,9 @@ export const taskService = {
   },
 
   verifiedFreezeTask: async (taskId: string): Promise<boolean> => {
-  const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
-  return response.data;
-},
+    const response = await api.get<boolean>(`/task/verifiedFreezeTask/${taskId}`);
+    return response.data;
+  },
   getEmployeeTaskStepper: async (empId: number): Promise<TaskStepperGroup[]> => {
     const response = await api.get<TaskStepperGroup[]>(
       `/task/getEmployeeTaskStepper/${empId}`
@@ -1742,6 +1742,7 @@ export const employeeService = {
     question: string;
     responseType: "yes_no" | "text";
     levels: string[];
+    departmentIds: number[];
   }): Promise<boolean> => {
     const response = await api.post<boolean>(
       "/eQuestions/saveMasterEQuestions",
@@ -1806,12 +1807,12 @@ export const sbuService = {
   findById: async (id: number): Promise<Sbu> => {
     const response = await api.get<Sbu>(`/sbu/findById/${id}`);
     return response.data;
-  }, 
+  },
 
-   deleteSbu: async (id: number): Promise<void> => {
+  deleteSbu: async (id: number): Promise<void> => {
     await api.get(`/sbu/deleteSbu/${id}`);
   },
-  
+
   getNonSelectedDepartmentsForSbu: async (sbuId: number): Promise<DropDownDTO[]> => {
     const response = await api.get<DropDownDTO[]>(
       `/sbu/getNonSelectedDepartmentsForSbu/${sbuId}`
@@ -1819,7 +1820,7 @@ export const sbuService = {
     return response.data;
   },
 
-  deleteSbuDepartment: async (sbuId: number, deptId:number): Promise<boolean> => {
+  deleteSbuDepartment: async (sbuId: number, deptId: number): Promise<boolean> => {
     const response = await api.get<boolean>(
       `/sbu/deleteSbuDepartment/${sbuId}/${deptId}`
     );
