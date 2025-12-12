@@ -766,13 +766,15 @@ const EmployeesPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-5">
-                        <button
-                          onClick={() => handleEditEmployee(emp.id)}
-                          className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
-                          title="Edit Employee"
-                        >
-                          <Edit size={18} />
-                        </button>
+                        {emp.status !== "Completed" && (
+                          <button
+                            onClick={() => handleEditEmployee(emp.id)}
+                            className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
+                            title="Edit Employee"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
                         <button
                           onClick={() => resendMail(emp.id)}
                           className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
@@ -780,18 +782,21 @@ const EmployeesPage: React.FC = () => {
                         >
                           <MailPlus size={18} />
                         </button>
-                        <button
-                          onClick={() => {
-                            setEmployeeToDelete(emp);
-                            setShowDeleteModal(true);
-                          }}
-                          className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
-                          title="Delete Employee"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {emp.status !== "Completed" && (
+                          <button
+                            onClick={() => {
+                              setEmployeeToDelete(emp);
+                              setShowDeleteModal(true);
+                            }}
+                            className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
+                            title="Delete Employee"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
+
                   </tr>
                 ))
               )}
@@ -1057,7 +1062,7 @@ const EmployeesPage: React.FC = () => {
                       }
                     }}
                     className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-                    placeholder="Number of compliance days (max 20)"
+                    placeholder="Number of compliance days"
                   />
                 </div>
 
