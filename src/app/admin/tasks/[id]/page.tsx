@@ -260,7 +260,6 @@ const TaskDetailsPage: React.FC = () => {
 
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
     const status = (q.status || "Pending").toLowerCase();
-    const overdue = q.overDueFlag;
 
     const base =
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
@@ -270,20 +269,16 @@ const TaskDetailsPage: React.FC = () => {
 
     return (
       <div className="flex items-center gap-2">
-        <span className={`${base} ${status === "completed" ? done : pending}`}>
+        <span className={`${base} ${(status === "completed") ? done : (status === "overdue" ? late : pending)}`}>
           {status === "completed" ? (
             <CheckCircle2 size={12} />
+          ) : status === "overdue" ? (
+            <AlertCircle size={12} />
           ) : (
             <Clock size={12} />
           )}
-          {status === "completed" ? "Completed" : "Pending"}
+          {status === "completed" ? "Completed" : status === "overdue" ? "Overdue" : "Pending"}
         </span>
-        {overdue === true && (
-          <span className={`${base} ${late}`}>
-            <AlertCircle size={12} />
-            Overdue
-          </span>
-        )}
       </div>
     );
   };
