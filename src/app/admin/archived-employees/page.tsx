@@ -227,7 +227,7 @@ const ArchivedEmployeesPage: React.FC = () => {
                             setCurrentPage(0);
                         }}
                         placeholder="Search…"
-                        className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-64 rounded-md border bg-background px-3 py-2 text-sm text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                         aria-label="Search tasks"
                     />
                 </div>

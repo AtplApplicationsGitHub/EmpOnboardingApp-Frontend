@@ -92,11 +92,11 @@ const SBUPage: React.FC = () => {
 
     const loadDepartments = async (sbuId: any) => {
         const departments = await sbuService.getNonSelectedDepartmentsForSbu(Number(sbuId));
-            const transformedDepartments = departments.map(dept => ({
-                ...dept,
-                value: dept.value || dept.key
-            }));
-            setDepartmentOptions(transformedDepartments);
+        const transformedDepartments = departments.map(dept => ({
+            ...dept,
+            value: dept.value || dept.key
+        }));
+        setDepartmentOptions(transformedDepartments);
     };
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -391,22 +391,24 @@ const SBUPage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
+                                            <div className="flex items-center justify-center gap-3">
                                                 <button
                                                     onClick={() => openEditModal(sbu.id)}
-                                                    className="p-2 rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
+                                                    className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                     title="Edit SBU"
                                                 >
                                                     <Edit size={18} />
                                                 </button>
-                                                {!sbu.disableDelete && (
+                                                {!sbu.disableDelete ? (
                                                     <button
                                                         onClick={() => openDeleteModal(sbu.id, sbu.sbuName)}
-                                                        className="p-2 rounded-lg text-red-600 duration-300 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 transition-all"
+                                                        className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
                                                         title="Delete SBU"
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>
+                                                ) : (
+                                                    <div className="w-[34px] h-[34px]"></div>
                                                 )}
                                             </div>
                                         </td>
@@ -492,8 +494,8 @@ const SBUPage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="relative w-full max-w-2xl flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
                         {/* Gradient Header */}
-                        <div className="flex-shrink-0 px-5 py-4 border-b border-border">
-                            <CardTitle className="text-xl font-semibold text-primary">
+                        <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
+                            <CardTitle className="text-1xl font-semibold text-primary">
                                 {editMode ? "Update SBU" : "Create New SBU"}
                             </CardTitle>
                         </div>

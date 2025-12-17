@@ -23,12 +23,14 @@ type FormState = {
     question: string;
     responseType: "yes_no" | "text" | "";
     level: string[];
+    department: string[];
 };
 
 const emptyForm: FormState = {
     question: "",
     responseType: "",
     level: [],
+    department: [],
 };
 
 const EmployeeQuestionnairePage: React.FC = () => {
@@ -41,7 +43,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | null>(null);
-
+    const [departmentOptions, setDepartmentOptions] = useState<DropDownDTO[]>([]);
     const [searchFilter, setSearchFilter] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [form, setForm] = useState<FormState>(emptyForm);
@@ -57,6 +59,13 @@ const EmployeeQuestionnairePage: React.FC = () => {
             try {
                 const response = await adminService.getLookupItems("Level");
                 setLevelOptions(response);
+                const departments = await adminService.findAllDepartment();
+                const transformedDepartments = departments.map(dept => ({
+                    ...dept,
+                    value: dept.value || dept.key
+                }));
+                setDepartmentOptions(transformedDepartments);
+                console.log("Fetched levels:", response);
             } catch (error) {
                 console.error("Failed to fetch levels:", error);
             }
@@ -111,6 +120,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 question: questionnaire.question,
                 responseType: questionnaire.responseType as "yes_no" | "text",
                 level: questionnaire.levels || [],
+                department: questionnaire.departmentName ? [questionnaire.departmentName] : [],
             });
             setSelectedQuestionnaireId(questionnaireId);
             setEditMode(true);
@@ -153,11 +163,17 @@ const EmployeeQuestionnairePage: React.FC = () => {
                     closeModal();
                 }
             } else {
+                const departmentIds = departmentOptions
+                    .filter(option => form.department.includes(option.value))
+                    .map(option => option.id);
+
                 const saveData = {
                     question: form.question.trim(),
                     responseType: form.responseType,
                     levels: form.level,
+                    departmentIds: departmentIds,
                 };
+                // console.log("Saving new questionnaire with data:", saveData);
 
                 const success = await employeeService.saveMasterEQuestions(saveData);
 
@@ -169,7 +185,6 @@ const EmployeeQuestionnairePage: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to save/update questionnaire:", error);
-            alert("Failed to save/update questionnaire. Please try again.");
         }
     };
 
@@ -204,7 +219,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
     }
 
     return (
-        <div className="space-y-2 bg-background min-h-screen p-6">
+        <div className="space-y-2">
             {/* Header Section */}
             <div className="flex items-center justify-between">
                 {/* Search Box */}
@@ -216,7 +231,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring"
+                        className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
 
@@ -244,6 +259,9 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%] ">
                                     Level
+                                </th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-[12%]">
+                                    Department
                                 </th>
                                 <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider w-[8%]">
                                     Actions
@@ -283,6 +301,11 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                                     : "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
                                                 }`}>
                                                 {questionnaire.levels?.[0] || 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2.5 py-1 text-xs font-medium ">
+                                                {questionnaire.departmentName || '-'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
@@ -392,14 +415,14 @@ const EmployeeQuestionnairePage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
                     <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
                         {/* Header */}
-                        <div className="flex-shrink-0 px-5 py-3 order-b border-border shadow-md">
+                        <div className="flex-shrink-0 px-5 py-3 border-b border-border shadow-md">
                             <CardTitle className="text-xl font-semibold text-primary">
                                 {editMode ? "Update Questionnaire" : "Create New Questionnaire"}
                             </CardTitle>
                         </div>
 
                         {/* Scrollable Body */}
-                        <div className="flex-1 overflow-y-auto px-8 py-6 bg-card">
+                        <div className="flex-1 overflow-y-auto px-8 py-6">
                             <div className="space-y-5">
                                 {/* Question Text */}
                                 <div>
@@ -411,7 +434,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         value={form.question}
                                         onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                                         placeholder="Enter the question here..."
-                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-border rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-ring resize-none h-24"
+                                        className="w-full px-3.5 py-2.5 border-[1.5px] border-border rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 resize-none h-24"
                                     />
                                 </div>
 
@@ -479,6 +502,41 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                         usePortal={true}
                                     />
                                 </div>
+                                {/* Departments */}
+                                <div>
+                                    <label className="block text-[13px] font-semibold text-foreground mb-2">
+                                        Department <span className="text-red-500">*</span>
+                                    </label>
+                                    <SearchableDropdown
+                                        options={departmentOptions}
+                                        value={departmentOptions
+                                            .filter(option => form.department.includes(option.value))
+                                            .map(option => option.id)
+                                        }
+                                        onChange={(ids) => {
+                                            if (!editMode) {
+                                                if (Array.isArray(ids)) {
+                                                    const selectedDepartments = departmentOptions
+                                                        .filter(option => ids.includes(option.id))
+                                                        .map(option => option.value);
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        department: selectedDepartments,
+                                                    }));
+                                                } else {
+                                                    setForm((prev) => ({ ...prev, department: [] }));
+                                                }
+                                            }
+                                        }}
+                                        placeholder="Select Departments"
+                                        displayFullValue={false}
+                                        isEmployeePage={true}
+                                        isMultiSelect={true}
+                                        disabled={editMode}
+                                        showSelectAll={true}
+                                        usePortal={true}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -495,7 +553,7 @@ const EmployeeQuestionnairePage: React.FC = () => {
                                 </Button>
                                 <Button
                                     onClick={handleSubmit}
-                                    disabled={!form.question.trim() || !form.responseType || !form.level}
+                                    disabled={!form.question.trim() || !form.responseType || !form.level.length || !form.department.length}
                                     className="bg-gradient-to-r from-[#4c51bf] to-[#5a60d1] text-white"
                                 >
                                     {editMode ? "Update Question" : "Create Question"}

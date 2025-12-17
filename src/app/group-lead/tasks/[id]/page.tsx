@@ -370,16 +370,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   };
 
-  const overall = useMemo(() => {
-    const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
-    const doneQ = tasks.reduce((s, x) => s + (x.completedQuestions ?? 0), 0);
-    const pct = totalQ ? Math.round((doneQ / totalQ) * 100) : 0;
-    return { totalQ, doneQ, pct };
-  }, [tasks]);
 
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
     const status = (q.status || "Pending").toLowerCase();
-    const overdue = q.overDueFlag;
 
     const base =
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
@@ -389,20 +382,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
     return (
       <div className="flex items-center gap-2">
-        <span className={`${base} ${status === "completed" ? done : pending}`}>
+        <span className={`${base} ${(status === "completed") ? done : (status === "overdue" ? late : pending)}`}>
           {status === "completed" ? (
             <CheckCircle2 size={12} />
+          ) : status === "overdue" ? (
+            <AlertCircle size={12} />
           ) : (
             <Clock size={12} />
           )}
-          {status === "completed" ? "Completed" : "Pending"}
+          {status === "completed" ? "Completed" : status === "overdue" ? "Overdue" : "Pending"}
         </span>
-        {overdue === true && (
-          <span className={`${base} ${late}`}>
-            <AlertCircle size={12} />
-            Overdue
-          </span>
-        )}
       </div>
     );
   };
@@ -721,8 +710,8 @@ const GroupLeadTaskDetailPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
-              <h2 className="text-xl font-semibold text-primary">
+            <div className="flex-shrink-0 px-5 py-4 border-b shadow-md border-border">
+              <h2 className="text-1xl font-semibold text-primary">
                 Reassign Task
               </h2>
             </div>
@@ -768,7 +757,7 @@ const GroupLeadTaskDetailPage: React.FC = () => {
                   type="button"
                   onClick={reassignTask}
                   disabled={!primaryGroupLeadId}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold 
+                  className="px-6 py-2.5 bg-primary-gradient text-white rounded-lg text-sm font-semibold 
               shadow-md transition-all duration-300 ease-in-out 
               hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 
               disabled:opacity-50 disabled:cursor-not-allowed"

@@ -392,7 +392,8 @@ const TasksPage: React.FC = () => {
                 setCurrentPage(0);
               }}
               placeholder="Date Of Joining"
-              className="w-64 rounded-md border bg-background px-3 py-2 text-sm pr-8 text-foreground dark:text-foreground dark:bg-background dark:[color-scheme:dark] [color-scheme:light] dark:border-border" max="9999-12-31"
+              className="w-64 rounded-md border bg-background px-3 py-2 text-sm pr-8 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:text-foreground dark:[color-scheme:dark] [color-scheme:light] dark:border-border"
+              max="9999-12-31"
               min="1900-01-01"
             />
             {selectedDoj && (
@@ -417,7 +418,7 @@ const TasksPage: React.FC = () => {
               setCurrentPage(0);
             }}
             placeholder="Search…"
-            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            className="w-64 px-3 py-2 border border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             aria-label="Search tasks"
           />
         </div>
@@ -526,7 +527,7 @@ const TasksPage: React.FC = () => {
                       <TableCell className="min-w-[100px]">
                         {(() => {
                           const status = (task.status || "").toLowerCase();
-                          console.log(task.employeeName+""+status)
+                          console.log(task.employeeName + "" + status)
                           const base =
                             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:shadow-md transition-all";
 
@@ -748,8 +749,8 @@ const TasksPage: React.FC = () => {
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border">
-              <CardTitle className="text-xl font-semibold text-primary">
+            <div className="flex-shrink-0 px-5 py-4 border-b shadow-md border-border">
+              <CardTitle className="text-1xl font-semibold text-primary">
                 Change Lab
               </CardTitle>
             </div>
@@ -809,7 +810,7 @@ const TasksPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden ">
 
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border flex items-center justify-between">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-border shadow-md flex items-center justify-between">
               <h2 className="text-xl font-semibold text-primary">
                 Employee Task Questions
               </h2>

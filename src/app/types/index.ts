@@ -48,6 +48,8 @@ export interface Employee {
   archiveFlag?: boolean;
   sbuId: number;
   sbuName: string;
+  departmentName: string;
+  status?: string;
 }
 
 export interface EmployeeImportResult {
@@ -379,6 +381,8 @@ export interface Questionnaire {
   question: string;
   responseType: string;
   levels: string[];
+  departmentName: string ;
+  departmentIds: number[];
   createdDate?: string;
   updatedTime?: string;
 };

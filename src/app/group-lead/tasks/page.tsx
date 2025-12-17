@@ -298,7 +298,7 @@ const GroupLeadTasksPage: React.FC = () => {
               setCurrentPage(0);
             }}
             placeholder="Search…"
-            className="w-64 rounded-md border bg-background px-3 py-2 text-sm"
+            className="w-64 px-3 py-2 border border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             aria-label="Search tasks"
           />
         </div>
@@ -509,7 +509,7 @@ const GroupLeadTasksPage: React.FC = () => {
 
       {showLabChangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-background rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
 
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 shadow-md border-b border-border">
@@ -519,7 +519,7 @@ const GroupLeadTasksPage: React.FC = () => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 px-8 py-6 bg-background">
+            <div className="flex-1 px-8 py-6">
               <div className="space-y-6">
                 <div>
                   <label className="block text-[13px] font-semibold text-foreground mb-2">

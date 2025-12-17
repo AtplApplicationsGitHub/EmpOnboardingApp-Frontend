@@ -80,7 +80,7 @@ const EmployeesPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [originalGroupValue, setOriginalGroupValue] = useState<string>("");
   const [groupChanged, setGroupChanged] = useState(false);
-   const emailDebounceRef = useRef<number | null>(null);
+  const emailDebounceRef = useRef<number | null>(null);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     name: "",
     date: "",
@@ -191,6 +191,7 @@ const EmployeesPage: React.FC = () => {
         params.search = searchFilter.trim();
       }
       const data = await adminService.getEmployee(params);
+      console.log(data);
       setEmployees(data.commonListDto || []);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
@@ -397,37 +398,37 @@ const EmployeesPage: React.FC = () => {
   };
 
   const handleEmailChange = (value: string) => {
-  // update UI immediately
-  setNewEmployee(prev => ({ ...prev, email: value }));
+    // update UI immediately
+    setNewEmployee(prev => ({ ...prev, email: value }));
 
-  // clear previous timer
-  if (emailDebounceRef.current) {
-    clearTimeout(emailDebounceRef.current);
-  }
-
-  // if empty, reset flags and skip API
-  if (!value) {
-    setEmailExists(false);
-    setCheckingEmail(false);
-    return;
-  }
-
-  // set new debounce timer (e.g. 500ms)
-  emailDebounceRef.current = window.setTimeout(async () => {
-    setCheckingEmail(true);
-    try {
-      const res = await adminService.isEmployeeEmailExists(
-        selectedEmployeeId || 0,
-        value
-      );
-      setEmailExists(res);
-    } catch (error) {
-      setEmailExists(false);
-    } finally {
-      setCheckingEmail(false);
+    // clear previous timer
+    if (emailDebounceRef.current) {
+      clearTimeout(emailDebounceRef.current);
     }
-  }, 500);
-};
+
+    // if empty, reset flags and skip API
+    if (!value) {
+      setEmailExists(false);
+      setCheckingEmail(false);
+      return;
+    }
+
+    // set new debounce timer (e.g. 500ms)
+    emailDebounceRef.current = window.setTimeout(async () => {
+      setCheckingEmail(true);
+      try {
+        const res = await adminService.isEmployeeEmailExists(
+          selectedEmployeeId || 0,
+          value
+        );
+        setEmailExists(res);
+      } catch (error) {
+        setEmailExists(false);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+  };
 
   const handleSubChange = (value: number | number[] | undefined) => {
     const subId = Array.isArray(value) ? value[0] : value;
@@ -765,13 +766,15 @@ const EmployeesPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-5">
-                        <button
-                          onClick={() => handleEditEmployee(emp.id)}
-                          className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
-                          title="Edit Employee"
-                        >
-                          <Edit size={18} />
-                        </button>
+                        {emp.status !== "Completed" && (
+                          <button
+                            onClick={() => handleEditEmployee(emp.id)}
+                            className="rounded-lg text-primary transition-colors duration-300 hover:text-primary/80 hover:bg-primary/10"
+                            title="Edit Employee"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
                         <button
                           onClick={() => resendMail(emp.id)}
                           className="rounded-lg text-[#4c51bf] duration-300 hover:text-[#2e31a8] hover:bg-[rgba(76,81,191,0.08)] dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
@@ -779,18 +782,21 @@ const EmployeesPage: React.FC = () => {
                         >
                           <MailPlus size={18} />
                         </button>
-                        <button
-                          onClick={() => {
-                            setEmployeeToDelete(emp);
-                            setShowDeleteModal(true);
-                          }}
-                          className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
-                          title="Delete Employee"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {emp.status !== "Completed" && (
+                          <button
+                            onClick={() => {
+                              setEmployeeToDelete(emp);
+                              setShowDeleteModal(true);
+                            }}
+                            className="rounded-lg text-destructive duration-300 hover:text-destructive/80 hover:bg-destructive/10 dark:text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-muted"
+                            title="Delete Employee"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
+
                   </tr>
                 ))
               )}
@@ -1019,13 +1025,42 @@ const EmployeesPage: React.FC = () => {
                   <input
                     type="number"
                     min={1}
+                    max={20}
                     value={newEmployee.complianceDay ?? "3"}
-                    onChange={(e) =>
-                      setNewEmployee({
-                        ...newEmployee,
-                        complianceDay: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = parseInt(value);
+
+                      if (value === "" || value === "-") {
+                        setNewEmployee({
+                          ...newEmployee,
+                          complianceDay: value,
+                        });
+                      } else if (!isNaN(numValue)) {
+                        if (numValue <= 20 && numValue >= 1) {
+                          setNewEmployee({
+                            ...newEmployee,
+                            complianceDay: value,
+                          });
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      const numValue = parseInt(value);
+
+                      if (value === "" || isNaN(numValue) || numValue < 1) {
+                        setNewEmployee({
+                          ...newEmployee,
+                          complianceDay: "",
+                        });
+                      } else if (numValue > 20) {
+                        setNewEmployee({
+                          ...newEmployee,
+                          complianceDay: "20",
+                        });
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 border-[1.5px] border-input rounded-lg text-sm bg-background text-foreground transition-all focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
                     placeholder="Number of compliance days"
                   />
@@ -1127,7 +1162,7 @@ const EmployeesPage: React.FC = () => {
                       displayFullValue={false}
                       isEmployeePage={true}
                       disabled={!newEmployee.departmentId || labOptions.length === 0}
-                      
+
                     />
                   </div>
                 )}
@@ -1207,7 +1242,7 @@ const EmployeesPage: React.FC = () => {
                     !newEmployee.departmentId ||
                     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email || "") ||
                     emailExists ||
-                    checkingEmail
+                    checkingEmail || !newEmployee.date
                   }
                   className="px-6 py-2.5 bg-primary-gradient text-primary-foreground rounded-lg text-sm font-semibold 
         shadow-md transition-all duration-300 ease-in-out 
