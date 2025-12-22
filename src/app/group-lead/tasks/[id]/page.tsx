@@ -370,16 +370,9 @@ const GroupLeadTaskDetailPage: React.FC = () => {
     }
   };
 
-  const overall = useMemo(() => {
-    const totalQ = tasks.reduce((s, x) => s + (x.totalQuestions ?? 0), 0);
-    const doneQ = tasks.reduce((s, x) => s + (x.completedQuestions ?? 0), 0);
-    const pct = totalQ ? Math.round((doneQ / totalQ) * 100) : 0;
-    return { totalQ, doneQ, pct };
-  }, [tasks]);
 
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
     const status = (q.status || "Pending").toLowerCase();
-    const overdue = q.overDueFlag;
 
     const base =
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
@@ -389,20 +382,16 @@ const GroupLeadTaskDetailPage: React.FC = () => {
 
     return (
       <div className="flex items-center gap-2">
-        <span className={`${base} ${status === "completed" ? done : pending}`}>
+        <span className={`${base} ${(status === "completed") ? done : (status === "overdue" ? late : pending)}`}>
           {status === "completed" ? (
             <CheckCircle2 size={12} />
+          ) : status === "overdue" ? (
+            <AlertCircle size={12} />
           ) : (
             <Clock size={12} />
           )}
-          {status === "completed" ? "Completed" : "Pending"}
+          {status === "completed" ? "Completed" : status === "overdue" ? "Overdue" : "Pending"}
         </span>
-        {overdue === true && (
-          <span className={`${base} ${late}`}>
-            <AlertCircle size={12} />
-            Overdue
-          </span>
-        )}
       </div>
     );
   };
