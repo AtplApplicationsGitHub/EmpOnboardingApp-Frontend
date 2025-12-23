@@ -201,6 +201,7 @@ export interface TaskQuestions {
   answer: string;
   verifiedBy: string;
   verificationStatus: string;
+  questionStatus:string;
 }
 
 export interface TaskProjection {
