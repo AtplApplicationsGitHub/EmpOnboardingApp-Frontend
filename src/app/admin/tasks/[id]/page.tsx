@@ -259,7 +259,7 @@ const TaskDetailsPage: React.FC = () => {
   }, [tasks]);
 
   const StatusPills: React.FC<{ q: TaskQuestions }> = ({ q }) => {
-    const status = (q.status || "Pending").toLowerCase();
+    const status = (q.questionStatus || "Pending").toLowerCase();
 
     const base =
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium";
